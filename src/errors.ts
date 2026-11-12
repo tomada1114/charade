@@ -36,8 +36,8 @@ export abstract class CharadeError extends Error {
  * A command was given a flag it does not have.
  *
  * @remarks
- * `path` names the flag as the command defines it, never the value that was
- * passed with it. The command exits with code 2: it could not run.
+ * `path` names the flag as it was given, never the value that was passed
+ * with it. The command exits with code 2: it could not run.
  *
  * @example
  * ```ts

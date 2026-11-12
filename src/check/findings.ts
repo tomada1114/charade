@@ -105,9 +105,10 @@ export class FindingCollector {
   readonly #findings: Finding[] = [];
   #truncated = false;
 
-  /** The recorded findings, in the order they were added. */
+  /** A snapshot of the recorded findings, in the order they were added. */
   get findings(): readonly Finding[] {
-    return this.#findings;
+    // A copy, so a report built mid-run does not grow and the cap cannot be bypassed.
+    return [...this.#findings];
   }
 
   /** Whether at least one finding was dropped because the cap was reached. */
@@ -181,8 +182,10 @@ export function exitCodeFor(
   findings: readonly Finding[],
   options: OutcomeOptions = {},
 ): 0 | 1 {
-  const strict = options.strict === true;
-  const fails = findings.some((finding) => finding.severity === "error" || strict);
+  const fails =
+    options.strict === true
+      ? findings.length > 0
+      : findings.some((finding) => finding.severity === "error");
   return fails ? 1 : 0;
 }
 
@@ -246,14 +249,15 @@ export function checkReport(
   findings: readonly Finding[],
   options: CheckReportOptions = {},
 ): CheckReport {
-  const errors = findings.filter((finding) => finding.severity === "error").length;
+  const count = (severity: Severity): number =>
+    findings.filter((finding) => finding.severity === severity).length;
   return {
     version: 1,
     ok: exitCodeFor(findings, options) === 0,
     findings,
     summary: {
-      errors,
-      warnings: findings.length - errors,
+      errors: count("error"),
+      warnings: count("warning"),
       truncated: options.truncated === true,
     },
   };
