@@ -14,6 +14,10 @@ and an undocumented public symbol. What follows is the judgment they cannot make
 - `src/index.ts` is the whole contract, re-exported by name. A line added there is a
   public-API decision made at that moment; a line removed is a break. A new subpath in
   `package.json#exports` weighs the same as a new symbol.
+- The root entry stays pure: the authoring API, the definition API, types and errors.
+  Nothing it exports may reach skia-canvas, ffmpeg or a `node:` module through its
+  import graph, not even behind a lazy `import()`; `.claude/rules/export.md` says where
+  rendering lives instead.
 - `src/internal/` is private because of the directory, not the file name. `src/cli.ts`
   is a command entry, tested through `argv`, exit code and output, never re-exported.
 - Every public declaration carries TSDoc with `@public`. A public type that references

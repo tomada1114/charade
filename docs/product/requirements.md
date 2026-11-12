@@ -82,12 +82,15 @@
 | 1. Action          | a named piece of acting, with a mood                               | `a.do("sitDown", { mood: "dejected" })`            |
 | 2. Pose and target | joint angles, where a hand or foot should reach, timing and easing | `a.reach("handR", ball, { at: 1.2 })`              |
 | 3. Motion function | motion as a function of time (sway, spring, arc, follow)           | `a.drive(t => ({ spine: Math.sin(t * 3) * 0.1 }))` |
-| 4. Free drawing    | anything, on a Canvas 2D context, for that frame                   | `stage.draw((ctx, t) => { ... })`                  |
+| 4. Free drawing    | any vector drawing, on a Canvas 2D context, for that frame         | `stage.draw((ctx, t) => { ... })`                  |
 
 - Write at depth 1; go down only when the vocabulary does not have what is needed.
 - All four depths ship in the first release.
 - Depths 3 and 4 put functions on the timeline. They receive time and a seeded random
   source; reading the clock or `Math.random` is rejected by `check`.
+- The context at depth 4 is this package's own interface: every standard Canvas 2D
+  member that works on numbers and strings. Bitmap images, pixel readback and raw text
+  drawing are not on it; text goes through labels, speech bubbles and a text helper.
 - **Edge cases:** an unknown action, expression, prop or backdrop name is an error that
   lists the nearest valid names. A scene with no actor is valid (text and props only).
 
@@ -123,11 +126,13 @@
 | Effects     | 4     | `sweat`, `impact`, `speedLines`, `sparkle`                                                                                      |
 
 - Each item is one TypeScript module that carries its name, a description, typed
-  parameters and a sample scene. A prop or backdrop is an SVG held as a string in its
-  module, or a drawing function whose shape depends on its parameters.
+  parameters and a sample scene. A prop or backdrop is a drawing function; a shape made
+  in an SVG editor is carried as SVG path data (a `d` string) and drawn by a helper.
 - Vocabulary is defined with the same public API a user has (`defineAction` and its
   siblings). The engine has no private back door, so a user can define their own items
   in their own project in the same way.
+- A built-in is used by name (`a.do("sitDown")`); any item, a user's own included, is
+  used by passing its definition (`a.do(myAction)`). Nothing is registered.
 - The index of built-in vocabulary is a generated file. It is rebuilt by a script, and a
   test fails when it is stale. Nothing registers itself on import.
 - Names are a contract once released: adding one is a minor change, renaming or removing
@@ -150,7 +155,7 @@
   scene may name a font file instead, which is then used on every machine. No font is
   bundled.
 - Frames that contain text are not identical across machines with different fonts, so
-  recorded sample hashes use frames without text.
+  sample records measure text with a fixed stand-in rather than a real font.
 - `check` reports text that is too small to read at the output size or that leaves the
   frame.
 
@@ -201,8 +206,9 @@ Four ways for an agent to see what it made, since it cannot watch a video:
 
 - The flow is one line: add a file → rebuild the index → `check` → `catalog` → look at
   the sample images and fix → commit.
-- Type checking stops a malformed item first. Sample frames are hashed and recorded, so
-  an unintended change in appearance fails a test.
+- Type checking stops a malformed item first. Each sample's drawing calls are recorded,
+  so an unintended change in appearance fails a test on any operating system. Pixels are
+  checked only within one run: a frame rendered twice is identical.
 - The flow must run with an agent alone, so that actions, expressions and backdrops can
   be added day by day. This is verified before the vocabulary grows (§5 of the plan
   below, "first thing to prove").
@@ -291,3 +297,12 @@ loop does not work, the vocabulary plan does not either.
   font — several MB and a packaging-gate change; dropping text — reverses a decision).
 - 2026-11-12 First README video: moving a rock in three rows (rejected: ladder — needs
   an extra action; carrying boxes — needs collapse physics).
+- 2026-11-12 Depth 4 draws on the package's own interface without bitmap images
+  (rejected: the DOM type — not in the build, and skia-canvas does not satisfy it; image
+  members — a host object that cannot be recorded).
+- 2026-11-12 Props and backdrops are drawing functions with a path-data helper
+  (rejected: whole SVG documents — they need the image decoding just ruled out).
+- 2026-11-12 Samples record drawing calls, not pixel hashes (rejected: pixel hashes per
+  operating system — a record made on macOS cannot be checked on Linux CI).
+- 2026-11-12 Built-ins by name, any item by its definition (rejected: a per-scene
+  registry now — it needs a collision policy that makes adding a built-in name a break).

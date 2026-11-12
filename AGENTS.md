@@ -100,8 +100,36 @@ src/
 ```
 
 `src/index.ts` is the single consumer-importable entry point of the published contract.
-`scripts/*.mjs` is repository automation that never ships. Three facts hold for every
-change, because no config can check whether a change was meant:
+`scripts/*.mjs` is repository automation that never ships.
+
+The engine is built in layers: a directory under `src/` for each, except the CLI, which
+is `src/cli.ts`. A pure layer never imports the export layer or the CLI; the export
+layer and the CLI may import any pure layer.
+
+| Layer      | Holds                                                               | May touch                  |
+| ---------- | ------------------------------------------------------------------- | -------------------------- |
+| scene      | the authoring API: `scene`, actors, the `define…` functions         | pure code only             |
+| timeline   | the data a scene yields, its JSON form, the seeded random source    | pure code only             |
+| rig        | joints, limits, inverse kinematics, pose interpolation              | pure code only             |
+| draw       | frame `n` as drawing calls, and this package's drawing interface    | pure code only             |
+| check      | findings, the recording context, check-image layout                 | pure code only             |
+| vocabulary | built-in actions, expressions, props, backdrops, effects, the index | only what the root exports |
+| export     | scene loading, skia-canvas, ffmpeg, files                           | Node builtins and skia     |
+| cli        | argument parsing and exit codes                                     | the export layer           |
+
+Pure code imports no `node:` module and no skia-canvas, and reads no clock and no
+unseeded random number, so that a browser page can bundle it later without a change to
+the published contract. Only the export layer and the CLI are Node-only, and neither is
+reachable from the root entry. The boundary is a lint rule by directory; where it is not
+yet configured, it holds as this instruction.
+
+These facts hold for every change, because no config can check whether a change was
+meant:
+
+- Scene code never draws. It runs once and yields a timeline; the engine draws frame `n`
+  as a pure function of that timeline and `n`.
+- Built-in vocabulary is written with the same public API a user has. The engine has no
+  private back door.
 
 - Adding or removing a line in `src/index.ts`, or an entry in `package.json`'s
   `exports`/`files`, changes the published contract. Decide it deliberately.
@@ -112,9 +140,14 @@ change, because no config can check whether a change was meant:
 
 ## Rules, skills and sub-agents
 
-`.claude/rules/src.md` and `.claude/rules/tests.md` load once a matching file is opened,
-which is after a design is under way: read the rule for each area a change touches
-before designing it.
+The rules under `.claude/rules/` load once a matching file is opened, which is after a
+design is under way: read the rule for each area a change touches before designing it.
+`src.md` and `tests.md` cover all source and tests. The engine's design decisions live
+in four more, each with its reasoning: `engine.md` (time, space, angles, randomness, the
+drawing interface), `checks.md` (what a sample record is), `export.md` (scene loading,
+rasterising, encoding and how they are tested), and `vocabulary.md` (how an item reaches
+a scene, and what adding a built-in owes). A decision that changes is rewritten there,
+in the same change as the code.
 
 Each skill under `.claude/skills/` owns one kind of work; its `description` says when.
 Skills are edited in place; `authoring-skills` holds how they are checked.
