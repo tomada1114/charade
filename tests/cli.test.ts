@@ -1,6 +1,8 @@
+import { fileURLToPath } from "node:url";
+
 import { describe, expect, it } from "vitest";
 
-import { runCli } from "../src/cli.js";
+import { isMain, main, runCli, runIfMain } from "../src/cli.js";
 
 describe("runCli", () => {
   it("returns help on --help", () => {
@@ -40,4 +42,51 @@ describe("runCli", () => {
       });
     },
   );
+});
+
+describe("main", () => {
+  it("writes the result to the given streams and returns the exit code", () => {
+    const out: string[] = [];
+    const err: string[] = [];
+    const streams = {
+      stdout: { write: (chunk: string) => out.push(chunk) },
+      stderr: { write: (chunk: string) => err.push(chunk) },
+    };
+
+    expect(main(["--unknown"], "my-tool", streams)).toBe(2);
+    expect(out.join("")).toBe("");
+    expect(err.join("")).toBe("Invalid arguments. Run my-tool --help for usage.\n");
+  });
+});
+
+describe("runIfMain", () => {
+  const moduleUrl = new URL("../src/cli.ts", import.meta.url).href;
+  const silent = { stdout: { write: () => true }, stderr: { write: () => true } };
+
+  it("runs the command when the module is the entry script", () => {
+    const entry = fileURLToPath(moduleUrl);
+    expect(runIfMain(moduleUrl, ["node", entry, "--unknown"], silent)).toBe(2);
+  });
+
+  it("does nothing when the module was only imported", () => {
+    expect(
+      runIfMain(moduleUrl, ["node", "/elsewhere/tool.js"], silent),
+    ).toBeUndefined();
+  });
+});
+
+describe("isMain", () => {
+  const moduleUrl = new URL("../src/cli.ts", import.meta.url).href;
+
+  it("is true when the entry is the module's own file", () => {
+    expect(isMain(moduleUrl, fileURLToPath(moduleUrl))).toBe(true);
+  });
+
+  it("is false without an entry script", () => {
+    expect(isMain(moduleUrl, undefined)).toBe(false);
+  });
+
+  it("is false for an entry that does not exist", () => {
+    expect(isMain(moduleUrl, "/no/such/entry.js")).toBe(false);
+  });
 });

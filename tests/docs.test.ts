@@ -14,7 +14,7 @@ import { describe, expect, it } from "vitest";
 
 import { parseJson, readKey, readString } from "../scripts/lib/json.mjs";
 import { resolveDependencyBin, runNode } from "../scripts/lib/node-tools.mjs";
-import { normalizeIdentifier } from "../src/index.js";
+import { CharadeError } from "../src/index.js";
 
 // the `create-pr` skill requires every documented code example to
 // compile against the *current* public API. Nothing did: a substring
@@ -92,9 +92,7 @@ const JSDOC_THEN_EXPORT =
  * the example deliberately leaves free (a reader is expected to supply it) —
  * never a change to the documented example itself.
  */
-const SNIPPET_FIXTURES = new Map<string, string>([
-  ["withTimeout", "declare const url: string;\n"],
-]);
+const SNIPPET_FIXTURES = new Map<string, string>();
 
 /** Strip a JSDoc comment's leading ` * ` from every line, left over from
  * `/\*\*...\*\/` capturing the comment body verbatim. */
@@ -197,8 +195,10 @@ describe("documented examples compile against the public API", () => {
 
 describe("README quick start", () => {
   it("matches runtime behavior", () => {
-    const result = normalizeIdentifier("Hello World");
-    expect(result).toBe("hello-world");
+    const reasonOf = (error: unknown): string =>
+      error instanceof CharadeError ? error.code : "unknown";
+    const result = reasonOf(new Error("not ours"));
+    expect(result).toBe("unknown");
     // The "documented examples compile" suite above only type-checks this
     // snippet — a `// => "..."` comment is inert to tsc. Compare the
     // annotation against the real, current output here, so a stale or

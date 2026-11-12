@@ -7,7 +7,7 @@ const fixtures = "tests/fixtures/**";
 // Tests that import repository automation, touch the filesystem, spawn a
 // subprocess, or use git. They are listed explicitly so a new test defaults to
 // the short-timeout unit project until its I/O needs are deliberately reviewed.
-// The six files not listed here are unit tests. Two are intentional exceptions
+// The five files not listed here are unit tests. Two are intentional exceptions
 // to the usual `src/**` rule: guard-rules.test.ts calls the guard engine's pure
 // functions directly, and agents.test.ts only reads the committed tier files.
 const automationTests = [
