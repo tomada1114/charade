@@ -16,10 +16,26 @@ else — no personal skills, sub-agents or settings — so never rely on one bei
 
 ## Overview
 
-An ESM-only TypeScript package published to npm. Development runs on Node >= 24, while a
-generated `node-library` chooses its published `engines.node` floor during bootstrap.
-pnpm 11 is the package manager, used through Corepack. A package may also ship one
-command entry in `src/cli.ts`; that command is not an import surface.
+charade is an engine that lets an AI coding agent write a short 2D animation as code: a
+stick figure with a face acts out an idea, so the point is carried by the picture rather
+than by text. The person asks; the agent writes the scene through an Agent Skill.
+
+The core interaction is a loop: read the vocabulary, write a scene in TypeScript, check
+it, look at check images, fix it, render an MP4. An agent cannot see its own output, so
+the check-and-look loop is the product. charade competes on the quality of the acting,
+the range of what can be expressed, and ease of use; engine internals and render speed
+are not the headline.
+
+Non-goals: importing Rive, Lottie, Spine or other external character formats; building
+on or forking another animation framework; a headless browser anywhere in the render
+path; bundling ffmpeg; narration, text-to-speech, charts and diagrams; a preview editor
+or any GUI; narrowing what a scene can express to make the engine simpler to build.
+
+What it is and is not, with the reasons, is `docs/product/requirements.md`.
+
+It ships as an ESM-only TypeScript package published to npm, with one command entry in
+`src/cli.ts`; that command is not an import surface. Development and the published floor
+are both Node >= 24. pnpm 11 is the package manager, used through Corepack.
 
 ## Setup
 
@@ -40,8 +56,6 @@ pnpm package:check # build and pack once, then run every artifact check
 pnpm package:smoke # install the tarball into throwaway consumers and run it
 pnpm docs:build    # TypeDoc into docs/api/
 pnpm repo:labels   # create/update GitHub labels from .github/labels.yml
-pnpm bootstrap:e2e # run scripts/bootstrap.mjs end to end for every profile
-pnpm bootstrap:check # install and run the full gate in every generated profile
 ```
 
 Run a single test file with `pnpm exec vitest run tests/<name>.test.ts`.
@@ -111,13 +125,6 @@ tier file carries its model, effort and instructions, and a bare `model` drops t
 Pick the tier by its `description`. Most work needs no delegation, and a decision that
 needs this conversation stays with the main session. Repository prose names tiers by
 role only, never a model or an effort level.
-
-<!-- template-only:start -->
-
-The tier files are generated outside this repository from the owner's canonical tier
-definitions and arrive by pull request; never edit them by hand.
-
-<!-- template-only:end -->
 
 ## Security and human approval
 

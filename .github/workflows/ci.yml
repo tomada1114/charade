@@ -119,7 +119,6 @@ jobs:
       - name: Verify the publishable package
         run: pnpm run package:check
 
-  # profile:node-library:start
   # A package with no published Node floor (universal-library) has no floor
   # for this job to verify, so bootstrap removes the whole job for that
   # profile instead of running it against a floor that doesn't exist.
@@ -157,33 +156,7 @@ jobs:
       # target and does not survive that rewrite).
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 24 # bootstrap-node-floor
+          node-version: 24
 
       - name: Consume the packed artifact at the published Node floor
         run: pnpm --config.runtime-on-fail=ignore run package:smoke -- --pack-dir .smoke
-  # profile:node-library:end
-
-  # template-only:start
-  bootstrap:
-    name: Bootstrap generated repositories
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
-
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version-file: .node-version
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Verify generated repositories
-        run: pnpm run bootstrap:check
-  # template-only:end

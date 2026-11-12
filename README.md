@@ -1,33 +1,22 @@
-# my-package
+# charade
 
-[![CI](https://github.com/your-name/my-package/actions/workflows/ci.yml/badge.svg)](https://github.com/your-name/my-package/actions/workflows/ci.yml)
+[![CI](https://github.com/tomada1114/charade/actions/workflows/ci.yml/badge.svg)](https://github.com/tomada1114/charade/actions/workflows/ci.yml)
 
-A short description.
+Short 2D animations where stick figures act out an idea — written as code by AI agents.
 
 ## Install
 
 ```sh
-pnpm add my-package
+pnpm add charade
 ```
-
-<!-- profile:node-library:start -->
 
 Requires Node.js 24 or newer. The package ships ESM only. CommonJS consumers need a
 Node.js version with unflagged `require(esm)` support (20.19+, 22.12+, or 24+).
-<!-- bootstrap-node-floor -->
-<!-- profile:node-library:end -->
-
-<!-- profile:universal-library:start -->
-
-The package does not declare a Node.js floor. It ships ESM for runtimes with ES2023 and
-the web APIs it uses. CommonJS consumers need a Node.js version with unflagged
-`require(esm)` support (20.19+, 22.12+, or 24+).
-<!-- profile:universal-library:end -->
 
 ## Quick start
 
 ```ts
-import { normalizeIdentifier } from "my-package";
+import { normalizeIdentifier } from "charade";
 
 console.log(normalizeIdentifier("Hello World"));
 // => "hello-world"
@@ -46,30 +35,6 @@ blocked by the package export map.
 See the generated TypeDoc documentation from `pnpm docs:build` for the full API
 reference.
 
-<!-- template-only:start -->
-
-## Use this template
-
-Create a repository with GitHub's **Use this template** button, then run the interactive
-bootstrap before installing dependencies:
-
-```sh
-node scripts/bootstrap.mjs
-```
-
-Answer the prompts for the package name, profile, CLI choice, published Node floor,
-author, email, GitHub user, license, and description. For automation, pass the package
-name together with the `--profile`, `--cli`, `--node-engines`, `--author`, `--email`,
-`--github-user`, and `--license` flags. Use `--dry-run` to preview changes and `--help`
-for the complete command syntax.
-
-Use `node-library` for a Node.js package, or `universal-library` for code that must
-build without Node APIs. Add `--cli yes` to a `node-library` package to keep its
-`src/cli.ts` command entry. A `node-library` publishes `>=24` by default; pass
-`--node-engines '>=20'` to choose a different published floor. Bootstrap removes this
-section from the generated repository.
-<!-- template-only:end -->
-
 ## Development
 
 ```sh
@@ -82,4 +47,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the complete workflow.
 
 ## License
 
-[MIT](LICENSE) © Your Name
+[MIT](LICENSE) © tomada

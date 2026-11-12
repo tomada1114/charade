@@ -1,18 +1,18 @@
 {
-  "name": "my-package",
-  "version": "0.1.1",
-  "description": "A short description.",
+  "name": "charade",
+  "version": "0.0.0",
+  "description": "Short 2D animations where stick figures act out an idea — written as code by AI agents.",
   "keywords": [],
   "license": "MIT",
-  "author": "Your Name <you@example.com>",
+  "author": "tomada (https://x.com/muscle_coding)",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/your-name/my-package.git"
+    "url": "git+https://github.com/tomada1114/charade.git"
   },
   "bugs": {
-    "url": "https://github.com/your-name/my-package/issues"
+    "url": "https://github.com/tomada1114/charade/issues"
   },
-  "homepage": "https://github.com/your-name/my-package#readme",
+  "homepage": "https://github.com/tomada1114/charade#readme",
   "type": "module",
   "engines": {
     "node": ">=24"
@@ -70,9 +70,7 @@
     "check:source": "pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm run test:coverage && pnpm run build && pnpm run docs:build",
     "check": "pnpm run check:source && node scripts/clean.mjs .package && pnpm pack --pack-destination .package && pnpm run package:verify -- --pack-dir .package && node scripts/clean.mjs .package",
     "fix": "eslint . --fix && prettier --write .",
-    "hooks:install": "lefthook install",
-    "bootstrap:e2e": "node scripts/verify-bootstrap.mjs",
-    "bootstrap:check": "node scripts/verify-bootstrap.mjs --check"
+    "hooks:install": "lefthook install"
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.5",
@@ -89,5 +87,8 @@
     "typescript": "~6.0.3",
     "typescript-eslint": "^8.72.1",
     "vitest": "^4.1.11"
+  },
+  "bin": {
+    "charade": "./dist/cli.js"
   }
 }
