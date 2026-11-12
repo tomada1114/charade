@@ -1,0 +1,39 @@
+{
+  "compilerOptions": {
+    "target": "ES2023",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitOverride": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noUncheckedSideEffectImports": true,
+    "noImplicitReturns": true,
+    "useUnknownInCatchVariables": true,
+    // Forbids the syntax Node's type stripping cannot erase — enum, namespace,
+    // parameter properties — so every source file stays runnable unbuilt.
+    "erasableSyntaxOnly": true,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "forceConsistentCasingInFileNames": true,
+    "allowUnreachableCode": false,
+    "allowUnusedLabels": false,
+    "skipLibCheck": true,
+    // Closes the path where a package in node_modules substitutes its own
+    // standard library for TypeScript's built-in lib files.
+    "libReplacement": false,
+    "noEmit": true,
+
+    // Repository automation (bootstrap, package checks, agent skills) must run
+    // on plain Node before `pnpm install`, so it is authored as `.mjs`.
+    // Checking those files here is what makes "typecheck covers scripts" true.
+    "allowJs": true,
+    "checkJs": true
+  },
+  "include": ["src", "tests", "scripts", ".claude/skills", "*.ts", "*.mts", "*.mjs"],
+  // A `tests/fixtures/` file is malformed on purpose, so type-checking it
+  // reports the very defect a test asserts on.
+  "exclude": ["tests/fixtures/**"]
+}
