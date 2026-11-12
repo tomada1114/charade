@@ -1,6 +1,18 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
 
-import { CharadeError } from "../src/index.js";
+import {
+  CharadeError,
+  type CheckReport,
+  checkReport,
+  COULD_NOT_RUN,
+  type ExitCode,
+  exitCodeFor,
+  type Finding,
+  type FindingCollector,
+  type Severity,
+  type SourceLocation,
+  UnknownFlagError,
+} from "../src/index.js";
 
 class FirstError extends CharadeError {
   readonly code = "ERR_FIRST" as const;
@@ -58,6 +70,104 @@ describe("public API types", () => {
       class Uncoded extends CharadeError {}
       expectTypeOf(Uncoded).toBeObject();
     };
+    expect(rejected).toBeTypeOf("function");
+  });
+});
+
+describe("finding types", () => {
+  it("types severity as error or warning", () => {
+    expectTypeOf<Severity>().toEqualTypeOf<"error" | "warning">();
+  });
+
+  it("requires code, severity, message and fix", () => {
+    expectTypeOf<
+      Pick<Finding, "code" | "severity" | "message" | "fix">
+    >().toEqualTypeOf<{
+      readonly code: string;
+      readonly severity: Severity;
+      readonly message: string;
+      readonly fix: string;
+    }>();
+  });
+
+  it("makes every location field optional", () => {
+    expectTypeOf<Finding["row"]>().toEqualTypeOf<number | undefined>();
+    expectTypeOf<Finding["target"]>().toEqualTypeOf<string | undefined>();
+    expectTypeOf<Finding["joint"]>().toEqualTypeOf<string | undefined>();
+    expectTypeOf<Finding["time"]>().toEqualTypeOf<
+      readonly [start: number, end: number] | undefined
+    >();
+    expectTypeOf<Finding["frames"]>().toEqualTypeOf<
+      readonly [first: number, last: number] | undefined
+    >();
+    expectTypeOf<Finding["source"]>().toEqualTypeOf<SourceLocation | undefined>();
+    expectTypeOf<{
+      code: "ERR_CHECK_X";
+      severity: "error";
+      message: string;
+      fix: string;
+    }>().toExtend<Finding>();
+  });
+
+  it("allows measured values and nearest names", () => {
+    expectTypeOf<Finding["measured"]>().toEqualTypeOf<
+      Readonly<Record<string, number>> | undefined
+    >();
+    expectTypeOf<Finding["nearest"]>().toEqualTypeOf<readonly string[] | undefined>();
+  });
+
+  it("rejects a severity outside the two", () => {
+    const rejected = (): Finding => ({
+      code: "ERR_CHECK_X",
+      // @ts-expect-error severity is error or warning
+      severity: "info",
+      message: "m",
+      fix: "f",
+    });
+    expect(rejected).toBeTypeOf("function");
+  });
+
+  it("maps findings to 0 or 1, and could-not-run to 2", () => {
+    expectTypeOf(exitCodeFor).returns.toEqualTypeOf<0 | 1>();
+    expectTypeOf(exitCodeFor).returns.toExtend<ExitCode>();
+    expectTypeOf(COULD_NOT_RUN).toEqualTypeOf<2>();
+    expectTypeOf<ExitCode>().toEqualTypeOf<0 | 1 | 2>();
+  });
+
+  it("types the report as version, ok, findings and summary", () => {
+    expectTypeOf(checkReport).returns.toEqualTypeOf<CheckReport>();
+    expectTypeOf<keyof CheckReport>().toEqualTypeOf<
+      "version" | "ok" | "findings" | "summary"
+    >();
+    expectTypeOf<CheckReport["version"]>().toEqualTypeOf<1>();
+  });
+
+  it("exposes the collected findings read-only", () => {
+    expectTypeOf<FindingCollector["findings"]>().toEqualTypeOf<readonly Finding[]>();
+    expectTypeOf<FindingCollector["add"]>().returns.toEqualTypeOf<boolean>();
+  });
+});
+
+describe("thrown error types", () => {
+  it("keeps UnknownFlagError's code as its literal", () => {
+    expectTypeOf<UnknownFlagError["code"]>().toEqualTypeOf<"ERR_CLI_UNKNOWN_FLAG">();
+  });
+
+  it("holds the flag's path and no rejected value", () => {
+    expectTypeOf<Exclude<keyof UnknownFlagError, keyof Error>>().toEqualTypeOf<
+      "code" | "path"
+    >();
+    expectTypeOf<UnknownFlagError["path"]>().toEqualTypeOf<string>();
+  });
+
+  it("is constructed from the path alone", () => {
+    expectTypeOf(UnknownFlagError).toBeConstructibleWith("check.strict");
+    expectTypeOf(UnknownFlagError).toBeConstructibleWith("check.strict", {
+      cause: new Error(),
+    });
+    const rejected = (): UnknownFlagError =>
+      // @ts-expect-error the constructor takes no value argument
+      new UnknownFlagError("check.strict", "--strict=maybe");
     expect(rejected).toBeTypeOf("function");
   });
 });
