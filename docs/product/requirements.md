@@ -177,8 +177,12 @@
 - ffmpeg is not bundled. `render` calls the `ffmpeg` on `PATH`; when there is none it
   prints how to install it for the current OS and exits non-zero without writing partial
   output.
-- Exit code 0 on success, non-zero on any failure. Failures carry a stable `ERR_…` code;
-  messages may be reworded.
+- Exit code 0 on success, 1 when `check` finds errors, 2 when the command could not run.
+  Findings and failures carry a stable `ERR_…` code; messages may be reworded.
+- `--at` takes seconds (`1.5`, `1.5s`) or a frame (`45f`). Output is written next to the
+  scene unless `-o` names a path. `catalog` writes sample images when given `--images`.
+- `render` checks first and stops on an error finding; a warning, such as a figure
+  leaving the frame, does not stop it.
 - `check` covers: unknown names, joint limits, anything leaving the frame, overlap of
   actor and text, unreadable text, and clock or unseeded-random use.
 
@@ -188,9 +192,10 @@ Four ways for an agent to see what it made, since it cannot watch a video:
 
 - a contact sheet of frames (`sheet`),
 - a single frame (`frame`),
-- one actor's motion overlaid as ghosts on a single image, so motion reads from a still,
+- one actor's motion overlaid as ghosts on a single image, so motion reads from a still
+  (`sheet --ghost`),
 - a text description of state at given times: who is where, in which pose, facing which
-  way.
+  way (printed by `frame` and `sheet`, and by `check --at`).
 
 ### 3.9 Agent Skills
 

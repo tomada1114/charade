@@ -23,8 +23,90 @@ recorded sample is written against; changing any of it changes all of them at on
   computed from `n` each frame and never accumulated.
 - Frame `n` is a pure function of the timeline and `n`. A single frame asked for by time
   or number equals that frame of a full render, so nothing in a frame may depend on an
-  earlier frame having been drawn. That binds motion that carries state (a spring, a
-  follow) too; how it meets the rule is not settled.
+  earlier frame having been drawn.
+- Motion that carries state (a spring, a follow) is simulated once, at a fixed step,
+  while the scene runs, and stored on the timeline as data. Evaluating it frame by frame
+  would make frame `n` depend on frame `n - 1`; allowing only closed forms would rule
+  out following a moving target. Baked motion also serialises.
+- A scene of duration `d` has `d × fps + 1` frames: the frame at `t = d` is drawn, so
+  the final pose is always in the video and on the contact sheet.
+- Duration is the end of the last bounded segment in any row, rounded up to a frame; the
+  `duration` option overrides it. An open-ended track (a `stand` with no duration, a
+  label with none) runs to the end and does not extend it. A scene with only open-ended
+  tracks and no `duration` is an error.
+
+## The scene
+
+- `scene(options, build)` or `scene(build)`. The options are data known before the first
+  call — `width`, `height`, `fps`, `rows`, `seed`, `font`, `duration` — so a call on a
+  row the scene does not have fails on that line. `build` receives the stage and runs
+  once, synchronously, inside `scene()`; a callback that returns a promise is rejected.
+- The default export is frozen data, not a function: `kind: "charade.scene"`, a version,
+  the built timeline, and the findings recorded while authoring. A function would let
+  the CLI run the scene twice, once to check and once to render.
+- `stage.row(i)` returns the same handle on every call; row 0 is the top. The stage is
+  also row 0, so a one-row scene writes `stage.actor()` and `stage.draw(...)` directly.
+  On a scene with more rows those are an error that says to use `stage.row(i)`. There is
+  no whole-canvas coordinate space.
+- A row creates its backdrop, props, actor, labels and free drawing; an actor has `do`,
+  `express`, `pose`, `reach`, `drive`, `say` and `wait`. Handles are variables. Each
+  also has an id used in findings, built from the row, the kind, the name and the
+  occurrence index — the same key the random source uses.
+- A row shows 2.5 units of height at every row count, with the ground line 0.3 units
+  above its lower edge; the visible width follows from the canvas and the row count. The
+  two numbers are tuned on the first three actions and are contract after the first
+  release.
+
+## Sequencing
+
+- Each actor has a cursor. A call without `at` starts when everything already recorded
+  on that actor has ended, so consecutive calls play in order. `at` is absolute scene
+  time. Absolute time on every call would have the author do arithmetic on every line.
+- Every recording call returns a span: `start`, `end`, `duration` and named `marks` (the
+  release of a throw), all in seconds. Parallel motion and timing across rows are
+  written with those numbers; all rows share one clock. `stage.sync()` moves every
+  actor's cursor to the latest end.
+- A call without `at` after an open-ended track has no cursor to start from and is an
+  error with a fix line.
+- When two tracks drive one joint, the one recorded later wins for the joints it names,
+  blended in and out; `mode: "add"` adds instead. So depth 2 and depth 3 override only
+  the joints they name over a depth 1 action. A full-body action that cuts another is a
+  warning. Joint limits are checked on the composed angle.
+- Each segment blends in from the composed pose beneath it over `blend` seconds (about
+  0.2 by default). `anticipation` and `followThrough` are options of `pose` and `reach`,
+  in seconds, as closed-form curves.
+- A function at depth 3 or 4 receives `t`, seconds since its segment began, and a second
+  argument with the scene time, the segment's duration and progress, and the keyed
+  random source.
+
+## The rig
+
+```
+pelvis (root: pelvisX, pelvisY)
+├─ spine ─ chest ─ neck ─ head (face)
+│          ├─ shoulderL ─ elbowL ─ [handL]
+│          └─ shoulderR ─ elbowR ─ [handR]
+├─ hipL ─ kneeL ─ ankleL ─ [footL]
+└─ hipR ─ kneeR ─ ankleR ─ [footR]
+```
+
+- Fourteen angles. The back has two segments so a slump curves instead of hinging, and
+  the ankles let a seated figure plant its feet. Wrists can be added later as a minor
+  change.
+- Names take a side suffix, as in `handR`. The four effectors in brackets are targets
+  for `reach` and are not angles; using one as an angle is an error that names the
+  angles of its chain.
+- `R` is the limb nearer the camera in both facings, because mirroring flips the
+  picture. The catalog says so.
+- The root carries position in the actor's own frame (`pelvisX`, `pelvisY`). Where the
+  actor stands on the ground and which way it faces are separate.
+- The face is eight symmetric numbers: `eyeOpen`, `gazeX`, `gazeY`, `browHeight`,
+  `browTilt`, `mouthCurve`, `mouthOpen`, `mouthWidth`.
+- `pose` and `drive` take one flat map of channels: angles, root and face.
+- Joint limits and segment lengths are tuned on the first three actions. After the first
+  release a change to either changes every recorded sample.
+- Inverse kinematics with a fixed bend direction cannot bend a knee backwards; a
+  directly authored angle can, which is the case the limit check exists for.
 
 ## Space and angles
 
@@ -78,3 +160,7 @@ A prop or a backdrop is a drawing function. A shape taken from an SVG editor is 
 as SVG path data (the string of a `d` attribute) and drawn by this package's own
 path-data helper, which issues ordinary path calls. A full SVG document is not an input:
 it would need an image decoder, which the drawing interface excludes.
+
+There is no `Path2D`: it is a global constructor the drawing interface cannot reach, and
+a path object would be a host object the recording context cannot log. Paths are drawn
+with the context's own path calls every frame.

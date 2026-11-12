@@ -26,6 +26,42 @@ repeats it. This rule holds only what is true inside this repository.
   names, bad parameters and the catalog listing all work from the parameter
   specification as runtime data. That specification is part of the public definition
   API.
+- Names are unique within a kind, not across kinds: the method called already says which
+  kind is meant. The catalog and every error name the kind beside the name.
+
+## The shape of a definition
+
+- Parameters are declared once, as plain data marked `as const`, and the TypeScript type
+  is derived from it. Each key states its `type` (`number`, `enum`, `boolean`, `color`,
+  `point`, `text`), a `default` (a key without one is required), a range or the allowed
+  values, a unit and a `doc` line. Helper calls such as a number builder fail under
+  isolated declarations, and an interface written beside the data drifts from it.
+- A definition's export is annotated with its definition type; the `build` or `draw`
+  member is declared as a method, which is what keeps a specific definition assignable
+  to the general type. The export is named for the item and its kind, since a name such
+  as `throw` is a reserved word.
+- Options and timing share one bag, so a parameter may not be named `at`, `duration`,
+  `mood`, `blend` or `mode`. The types do not catch that, nor a default outside the
+  allowed values; the `define…` function rejects both when it runs.
+- An action's `build` receives a clip with an actor's depth 2 and 3 calls, time 0 at the
+  action's start, and the resolved parameters. It records and returns nothing. An action
+  states its marks, and built-in actions stay free of functions on the timeline so that
+  a scene written at depth 1 serialises without loss.
+- An expression returns face channels. A prop, backdrop or effect has a `draw` that
+  receives the drawing interface, the resolved parameters and the same second argument a
+  depth 4 callback gets, in row units with the origin at the item's ground point.
+- `mood` is an option of every action and takes any expression name. An action lists the
+  moods that also change the body.
+- An action that moves a prop takes it as a parameter: the scene passes the prop's
+  handle, and `build` writes that prop's track — held by an effector until a mark, then
+  along a closed-form path. This is how `throw`, `pickUp`, `push` and `carry` work, and
+  it is not interaction between actors.
+- The sample is a builder callback, `sample(stage)`, which the consumer passes to
+  `scene`. A sample that called `scene` itself would import the root entry and close the
+  cycle named below; this way an item imports nothing for its sample, and built-ins and
+  a user's items are written the same way. A sample passes definitions, never names.
+- The root entry exports the `define…` functions, the definition and parameter types,
+  and the built-in maps. The individual built-in definitions are not root exports.
 
 ## Inside this repository
 
