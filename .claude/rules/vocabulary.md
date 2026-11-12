@@ -33,9 +33,9 @@ repeats it. This rule holds only what is true inside this repository.
 
 - Parameters are declared once, as plain data marked `as const`, and the TypeScript type
   is derived from it. Each key states its `type` (`number`, `enum`, `boolean`, `color`,
-  `point`, `text`), a `default` (a key without one is required), a range or the allowed
-  values, a unit and a `doc` line. Helper calls such as a number builder fail under
-  isolated declarations, and an interface written beside the data drifts from it.
+  `point`, `text`, `prop`), a `default` (a key without one is required), a range or the
+  allowed values, a unit and a `doc` line. Helper calls such as a number builder fail
+  under isolated declarations, and an interface written beside the data drifts from it.
 - A definition's export is annotated with its definition type; the `build` or `draw`
   member is declared as a method, which is what keeps a specific definition assignable
   to the general type. The export is named for the item and its kind, since a name such

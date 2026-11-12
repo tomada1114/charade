@@ -55,13 +55,16 @@ recorded sample is how an unintended change in appearance fails a test.
   and `ERR_ENV_` (ffmpeg, fonts, the native binary).
 - An unknown name or a bad parameter while a scene runs is recorded as a finding and
   authoring continues with a placeholder, so one run reports every mistake instead of
-  the first. Recording stops at about twenty findings.
+  the first. Recording stops at about twenty findings. A structural mistake — a row the
+  scene does not have, a callback that returns a promise — is thrown instead, since
+  there is no placeholder to continue with.
 - Leaving the frame is a warning. A figure that walks off is ordinary acting, and the
   first README video ends with one.
 - Reading the clock or an unseeded random number is detected by replacing `Date`,
   `performance.now` and `Math.random` while the scene callback and every frame's
-  functions run, in every command. A scan of the source would flag comments and miss
-  indirect calls; a parser would be a second dependency.
+  functions run, in every command. The replacement is done by the export layer, which is
+  what runs them; the pure layers never touch those globals. A scan of the source would
+  flag comments and miss indirect calls; a parser would be a second dependency.
 
 ## Output
 

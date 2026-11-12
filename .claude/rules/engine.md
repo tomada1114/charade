@@ -90,9 +90,9 @@ pelvis (root: pelvisX, pelvisY)
 └─ hipR ─ kneeR ─ ankleR ─ [footR]
 ```
 
-- Fourteen angles. The back has two segments so a slump curves instead of hinging, and
-  the ankles let a seated figure plant its feet. Wrists can be added later as a minor
-  change.
+- Fourteen angles: the thirteen joints in the tree and `pelvis`, the root's tilt. The
+  back has two segments so a slump curves instead of hinging, and the ankles let a
+  seated figure plant its feet. Wrists can be added later as a minor change.
 - Names take a side suffix, as in `handR`. The four effectors in brackets are targets
   for `reach` and are not angles; using one as an angle is an error that names the
   angles of its chain.
