@@ -92,7 +92,7 @@ const JSDOC_THEN_EXPORT =
  * the example deliberately leaves free (a reader is expected to supply it) —
  * never a change to the documented example itself.
  */
-const SNIPPET_FIXTURES = new Map<string, string>([]);
+const SNIPPET_FIXTURES = new Map<string, string>();
 
 /** Strip a JSDoc comment's leading ` * ` from every line, left over from
  * `/\*\*...\*\/` capturing the comment body verbatim. */

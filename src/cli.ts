@@ -63,7 +63,7 @@ function canonicalize(target: string): string {
  * @param moduleUrl The module's `import.meta.url`.
  * @param entry The script path Node was given, `process.argv[1]`.
  */
-export function isMain(moduleUrl: string, entry: string | undefined): entry is string {
+export function isMain(moduleUrl: string, entry: string | undefined): boolean {
   return (
     entry !== undefined &&
     canonicalize(entry) === canonicalize(fileURLToPath(moduleUrl))
@@ -109,7 +109,13 @@ export function runIfMain(
   streams: CliStreams,
 ): number | undefined {
   const entry = argv[1];
-  return isMain(moduleUrl, entry) ? main(argv.slice(2), entry, streams) : undefined;
+  if (entry === undefined || !isMain(moduleUrl, entry)) {
+    return undefined;
+  }
+  return main(argv.slice(2), entry, streams);
 }
 
-process.exitCode = runIfMain(import.meta.url, process.argv, process);
+const exitCode = runIfMain(import.meta.url, process.argv, process);
+if (exitCode !== undefined) {
+  process.exitCode = exitCode;
+}

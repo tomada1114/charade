@@ -18,11 +18,6 @@ extend-exclude = [
 
 # Each entry below is a word that is spelled the way it is on purpose. Prefer
 # fixing the text over adding to these lists.
-[default.extend-identifiers]
-# Deliberately misspelled in tests/types.test.ts, where the point is that an
-# unknown option is a type error rather than an extension point.
-seperator = "seperator"
-
 [default.extend-words]
 # Node.js v22's LTS codename.
 Jod = "Jod"

@@ -1,3 +1,5 @@
+import { fileURLToPath } from "node:url";
+
 import { describe, expect, it } from "vitest";
 
 import { isMain, main, runCli, runIfMain } from "../src/cli.js";
@@ -62,7 +64,7 @@ describe("runIfMain", () => {
   const silent = { stdout: { write: () => true }, stderr: { write: () => true } };
 
   it("runs the command when the module is the entry script", () => {
-    const entry = new URL(moduleUrl).pathname;
+    const entry = fileURLToPath(moduleUrl);
     expect(runIfMain(moduleUrl, ["node", entry, "--unknown"], silent)).toBe(2);
   });
 
@@ -77,7 +79,7 @@ describe("isMain", () => {
   const moduleUrl = new URL("../src/cli.ts", import.meta.url).href;
 
   it("is true when the entry is the module's own file", () => {
-    expect(isMain(moduleUrl, new URL(moduleUrl).pathname)).toBe(true);
+    expect(isMain(moduleUrl, fileURLToPath(moduleUrl))).toBe(true);
   });
 
   it("is false without an entry script", () => {

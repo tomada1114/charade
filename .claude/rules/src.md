@@ -53,10 +53,10 @@ and an undocumented public symbol. What follows is the judgment they cannot make
 
 - **`code` is the contract; `message` is not.** Callers branch on `code`, which changes
   only in a breaking release; `message` may be reworded in a patch.
-- Subclass `Error`, set `this.name`, declare `readonly code = "ERR_…" as const`. Add
-  `readonly` fields describing what was rejected (a limit, the dotted option path as
-  written in the public signature such as `options.maxLength`) — never the rejected
-  value itself.
+- Subclass `CharadeError` (it sets `this.name`), declare
+  `readonly code = "ERR_…" as const`. Add `readonly` fields describing what was rejected
+  (a limit, the dotted option path as written in the public signature such as
+  `options.maxLength`) — never the rejected value itself.
 - `ERR_` prefix, `SCREAMING_SNAKE_CASE`, naming the failure, not the function. Several
   structurally different failures are a union keyed on `code`, not one class with
   optional fields. A `scripts/**` code also carries the prefix of the check that raised
