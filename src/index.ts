@@ -14,4 +14,21 @@
  * @packageDocumentation
  */
 
-export { CharadeError } from "./errors.js";
+export {
+  checkReport,
+  COULD_NOT_RUN,
+  exitCodeFor,
+  FINDING_CAP,
+  FindingCollector,
+} from "./check/findings.js";
+export type {
+  CheckReport,
+  CheckReportOptions,
+  CheckSummary,
+  ExitCode,
+  Finding,
+  OutcomeOptions,
+  Severity,
+  SourceLocation,
+} from "./check/findings.js";
+export { CharadeError, UnknownFlagError } from "./errors.js";

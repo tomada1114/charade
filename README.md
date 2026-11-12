@@ -33,6 +33,32 @@ blocked by the package export map.
 
 - `CharadeError` is the base of every error charade throws. Branch on its stable `code`,
   never on `message`.
+- `UnknownFlagError` (`ERR_CLI_UNKNOWN_FLAG`) is thrown for a flag a command does not
+  have; its `path` names the flag, never the value passed with it.
+- `Finding`, `Severity` and `SourceLocation` describe one problem found in a scene as
+  plain data: an `ERR_<AREA>_<FAILURE>` `code`, an `error` or `warning` severity, what
+  is wrong, how to fix it, and where it applies.
+- `FindingCollector` records findings up to `FINDING_CAP` (20), keeping the first ones.
+- `exitCodeFor` maps findings to an `ExitCode` (0 clean, 1 failing findings, with
+  `strict` making warnings fail; `COULD_NOT_RUN` is 2), and `checkReport` builds the
+  `CheckReport` document `{ version, ok, findings, summary }`.
+
+```ts
+import { checkReport, exitCodeFor, type Finding } from "charade";
+
+const findings: Finding[] = [
+  {
+    code: "ERR_CHECK_OFF_FRAME",
+    severity: "warning",
+    message: "hero leaves the frame",
+    fix: "Ignore it if the exit is meant",
+  },
+];
+console.log(exitCodeFor(findings), exitCodeFor(findings, { strict: true }));
+// => 0 1
+console.log(checkReport(findings).summary);
+// => { errors: 0, warnings: 1, truncated: false }
+```
 
 See the generated TypeDoc documentation from `pnpm docs:build` for the full API
 reference.

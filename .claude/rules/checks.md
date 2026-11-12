@@ -55,9 +55,16 @@ recorded sample is how an unintended change in appearance fails a test.
   and `ERR_ENV_` (ffmpeg, fonts, the native binary).
 - An unknown name or a bad parameter while a scene runs is recorded as a finding and
   authoring continues with a placeholder, so one run reports every mistake instead of
-  the first. Recording stops at about twenty findings. A structural mistake — a row the
-  scene does not have, a callback that returns a promise — is thrown instead, since
-  there is no placeholder to continue with.
+  the first. Recording stops at twenty findings (`FINDING_CAP`), keeping the first ones;
+  the report says when later ones were dropped. A structural mistake — a row the scene
+  does not have, a callback that returns a promise — is thrown instead, since there is
+  no placeholder to continue with.
+- The public names are `Finding` (the plain data), `Severity` (`"error" | "warning"`),
+  `SourceLocation` (`file`, `line`, `column`), and `FindingCollector`, which records up
+  to the cap. A finding's location fields are `row`, `target`, `joint`, `time` (seconds)
+  and `frames`, all optional; `measured` holds the measured values and `nearest` the
+  nearest valid names. Thrown classes live in `src/errors.ts` and extend `CharadeError`;
+  `UnknownFlagError` (`ERR_CLI_UNKNOWN_FLAG`) carries the flag's dotted `path`.
 - Leaving the frame is a warning. A figure that walks off is ordinary acting, and the
   first README video ends with one.
 - Reading the clock or an unseeded random number is detected by replacing `Date`,
@@ -73,6 +80,10 @@ recorded sample is how an unintended change in appearance fails a test.
   is the default because the fix line is what the author acts on.
 - Exit code 0 is clean (warnings allowed), 1 is error findings, 2 is could not run
   (usage, loading, environment). `--strict` makes warnings fail.
+- These are data in `src/check/findings.ts`: `exitCodeFor(findings, { strict })` returns
+  0 or 1, `COULD_NOT_RUN` is 2, and `ExitCode` is `0 | 1 | 2`. `checkReport` builds the
+  `CheckReport`: `version` is `1`, `ok` agrees with `exitCodeFor` under the same
+  strictness, and `summary` is `{ errors, warnings, truncated }`.
 - The text description of state — who is where, in which pose, facing which way — is
   printed by `frame` and `sheet` for the frames they drew, and by `check --at` for given
   times without drawing. It is not a command of its own.

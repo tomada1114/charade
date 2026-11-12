@@ -82,10 +82,12 @@ function srcFiles(): string[] {
  * An `@example` block never imports the symbol it demonstrates — the doc
  * comment sits right above the export, so the import is implicit to a
  * reader. Compiling it standalone needs that import synthesized, from the
- * exported name the comment is attached to.
+ * exported name the comment is attached to. The body may not cross the end of a
+ * comment, or one above a declaration the pattern skips would be read as the
+ * next one's.
  */
 const JSDOC_THEN_EXPORT =
-  /\/\*\*([\s\S]*?)\*\/\s*\nexport\s+(?:async\s+)?(?:function|const|class|interface|type|enum)\s+(\w+)/g;
+  /\/\*\*((?:(?!\*\/)[\s\S])*)\*\/\s*\nexport\s+(?:async\s+|abstract\s+)?(?:function|const|class|interface|type|enum)\s+(\w+)/g;
 
 /**
  * A fixture prepended to one specific documented example, for an identifier
