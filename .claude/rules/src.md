@@ -62,5 +62,5 @@ and an undocumented public symbol. What follows is the judgment they cannot make
   optional fields. A `scripts/**` code also carries the prefix of the check that raised
   it (`ERR_SMOKE_*`, `ERR_ATTW_*`, `ERR_DEPENDENCY_*`); reuse an existing prefix.
 - When forwarding an abort to an `AbortSignal`, abort with the same error instance the
-  promise rejects with (`withTimeout` in `src/timeout.ts` does this).
+  promise rejects with.
 - Adding, renaming or removing a `code` on a public error is a contract change.

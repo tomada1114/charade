@@ -26,6 +26,3 @@ seperator = "seperator"
 [default.extend-words]
 # Node.js v22's LTS codename.
 Jod = "Jod"
-# normalizeIdentifier documents that "café" becomes "caf". That string is the
-# function's output, not a misspelling of "calf".
-caf = "caf"

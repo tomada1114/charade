@@ -16,10 +16,14 @@ Node.js version with unflagged `require(esm)` support (20.19+, 22.12+, or 24+).
 ## Quick start
 
 ```ts
-import { normalizeIdentifier } from "charade";
+import { CharadeError } from "charade";
 
-console.log(normalizeIdentifier("Hello World"));
-// => "hello-world"
+function reasonOf(error: unknown): string {
+  return error instanceof CharadeError ? error.code : "unknown";
+}
+
+console.log(reasonOf(new Error("not ours")));
+// => "unknown"
 ```
 
 All public symbols are named exports from the package root. Deep imports are private and
@@ -27,10 +31,8 @@ blocked by the package export map.
 
 ## API
 
-- `normalizeIdentifier(input, options?)` creates a URL- and filename-safe ASCII
-  identifier using `-`, `_`, `.`, or `~` as its separator.
-- `withTimeout(operation, options)` runs an abortable operation with a deadline.
-- `InvalidInputError` and `TimeoutError` expose stable error codes.
+- `CharadeError` is the base of every error charade throws. Branch on its stable `code`,
+  never on `message`.
 
 See the generated TypeDoc documentation from `pnpm docs:build` for the full API
 reference.
