@@ -106,21 +106,53 @@ pelvis (root: pelvisX, pelvisY)
 
 - Fourteen angles: the thirteen joints in the tree and `pelvis`, the root's tilt. The
   back has two segments so a slump curves instead of hinging, and the ankles let a
-  seated figure plant its feet. Wrists can be added later as a minor change.
+  seated figure plant its feet. Wrists can be added later as a minor change. In order
+  they are `pelvis`, `spine`, `chest`, `neck`, `shoulderL`, `shoulderR`, `elbowL`,
+  `elbowR`, `hipL`, `hipR`, `kneeL`, `kneeR`, `ankleL`, `ankleR`.
 - Names take a side suffix, as in `handR`. The four effectors in brackets are targets
   for `reach` and are not angles; using one as an angle is an error that names the
-  angles of its chain.
+  angles of its chain (`ERR_SCENE_EFFECTOR_AS_CHANNEL`, carrying the effector and the
+  chain). A chain is the two angles inverse kinematics sets: `shoulder`, `elbow` for a
+  hand and `hip`, `knee` for a foot. The foot target is the ankle point; the ankle angle
+  stays the author's, so a planted foot can still roll.
 - `R` is the limb nearer the camera in both facings, because mirroring flips the
   picture. The catalog says so.
 - The root carries position in the actor's own frame (`pelvisX`, `pelvisY`). Where the
-  actor stands on the ground and which way it faces are separate.
+  actor stands on the ground and which way it faces are separate. `pelvisX` and
+  `pelvisY` are offsets from the pelvis's rest position, 0 at rest like the angles, so
+  an action's root values survive a change of segment lengths.
 - The face is eight symmetric numbers: `eyeOpen`, `gazeX`, `gazeY`, `browHeight`,
-  `browTilt`, `mouthCurve`, `mouthOpen`, `mouthWidth`.
-- `pose` and `drive` take one flat map of channels: angles, root and face.
+  `browTilt`, `mouthCurve`, `mouthOpen`, `mouthWidth`. At rest the eyes are open
+  (`eyeOpen` 1), the mouth is its normal width (`mouthWidth` 1), and the rest are 0.
+- `pose` and `drive` take one flat map of channels: angles, root and face. Two maps are
+  interpolated linearly per channel, and progress 0 and 1 return the endpoints exactly
+  rather than by the formula, which can miss by a rounding step. Progress outside 0..1
+  extrapolates, so an overshooting easing carries through, and angles are not wrapped: a
+  `pelvis` going from 0 to 2π turns the figure all the way over.
+- The rig types and channel-name unions are internal: none is a root export until `pose`
+  and `drive` decide what an author names.
 - Joint limits and segment lengths are tuned on the first three actions. After the first
   release a change to either changes every recorded sample.
+- Segment lengths, in units of figure height: thigh 0.24, shin 0.24, spine 0.14, chest
+  0.14, neck 0.06, head 0.18 (a circle of diameter 0.18 on the neck), upper arm 0.17,
+  forearm 0.16, foot 0.08. The column from ankle to head top sums to 1, so a rest figure
+  stands 1 unit tall with its ankles and toes on the ground. Both hips sit on the pelvis
+  point and both shoulders on the top of the chest: a stick figure seen side on.
+- Joint limits, in radians: spine −0.3..0.9, chest −0.3..0.7, neck −0.7..0.9, shoulder
+  −1.0..3.1, elbow 0..2.6, hip −0.5..2.1, knee 0..2.6, ankle −0.6..0.5. `pelvis` has no
+  limit: it is the whole body's tilt, which a lie-down or a flip uses in full. A limit
+  is inclusive at both ends and `NaN` is never within it.
 - Inverse kinematics with a fixed bend direction cannot bend a knee backwards; a
   directly authored angle can, which is the case the limit check exists for.
+- Inverse kinematics is analytic two-bone, with the knee bending forward and the elbow
+  backward. A target out of reach is met by the limb fully extended toward it; one
+  closer than the difference of the two bones by the limb fully folded toward it; one
+  within 1e-9 units of the hip or shoulder, which has no direction of its own, along the
+  limb's rest direction. Every finite target gives finite angles, so a reach that cannot
+  succeed still draws a figure the check can flag. IK does not clamp to the limits: a
+  foot target on the hip folds the knee to π, which the limit check flags. The first
+  angle is read in the full turn centred on its limit's midpoint, which puts the cut
+  behind and below the joint; centred on 0, an arm straight overhead would sit on it.
 
 ## Space and angles
 
@@ -129,9 +161,14 @@ pelvis (root: pelvisX, pelvisY)
   the row count, because a row's height changes between 1 and 4 rows.
 - Angles are radians, relative to the parent joint, 0 at the rest pose, and positive in
   the direction the joint flexes. With that sign a joint limit is one comparison, which
-  is what turns a knee bent backwards into a `check` finding.
+  is what turns a knee bent backwards into a `check` finding. Facing right, `x` is
+  forward: a positive hip, shoulder, elbow or ankle turns its segment counter-clockwise
+  (the thigh or arm forward and up, the toe up), and a positive pelvis, spine, chest,
+  neck or knee turns it clockwise (the body leaning forward, the shin folding back).
 - Vocabulary is written facing right. The engine mirrors it for a figure facing left; an
-  item never branches on facing.
+  item never branches on facing. Mirroring negates every `x` of the posed skeleton and
+  keeps every name and angle, so `R` stays the near limb; negation is exact, so
+  mirroring twice gives back the original.
 
 ## Randomness
 
