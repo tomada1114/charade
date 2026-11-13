@@ -18,7 +18,7 @@ recorded sample is how an unintended change in appearance fails a test.
   without a record would pass vacuously.
 - The pixel layer lives in the automation project and asserts two things only: a frame
   rendered twice in one run is byte-identical, and a few probe pixels have the expected
-  colour (ink inside the head, background in a corner).
+  colour (ink on the head's outline, background in a corner).
 - What the log cannot see: a change in the rasteriser, a call skia interprets
   differently, text shaping, and a bug in the recorder itself. A refactor that draws the
   same picture with different calls changes the log; look at the check images before
@@ -100,6 +100,16 @@ recorded sample is how an unintended change in appearance fails a test.
   `ERR_SCENE_NO_DURATION`, and the warning `ERR_SCENE_FULL_BODY_CUT`. An authoring
   finding carries its `row` and the handle's id as `target`, and the channel as `joint`;
   it has no `source` yet, since reading a call site from a stack trace is not built.
+- Drawing a frame throws when one item throws: an actor whose `drive` function throws at
+  a frame after `t = 0`, a free drawing's callback that throws, or a drawing call the
+  context rejects, such as the recorder's `ERR_SCENE_NON_FINITE_DRAWING` for `NaN`. The
+  frame drawer wraps it in `FrameItemError` (`ERR_SCENE_DRAWING_FAILED`, internal to
+  `src/draw/frame.ts`), carrying `row`, the item's id as `target`, `frame` and `time` in
+  seconds, with the original error as `cause`; the recorder's `call` and `argument` are
+  on that cause. It is thrown, not recorded: a frame with a hole in it has no
+  placeholder to continue with, and the pure layer has no collector. The layer that
+  draws the frames, `check` or `render`, turns it into an error finding with the same
+  code, row, target and time. It is never swallowed.
 - Leaving the frame is a warning. A figure that walks off is ordinary acting, and the
   first README video ends with one.
 - Reading the clock or an unseeded random number is detected by replacing `Date`,

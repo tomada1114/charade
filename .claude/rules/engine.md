@@ -95,6 +95,15 @@ recorded sample is written against; changing any of it changes all of them at on
   above its lower edge; the visible width follows from the canvas and the row count. The
   two numbers are tuned on the first three actions and are contract after the first
   release.
+- Rows are stacked top to bottom, each a band of `height / rows` pixels spanning the
+  canvas width, so a unit is `height / rows / 2.5` pixels. A row is drawn under
+  `setTransform(s, 0, 0, −s, width / 2, groundY)`: the negated `y` scale turns row
+  units, `y` up, into canvas pixels, `y` down, with the origin on the ground line at the
+  band's centre. The transform is set absolutely for every row, never accumulated, so no
+  row depends on another having been drawn. This is `rowLayout` and `rowTransform` in
+  `src/draw/layout.ts`.
+- A row clips its drawing to its band: rows are separate panels, and a figure lifted
+  past its row's top would otherwise draw over the row above.
 
 ## Sequencing
 
@@ -255,6 +264,14 @@ pelvis (root: pelvisX, pelvisY)
   item never branches on facing. Mirroring negates every `x` of the posed skeleton and
   keeps every name and angle, so `R` stays the near limb; negation is exact, so
   mirroring twice gives back the original.
+- Facing is read from the actor's track, a `facing` field of `"left"` or `"right"`,
+  right when absent or anything else. No authoring call sets it yet, so only a
+  hand-built timeline faces left; the field is not part of `TimelineTrack`, and the JSON
+  reader, which wants a track's exact keys, rejects it. The call that places an actor
+  adds it to both. The figure is mirrored about its ground point, which is the row's
+  centre until placement exists: the skeleton through `mirrorSkeleton`, the face by
+  negating the `x` of every offset from the head's centre. No mirrored primitive carries
+  a rotation, so negating `x` is the whole mirror.
 
 ## Randomness
 
@@ -344,6 +361,40 @@ change to the shape raises the version.
   4 callback is the same without the text members: with `y` up raw text would be
   mirrored, and it would bypass the text checks. A scene's text goes through labels,
   speech bubbles and the text helper.
+
+## Drawing a frame
+
+- `drawFrame(ctx, source, n)` in `src/draw/frame.ts`, internal, draws frame `n` of a
+  scene on a `DrawingContext`. It starts with `ctx.reset()`, so nothing an earlier frame
+  left on the context, an unbalanced `save` included, reaches this one.
+- Every frame is first painted `#ffffff`, opaque, over the whole canvas: the rasteriser
+  drops alpha, so an undefined background would differ by platform.
+- The ink is `#111111`, a near black that reads as drawn rather than printed. The
+  figure's lines are 0.025 units wide (10.8 px on one 1080 px row) with round caps and
+  joins, the face's 0.01, the ground line's 0.01. Widths are in units, so a figure keeps
+  its weight relative to its size at every row count.
+- The head is a circle of the head's diameter, stroked in ink and filled with the
+  background, so the face draws in ink on paper; the probe pixel inside the head is
+  therefore taken on its outline or a feature. The face sits a tenth of the head's
+  radius forward of its centre, every feature inside the outline over the channels' full
+  ranges, so it reads as facing: two lens-shaped eyes whose height is `eyeOpen` (flat
+  at 0) with a pupil moved by `gazeX` and `gazeY`, brows raised by `browHeight` and
+  tilted inner end up by a positive `browTilt`, and a mouth of two quadratic curves: the
+  upper bends down at the middle by `mouthCurve` (a smile), the lower drops below it by
+  `mouthOpen`, the corners spread by `mouthWidth`.
+- The figure draws the far (`L`) arm and leg, then the back and the head, then the near
+  (`R`) leg and arm, so the near limbs are in front.
+- Within a row the order is the five slots of `ROW_SLOTS`: backdrop, props behind,
+  actor, props in front, text. Each item runs between `save` and `restore`. Backdrops,
+  props and text have no vocabulary yet, so `props behind` and `text` are empty and the
+  backdrop slot holds the ground line, drawn across the row's visible width at `y = 0`;
+  a backdrop item will draw before it. A free drawing (`row.draw`) goes in the
+  props-in-front slot, in recorded order: with no layering option yet, in front is the
+  one place it cannot be hidden. Its callback starts with ink as both styles and the
+  figure's line width.
+- A free drawing is called for each of its segments that `frameInSegment` says frame `n`
+  falls in, with `t` and the `Moment` of that segment; a parsed timeline's placeholder
+  draws nothing.
 
 ## Shapes
 
