@@ -34,14 +34,16 @@ recorded sample is how an unintended change in appearance fails a test.
   (`ERR_SCENE_NON_FINITE_DRAWING`, since it arises from a scene's drawing), internal to
   `src/check/recorder.ts`, carrying the member as `call` and the zero-based `argument`
   position, never the value. A property write counts: the write throws and the state
-  keeps its old value.
+  keeps its old value. An `undefined` in a required argument, before a given one, or
+  written to a property throws the same class, since a real context reads it as `NaN`.
 - A property write is logged as a call. A gradient is logged by its creation index.
 - An entry is `{ call, args }`. A property write's `call` is the property's name and
   `args` holds the one value; a method's `args` holds the arguments given, so an omitted
-  optional argument, or a trailing `undefined`, is absent. Strings and booleans are kept
-  as they are, arrays element by element, and a gradient is `{ gradient: index }`, which
-  no number collides with. A colour stop is logged as `addColorStop` with the gradient
-  first. Reads are not logged; query methods (`getLineDash`, `measureText`) are.
+  optional argument, or a trailing `undefined` in an optional position, is absent.
+  Strings and booleans are kept as they are, arrays element by element, and a gradient
+  is `{ gradient: index }`, which no number collides with. A colour stop is logged as
+  `addColorStop` with the gradient first. Reads are not logged; query methods
+  (`getLineDash`, `measureText`) are.
 - A gradient another context created has no index to log by and throws
   `ForeignGradientError` (`ERR_SCENE_FOREIGN_GRADIENT`, carrying `call`).
 - The recording context is `RecordingContext` in `src/check/recorder.ts`, internal: the
@@ -85,8 +87,9 @@ recorded sample is how an unintended change in appearance fails a test.
   `SourceLocation` (`file`, `line`, `column`), and `FindingCollector`, which records up
   to the cap. A finding's location fields are `row`, `target`, `joint`, `time` (seconds)
   and `frames`, all optional; `measured` holds the measured values and `nearest` the
-  nearest valid names. Thrown classes live in `src/errors.ts` and extend `CharadeError`;
-  `UnknownFlagError` (`ERR_CLI_UNKNOWN_FLAG`) carries the flag's dotted `path`.
+  nearest valid names. Exported thrown classes live in `src/errors.ts`, an internal one
+  beside the layer that throws it, and all extend `CharadeError`; `UnknownFlagError`
+  (`ERR_CLI_UNKNOWN_FLAG`) carries the flag's dotted `path`.
 - Leaving the frame is a warning. A figure that walks off is ordinary acting, and the
   first README video ends with one.
 - Reading the clock or an unseeded random number is detected by replacing `Date`,

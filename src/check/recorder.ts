@@ -50,6 +50,33 @@ export class ForeignGradientError extends CharadeError {
 
 const SCALE = 1e4;
 
+/** How many leading arguments a call requires; the rest may be omitted. */
+const REQUIRED_ARGUMENTS: Readonly<Record<string, number>> = {
+  translate: 2,
+  rotate: 1,
+  scale: 2,
+  transform: 6,
+  setTransform: 6,
+  moveTo: 2,
+  lineTo: 2,
+  bezierCurveTo: 6,
+  quadraticCurveTo: 4,
+  arc: 5,
+  arcTo: 5,
+  ellipse: 7,
+  rect: 4,
+  roundRect: 4,
+  fillRect: 4,
+  strokeRect: 4,
+  clearRect: 4,
+  createLinearGradient: 4,
+  createRadialGradient: 6,
+  createConicGradient: 3,
+  fillText: 3,
+  strokeText: 3,
+  measureText: 1,
+};
+
 function quantise(value: number, call: string, argument: number): number {
   const scaled = Math.round(value * SCALE);
   if (!Number.isFinite(scaled)) {
@@ -193,6 +220,10 @@ export class RecordingContext implements DrawingContext {
     if (Array.isArray(value)) {
       return value.map((item: unknown) => this.#value(item, call, argument));
     }
+    // A real context reads a missing number as `NaN`, so it is not taken for a gradient.
+    if (value === undefined) {
+      throw new NonFiniteDrawingError(call, argument);
+    }
     const index = this.#gradients.get(value);
     if (index === undefined) {
       throw new ForeignGradientError(call);
@@ -200,20 +231,25 @@ export class RecordingContext implements DrawingContext {
     return { gradient: index };
   }
 
-  #record(call: string, args: readonly unknown[]): void {
-    let end = args.length;
-    // An `undefined` trailing argument is an omitted one, as the standard reads it.
-    while (end > 0 && args[end - 1] === undefined) {
-      end -= 1;
-    }
-    const logged = args
-      .slice(0, end)
-      .map((value, argument) => this.#value(value, call, argument));
+  #push(call: string, args: readonly unknown[]): void {
+    const logged = args.map((value, argument) => this.#value(value, call, argument));
     this.#log.push({ call, args: logged });
   }
 
+  #record(call: string, args: readonly unknown[]): void {
+    let end = args.length;
+    // An `undefined` trailing optional argument is an omitted one, as the standard reads
+    // it; a required one is a missing number, which a real context reads as NaN.
+    const required = REQUIRED_ARGUMENTS[call] ?? 0;
+    while (end > required && args[end - 1] === undefined) {
+      end -= 1;
+    }
+    this.#push(call, args.slice(0, end));
+  }
+
   #set<K extends keyof State>(key: K, value: State[K]): void {
-    this.#record(key, [value]);
+    // Not `#record`: a written `undefined` is a value, not an omitted argument.
+    this.#push(key, [value]);
     this.#state[key] = value;
   }
 
@@ -232,7 +268,8 @@ export class RecordingContext implements DrawingContext {
 
   save(): void {
     this.#record("save", []);
-    this.#stack.push({ ...this.#state, lineDash: [...this.#state.lineDash] });
+    // `lineDash` is replaced, never mutated, so a shallow copy is enough.
+    this.#stack.push({ ...this.#state });
   }
 
   restore(): void {
@@ -354,7 +391,7 @@ export class RecordingContext implements DrawingContext {
   }
 
   setLineDash(segments: readonly number[]): void {
-    this.#record("setLineDash", [segments]);
+    this.#push("setLineDash", [segments]);
     this.#state.lineDash = [...segments];
   }
 

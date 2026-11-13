@@ -91,6 +91,34 @@ describe("non-finite arguments", () => {
     expect(ctx.log).toEqual([]);
   });
 
+  it("throws on a property written as undefined and keeps the old value", () => {
+    const ctx = new RecordingContext();
+    expect(() => {
+      Reflect.set(ctx, "lineWidth", undefined);
+    }).toThrow(NonFiniteDrawingError);
+    expect(ctx.lineWidth).toBe(1);
+    expect(ctx.log).toEqual([]);
+  });
+
+  it("throws on an undefined argument before the last instead of a gradient error", () => {
+    const ctx = new RecordingContext();
+    const lineTo = ctx.lineTo.bind(ctx) as (...args: unknown[]) => void;
+    expect(() => {
+      lineTo(undefined, 1);
+    }).toThrow(NonFiniteDrawingError);
+    expect(ctx.log).toEqual([]);
+  });
+
+  it("throws on a missing dash pattern and logs nothing", () => {
+    const ctx = new RecordingContext();
+    const setLineDash = ctx.setLineDash.bind(ctx) as (...args: unknown[]) => void;
+    expect(() => {
+      setLineDash(undefined);
+    }).toThrow(NonFiniteDrawingError);
+    expect(ctx.log).toEqual([]);
+    expect(ctx.getLineDash()).toEqual([]);
+  });
+
   it("throws on a value whose scaled form overflows", () => {
     const ctx = new RecordingContext();
     expect(() => {
@@ -412,5 +440,28 @@ describe("the fake text measurer", () => {
     const measured = ctx.measureText("ab");
     expect(measured.actualBoundingBoxLeft).toBe(left);
     expect(measured.actualBoundingBoxRight).toBe(12 - left);
+  });
+});
+
+describe("a required argument left undefined", () => {
+  it.each([
+    [
+      "lineTo",
+      (ctx: RecordingContext) => ctx.lineTo(1, undefined as unknown as number),
+    ],
+    [
+      "fillRect",
+      (ctx: RecordingContext) => ctx.fillRect(0, 0, 1, undefined as unknown as number),
+    ],
+    [
+      "arc",
+      (ctx: RecordingContext) => ctx.arc(0, 0, 1, 0, undefined as unknown as number),
+    ],
+  ])("throws for %s instead of logging a shorter call", (_name, draw) => {
+    const ctx = new RecordingContext();
+    expect(() => draw(ctx)).toThrow(
+      expect.objectContaining({ code: "ERR_SCENE_NON_FINITE_DRAWING" }),
+    );
+    expect(ctx.log).toEqual([]);
   });
 });
