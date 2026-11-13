@@ -374,7 +374,7 @@ function usageErrorFrom(
     if (token.kind !== "option") {
       continue;
     }
-    const known = options[token.name];
+    const known = Object.hasOwn(options, token.name) ? options[token.name] : undefined;
     if (known === undefined) {
       if (code === "ERR_PARSE_ARGS_UNKNOWN_OPTION") {
         const unknown = new UnknownFlagError(dotted(token.name));

@@ -158,6 +158,15 @@ describe("usage errors (R1)", () => {
     expect(result.stderr).toMatch(new RegExp(`^error ${code}: .+\\n  fix: .+\\n`, "m"));
   });
 
+  it.each(["--constructor", "--toString", "--__proto__"])(
+    "reports %s, a name Object.prototype has, as an unknown flag",
+    async (flag) => {
+      const result = await runCli(["check", "a.ts", flag], quiet);
+      expect(result.exitCode).toBe(2);
+      expect(result.stderr).toMatch(/^error ERR_CLI_UNKNOWN_FLAG: /);
+    },
+  );
+
   it("names an unknown flag by its dotted path, not its value", async () => {
     const result = await runCli(["check", "a.ts", "--strct=secret", "--json"], quiet);
     expect(parseOne(result.stdout).error?.code).toBe("ERR_CLI_UNKNOWN_FLAG");

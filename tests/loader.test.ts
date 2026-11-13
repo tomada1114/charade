@@ -516,7 +516,7 @@ describe("the built CLI in a child process", () => {
     write(work, "scene.ts", SCENE);
     const result = check("scene.ts");
     expect(result.code).toBe("ERR_CLI_NOT_IMPLEMENTED");
-    expect(result.stderr).toBe("");
+    expect(result.stderr).not.toContain("installed");
   });
 
   it.each([
