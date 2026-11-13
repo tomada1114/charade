@@ -19,8 +19,15 @@ recorded sample is written against; changing any of it changes all of them at on
   microseconds, quantised when the call is recorded. Float seconds drift: `0.1 + 0.2`
   lands past a frame boundary at 30 fps, and a decimal such as 4.1 s falls one frame
   short under `Math.floor`.
+- Each value is quantised on its own by rounding to the nearest microsecond, a half up,
+  and sums are taken in microseconds afterwards: truncation would turn 4.1 s into 4 099
+  999 µs. A negative, non-finite or unsafely large time is rejected
+  (`ERR_SCENE_OUT_OF_RANGE`), and `-0` is stored as `0`.
 - Frame `n` is drawn at `n / fps`, counted from 0. Segments are half-open. Time is
   computed from `n` each frame and never accumulated.
+- A frame time is rarely a whole microsecond, so frames are compared with stored times
+  by cross-multiplying in integers (`n × 1e6` against `µs × fps`), never by rounding the
+  frame's time. `fps` is a positive integer; 29.97 is rejected.
 - Frame `n` is a pure function of the timeline and `n`. A single frame asked for by time
   or number equals that frame of a full render, so nothing in a frame may depend on an
   earlier frame having been drawn.
@@ -28,12 +35,19 @@ recorded sample is written against; changing any of it changes all of them at on
   while the scene runs, and stored on the timeline as data. Evaluating it frame by frame
   would make frame `n` depend on frame `n - 1`; allowing only closed forms would rule
   out following a moving target. Baked motion also serialises.
+- Baked motion is sampled every 4 000 µs (250 per second), from the motion's start until
+  a sample reaches its end: a whole number of microseconds, independent of fps, and
+  several samples per frame at 30 or 60 fps without bloating the JSON form.
 - A scene of duration `d` has `d × fps + 1` frames: the frame at `t = d` is drawn, so
   the final pose is always in the video and on the contact sheet.
 - Duration is the end of the last bounded segment in any row, rounded up to a frame; the
   `duration` option overrides it. An open-ended track (a `stand` with no duration, a
   label with none) runs to the end and does not extend it. A scene with only open-ended
   tracks and no `duration` is an error.
+- An explicit `duration` is rounded up to a frame like a computed one. Duration
+  computation returns a result rather than throwing, and a timeline with no tracks at
+  all fails the same way as one with only open-ended tracks; the scene layer turns that
+  result into its finding.
 
 ## The scene
 
@@ -126,11 +140,33 @@ of the scene seed, the row, the item's kind and name, and its occurrence index. 
 track therefore does not reshuffle the others, and frames can be drawn in any order. A
 function at depth 3 or 4 receives this source; it has no sequential stream to advance.
 
+- The hash is 32-bit FNV-1a over the UTF-8 bytes of the key's JSON array
+  `[seed, row, kind, name, occurrence]`: a well-known hash with published test vectors,
+  and the array keeps `("ab", "c")` apart from `("a", "bc")`.
+- The generator is mulberry32, seeded with that hash. Its state after `n` steps is
+  `seed + n × 0x6D2B79F5`, so draw `n` is computed directly from its index; there is
+  still no stream.
+- The default seed is `0`: any fixed constant works, since the hash mixes it with the
+  rest of the key.
+
 ## Serialised timeline
 
 The JSON form carries `version: 1` and a canonical key order. Where a function at depth
 3 or 4 was omitted it leaves a placeholder, and the document is marked as lossy. A
 change to the shape raises the version.
+
+- The text is compact JSON. The envelope's keys are `version`, `lossy`, `timeline` in
+  that order, so the version is read first; every other object's keys are sorted by
+  UTF-16 code unit, written by hand because an engine puts integer-like keys first.
+- The placeholder is `{"$omitted":"function"}` and `lossy` is always present. A parsed
+  document keeps the placeholder as data, so writing it back gives the same text.
+- A non-finite number, `undefined`, an array hole or an object that is not plain (a
+  `Map`, a `Date`, a typed array) is rejected when writing, since JSON would change it.
+  Reading rejects a segment that ends before it starts and a number JSON reads as an
+  infinity. Reading checks every field and reports invalid JSON, another version, or a
+  wrong shape as a result.
+- The timeline types are internal: none is a root export until the scene layer decides
+  what a scene exposes.
 
 ## The drawing interface
 
