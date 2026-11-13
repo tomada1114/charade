@@ -90,6 +90,16 @@ recorded sample is how an unintended change in appearance fails a test.
   nearest valid names. Exported thrown classes live in `src/errors.ts`, an internal one
   beside the layer that throws it, and all extend `CharadeError`; `UnknownFlagError`
   (`ERR_CLI_UNKNOWN_FLAG`) carries the flag's dotted `path`.
+- The scene layer throws `AsyncBuildError` (`ERR_SCENE_ASYNC_BUILD`), `UnknownRowError`
+  (`ERR_SCENE_UNKNOWN_ROW`, carrying the scene's `rows`) and `SceneClosedError`
+  (`ERR_SCENE_CLOSED`). Its findings are `ERR_SCENE_UNKNOWN_CHANNEL`,
+  `ERR_SCENE_UNKNOWN_EFFECTOR`, `ERR_SCENE_UNKNOWN_MODE` and `ERR_SCENE_UNKNOWN_OPTION`
+  (each with `nearest`), `ERR_SCENE_EFFECTOR_AS_CHANNEL`, `ERR_SCENE_OUT_OF_RANGE` (a
+  number was expected), `ERR_SCENE_INVALID_VALUE` (another type was expected),
+  `ERR_SCENE_NO_CURSOR`, `ERR_SCENE_ROW_REQUIRED`, `ERR_SCENE_ROW_HAS_ACTOR`,
+  `ERR_SCENE_NO_DURATION`, and the warning `ERR_SCENE_FULL_BODY_CUT`. An authoring
+  finding carries its `row` and the handle's id as `target`, and the channel as `joint`;
+  it has no `source` yet, since reading a call site from a stack trace is not built.
 - Leaving the frame is a warning. A figure that walks off is ordinary acting, and the
   first README video ends with one.
 - Reading the clock or an unseeded random number is detected by replacing `Date`,

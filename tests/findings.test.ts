@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import * as api from "../src/index.js";
 import {
+  AsyncBuildError,
   CharadeError,
   checkReport,
   COULD_NOT_RUN,
@@ -9,7 +10,9 @@ import {
   FINDING_CAP,
   type Finding,
   FindingCollector,
+  SceneClosedError,
   UnknownFlagError,
+  UnknownRowError,
 } from "../src/index.js";
 
 /** The namespaces `.claude/rules/checks.md` fixes, copied from issue #6. */
@@ -71,15 +74,22 @@ describe("the code namespace", () => {
     .map((value) => value.name);
 
   it("has a representative code for every concrete error class", () => {
-    expect(errorCodes).toEqual(["UnknownFlagError"]);
+    expect(errorCodes.sort()).toEqual([
+      "AsyncBuildError",
+      "SceneClosedError",
+      "UnknownFlagError",
+      "UnknownRowError",
+    ]);
   });
 
-  it.each([["UnknownFlagError", new UnknownFlagError("check.strict").code]])(
-    "%s's code is in a namespace",
-    (_name, code) => {
-      expect(code).toMatch(NAMESPACED_CODE);
-    },
-  );
+  it.each([
+    ["AsyncBuildError", new AsyncBuildError().code],
+    ["SceneClosedError", new SceneClosedError().code],
+    ["UnknownFlagError", new UnknownFlagError("check.strict").code],
+    ["UnknownRowError", new UnknownRowError(4).code],
+  ])("%s's code is in a namespace", (_name, code) => {
+    expect(code).toMatch(NAMESPACED_CODE);
+  });
 
   it.each([
     ["no area", "ERR_STRICT"],

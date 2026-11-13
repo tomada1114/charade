@@ -38,21 +38,77 @@ export const FACE_NAMES = [
 
 export type FaceName = (typeof FACE_NAMES)[number];
 
-export type ChannelName = AngleName | RootName | FaceName;
+/**
+ * A channel of the figure, as `pose` and `drive` name it: one of the fourteen angles,
+ * the two root offsets, or the eight face numbers.
+ *
+ * @remarks
+ * Angles are radians relative to the parent joint, 0 at rest and positive in the
+ * direction the joint flexes. `pelvisX` and `pelvisY` are offsets from the pelvis's
+ * rest position in figure heights. `R` is the limb nearer the camera.
+ *
+ * @public
+ */
+export type ChannelName =
+  | "pelvis"
+  | "spine"
+  | "chest"
+  | "neck"
+  | "shoulderL"
+  | "shoulderR"
+  | "elbowL"
+  | "elbowR"
+  | "hipL"
+  | "hipR"
+  | "kneeL"
+  | "kneeR"
+  | "ankleL"
+  | "ankleR"
+  | "pelvisX"
+  | "pelvisY"
+  | "eyeOpen"
+  | "gazeX"
+  | "gazeY"
+  | "browHeight"
+  | "browTilt"
+  | "mouthCurve"
+  | "mouthOpen"
+  | "mouthWidth";
 
+// Written out above because a public type cannot refer to the internal unions; this
+// list fails to compile if it gains a name the three lists lack, and REST_POSE if it
+// lacks one.
 export const CHANNEL_NAMES: readonly ChannelName[] = [
   ...ANGLE_NAMES,
   ...ROOT_NAMES,
   ...FACE_NAMES,
 ];
 
+export function isChannelName(value: unknown): value is ChannelName {
+  return CHANNEL_NAMES.some((channel) => channel === value);
+}
+
 /** Every channel of the figure at one instant: angles, root and face. */
 export type Pose = Readonly<Record<ChannelName, number>>;
 
 /** Targets for `reach`; not angles. */
-export const EFFECTOR_NAMES = ["handL", "handR", "footL", "footR"] as const;
+export const EFFECTOR_NAMES: readonly EffectorName[] = [
+  "handL",
+  "handR",
+  "footL",
+  "footR",
+];
 
-export type EffectorName = (typeof EFFECTOR_NAMES)[number];
+/**
+ * A hand or a foot: what `reach` moves to a point. It is a target, not a channel.
+ *
+ * @public
+ */
+export type EffectorName = "handL" | "handR" | "footL" | "footR";
+
+export function isEffectorName(value: unknown): value is EffectorName {
+  return EFFECTOR_NAMES.some((effector) => effector === value);
+}
 
 /** The two angles inverse kinematics sets to put an effector on its target. */
 export const EFFECTOR_CHAINS: Readonly<

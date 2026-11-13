@@ -38,6 +38,9 @@ recorded sample is written against; changing any of it changes all of them at on
 - Baked motion is sampled every 4 000 µs (250 per second), from the motion's start until
   a sample reaches its end: a whole number of microseconds, independent of fps, and
   several samples per frame at 30 or 60 fps without bloating the JSON form.
+- No authoring call bakes motion yet: an actor has `pose`, `reach`, `drive` and `wait`,
+  and a follow needs a prop to follow. A spring or follow call records a baked segment
+  through `bakeMotion` when it is added.
 - A scene of duration `d` has `d × fps + 1` frames: the frame at `t = d` is drawn, so
   the final pose is always in the video and on the contact sheet.
 - Duration is the end of the last bounded segment in any row, rounded up to a frame; the
@@ -66,6 +69,28 @@ recorded sample is written against; changing any of it changes all of them at on
   `express`, `pose`, `reach`, `drive`, `say` and `wait`. Handles are variables. Each
   also has an id used in findings, built from the row, the kind, the name and the
   occurrence index — the same key the random source uses.
+- The public names are `scene`, `SceneOptions` and `Scene` (the frozen result: `kind`,
+  `version: 1`, `width`, `height`, `font`, `timeline`, `findings`, `truncated`; the
+  frame rate, seed and rows are read from `timeline`), the handles `Stage` (a `Row` plus
+  `row(i)` and `sync()`), `Row` and `Actor`, and their option types `ActorOptions`,
+  `PoseOptions`, `ReachOptions`, `DriveOptions` and `DrawOptions`. Handles are
+  interfaces an author is handed and never implements, so a later issue adds a method as
+  a minor change. `row.actor` and `row.draw` take an options bag rather than a
+  positional name, so placement and layering can be added the same way.
+- An id is `row<i>` for a row and `row<i>/<kind>/<name>/<occurrence>` for an item; an
+  actor's default name is `actor` and a drawing's is `draw`.
+- A bad scene option is a finding and its default is used (`rows` is clamped into 1–4
+  when it is a whole number), as is a missing `build`: the rest of the scene is still
+  checked. `stage.actor()` or `stage.draw()` on a scene with more rows is also a
+  finding, `ERR_SCENE_ROW_REQUIRED`, recorded on row 0, since row 0 is a placeholder to
+  continue with; it is reported once per scene, so a loop cannot fill the cap. Only
+  three things are thrown: a promise returned by `build` (`AsyncBuildError`), a row the
+  scene does not have (`UnknownRowError`), and a handle used after `scene()` returned
+  (`SceneClosedError`, which is also what an async build meets after its `await`).
+- A second actor in a row is a finding (`ERR_SCENE_ROW_HAS_ACTOR`) and is still recorded
+  on its own track.
+- An author's channel map is copied when the call is recorded; the scene never freezes
+  or keeps an object the author owns, only the functions given at depth 3 and 4.
 - A row shows 2.5 units of height at every row count, with the ground line 0.3 units
   above its lower edge; the visible width follows from the canvas and the row count. The
   two numbers are tuned on the first three actions and are contract after the first
@@ -81,17 +106,68 @@ recorded sample is written against; changing any of it changes all of them at on
   written with those numbers; all rows share one clock. `stage.sync()` moves every
   actor's cursor to the latest end.
 - A call without `at` after an open-ended track has no cursor to start from and is an
-  error with a fix line.
+  error with a fix line (`ERR_SCENE_NO_CURSOR`). It is reported once per actor, at the
+  first such call, so one open-ended sway cannot fill the finding cap; that call and
+  every later one is placed at the latest end recorded on the actor.
+- The cursor is the latest end on the actor, so a call placed earlier with `at` never
+  pulls it back. `wait` records a segment of its own, which is what lets a trailing wait
+  lengthen the scene. `sync()` returns the time it moved to, counts free drawings as
+  well as actors, and does not give a cursor to an actor that has an open-ended track.
+- `Span` is generic in its mark names, `Span<Marks extends string = never>`, so an
+  action can return `Span<"release">` later without a break; the calls of this layer
+  state no marks. An open-ended call's `end` and `duration` are `Infinity`.
+- `pose` and `reach` last `anticipation + blend + followThrough` when no `duration` is
+  given: a pose with no options takes its 0.2 s arrival and the next call follows it. A
+  shorter `duration` shortens the three phases in proportion, so a segment has always
+  arrived when it ends. `drive` without a `duration` is open-ended, and `row.draw`
+  without `at` starts at 0 and without a `duration` is open-ended; a drawing has no
+  cursor.
 - When two tracks drive one joint, the one recorded later wins for the joints it names,
   blended in and out; `mode: "add"` adds instead. So depth 2 and depth 3 override only
   the joints they name over a depth 1 action. A full-body action that cuts another is a
   warning. Joint limits are checked on the composed angle.
-- Each segment blends in from the composed pose beneath it over `blend` seconds (about
-  0.2 by default). `anticipation` and `followThrough` are options of `pose` and `reach`,
-  in seconds, as closed-form curves.
+- Each segment blends in from the composed pose beneath it over `blend` seconds, 0.2 by
+  default: six frames at 30 fps, short enough to read as one movement and long enough
+  not to pop. `anticipation` and `followThrough` are options of `pose` and `reach`, in
+  seconds, as closed-form curves.
+- The arrival weight is 0 at the start and 1 at the end of the blend, eased by
+  smoothstep (`3p² − 2p³`). Anticipation comes before the blend and dips the weight to
+  −0.1 and back (`−0.1 · sin²(πp)`); follow-through comes after it and lifts the weight
+  to 1.1 and back. A weight outside 0..1 extrapolates, which is the wind-up and the
+  overshoot. The 0.1 is tuned on the first three actions. There is no `ease` option yet;
+  it can be added without a break.
+- A pose is held after its call ends, until a later call moves those channels: an ended
+  `replace` segment stays as the base, a later end over an earlier one. Returning to
+  rest instead would make a seated figure stand up during every `wait`. A `drive` is
+  held at its last value, with `t` frozen at its duration.
+- A segment that ends while an earlier-recorded one is still running on a channel blends
+  back out to it over its own `blend`; this is the "out" of an override. Whether it does
+  is decided at its end, so the fade goes on if the lower one ends meanwhile. An `add`
+  segment is never held and always fades out. The mode's name is `BlendMode`, `replace`
+  or `add`; `reach` has no mode.
+- A `reach` is solved over the pose beneath it, while it runs and while it is held, so a
+  held hand stays on its point when an earlier-recorded call still moves the back. A
+  call recorded later than the reach that moves the body is not seen by it: the hand
+  then leaves the point, and the reach is recorded again after that call.
+- A full-body call is a `replace` pose that names all fourteen angles. One that starts
+  while an earlier one is still playing is the warning `ERR_SCENE_FULL_BODY_CUT`.
+- The composed pose at a frame is `poseAtFrame` in `src/rig/compose.ts`, internal. It
+  compares in frame units (`µs × fps` against `n × 1e6`), reads a segment's data field
+  by field so a parsed or hand-built timeline cannot break it, and skips a channel whose
+  value is not a finite number.
+- `drive` takes one function of time that returns a map of channel values, as in
+  `a.drive(t => ({ spine: Math.sin(t * 3) * 0.1 }))`. The channels it names are the keys
+  it returns when it is called once with `t = 0` as the call is recorded: an unknown
+  name can then be a finding, and the override is limited to those joints. At a frame a
+  key outside that set is ignored and a recorded key that is missing or not finite moves
+  nothing. A function that throws at `t = 0` or returns no object is a finding and names
+  no channel; an argument that is not a function is a finding and is recorded as a wait.
 - A function at depth 3 or 4 receives `t`, seconds since its segment began, and a second
   argument with the scene time, the segment's duration and progress, and the keyed
-  random source.
+  random source. That argument is `Moment` (`time`, `duration`, `progress`, `random`);
+  the function types are `MotionFunction` (returns a map of channel values) and
+  `DrawFunction` (draws on a `ShapeContext`), and the source is `RandomSource`. In an
+  open-ended segment `duration` is `Infinity` and `progress` stays 0.
 
 ## The rig
 
@@ -131,8 +207,15 @@ pelvis (root: pelvisX, pelvisY)
   rather than by the formula, which can miss by a rounding step. Progress outside 0..1
   extrapolates, so an overshooting easing carries through, and angles are not wrapped: a
   `pelvis` going from 0 to 2π turns the figure all the way over.
-- The rig types and channel-name unions are internal: none is a root export until `pose`
-  and `drive` decide what an author names.
+- An author names `ChannelName` (the twenty-four channels), `EffectorName`, `Point`, and
+  `PoseChannels`; those are root exports. `ChannelName` is written out as literals,
+  because a public type may not refer to an unexported one. The pose type, the angle,
+  root and face unions, the limits and the kinematics stay internal.
+- An unknown channel is the finding `ERR_SCENE_UNKNOWN_CHANNEL` with the nearest names,
+  and an effector used as a channel is the finding `ERR_SCENE_EFFECTOR_AS_CHANNEL`
+  naming its chain; either channel is dropped and the rest of the call is recorded.
+  Nearest names are at most three, by edit distance, none when the name is further than
+  half its length from every valid one.
 - Joint limits and segment lengths are tuned on the first three actions. After the first
   release a change to either changes every recorded sample.
 - Segment lengths, in units of figure height: thigh 0.24, shin 0.24, spine 0.14, chest
@@ -205,8 +288,15 @@ change to the shape raises the version.
   Reading rejects a segment that ends before it starts and a number JSON reads as an
   infinity. Reading checks every field and reports invalid JSON, another version, or a
   wrong shape as a result.
-- The timeline types are internal: none is a root export until the scene layer decides
-  what a scene exposes.
+- A scene exposes the timeline's skeleton: `Timeline`, `TimelineRow`, `TimelineTrack`
+  and `TimelineSegment` are root exports, with times in integer microseconds. A
+  segment's `data` is typed `unknown`: what a call records is not contract, so it can
+  change without a version of its own. The value types of the JSON form stay internal.
+- A segment's `data` is an object with a `kind`: `pose` (channels, mode, and the three
+  phases in microseconds), `reach` (effector, target, phases), `drive` (the function,
+  the channel names read at `t = 0`, mode, blend), `wait`, or `draw` (the callback).
+  These live in `src/timeline/segments.ts`. Nothing is released yet, so this shape is
+  still JSON version 1.
 
 ## The drawing interface
 

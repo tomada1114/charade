@@ -1,4 +1,10 @@
-import type { Row, Segment, Timeline, TimelineObject, Track } from "./timeline.js";
+import type {
+  Timeline,
+  TimelineObject,
+  TimelineRow,
+  TimelineSegment,
+  TimelineTrack,
+} from "./timeline.js";
 import { TimelineRangeError } from "./time.js";
 
 export const TIMELINE_JSON_VERSION = 1;
@@ -154,7 +160,7 @@ function isTimeline(value: unknown): value is Timeline {
   );
 }
 
-function isRow(value: unknown): value is Row {
+function isRow(value: unknown): value is TimelineRow {
   return (
     isRecord(value) &&
     hasExactKeys(value, ["tracks"]) &&
@@ -163,7 +169,7 @@ function isRow(value: unknown): value is Row {
   );
 }
 
-function isTrack(value: unknown): value is Track {
+function isTrack(value: unknown): value is TimelineTrack {
   return (
     isRecord(value) &&
     hasExactKeys(value, ["kind", "name", "occurrence", "segments"]) &&
@@ -175,7 +181,7 @@ function isTrack(value: unknown): value is Track {
   );
 }
 
-function isSegment(value: unknown): value is Segment {
+function isSegment(value: unknown): value is TimelineSegment {
   // `data` came out of JSON.parse, so it is already a JSON value, though possibly
   // with an overflowed number.
   if (!isRecord(value) || !hasExactKeys(value, ["data", "end", "start"])) {
