@@ -2,7 +2,11 @@ import { describe, expect, it } from "vitest";
 
 import type { DrawingContext } from "../src/draw/context.js";
 import { drawFrame } from "../src/draw/frame.js";
-import { createRasteriser, SkiaUnavailableError } from "../src/export/raster.js";
+import {
+  createRasteriser,
+  InvalidCanvasSizeError,
+  SkiaUnavailableError,
+} from "../src/export/raster.js";
 import { scene } from "../src/index.js";
 
 const PNG_SIGNATURE = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
@@ -53,8 +57,8 @@ describe("rasterising", () => {
       drawFrame(ctx, source, 0);
     });
 
-    expect(pixel(rgba, 1080, 540, 518)).toEqual([0x11, 0x11, 0x11, 255]);
-    expect(pixel(rgba, 1080, 2, 2)).toEqual([255, 255, 255, 255]);
+    expect(pixel(rgba, source.width, 540, 518)).toEqual([0x11, 0x11, 0x11, 255]);
+    expect(pixel(rgba, source.width, 2, 2)).toEqual([255, 255, 255, 255]);
   });
 
   it("gives width × height × 4 RGBA bytes with every alpha 255", async () => {
@@ -141,4 +145,31 @@ describe("a missing native binary", () => {
 
     expect(calls).toBe(1);
   });
+});
+
+describe("canvas size", () => {
+  it.each([
+    ["width", 0, 2],
+    ["width", -1, 2],
+    ["width", 2.5, 2],
+    ["width", Number.NaN, 2],
+    ["height", 2, 0],
+    ["height", 2, Number.POSITIVE_INFINITY],
+  ] as const)(
+    "rejects a %s of %s before loading skia-canvas",
+    async (path, width, height) => {
+      let loads = 0;
+      const rasteriser = createRasteriser(() => {
+        loads += 1;
+        return import("skia-canvas");
+      });
+      const failure = rasteriser.rgba(width, height, () => undefined);
+      await expect(failure).rejects.toBeInstanceOf(InvalidCanvasSizeError);
+      await expect(failure).rejects.toMatchObject({
+        code: "ERR_RENDER_INVALID_SIZE",
+        path,
+      });
+      expect(loads).toBe(0);
+    },
+  );
 });

@@ -31,6 +31,23 @@ export class SkiaUnavailableError extends CharadeError {
   }
 }
 
+/**
+ * Thrown when a rasteriser is asked for a canvas that is not a positive whole number
+ * of pixels in each direction; skia-canvas would otherwise resize it quietly and the
+ * raw output would no longer be `width × height × 4` bytes.
+ */
+export class InvalidCanvasSizeError extends CharadeError {
+  readonly code = "ERR_RENDER_INVALID_SIZE" as const;
+
+  /** Which dimension was rejected. */
+  readonly path: "width" | "height";
+
+  constructor(path: "width" | "height") {
+    super(`The canvas ${path} must be a positive whole number of pixels.`);
+    this.path = path;
+  }
+}
+
 /** Turns a drawing into pixels on a fresh, opaque, CPU-rendered canvas. */
 export interface Rasteriser {
   /** The picture as PNG bytes. */
@@ -45,7 +62,8 @@ const importSkia: SkiaLoader = () => import("skia-canvas");
  * A rasteriser that imports skia-canvas on its first use, not before, so a command
  * that never draws runs without the native binary.
  *
- * @throws `SkiaUnavailableError` from the first `png` or `rgba` when `load` rejects.
+ * @throws `SkiaUnavailableError` from every `png` or `rgba` once `load` has rejected;
+ * the loader is not retried.
  */
 export function createRasteriser(load: SkiaLoader = importSkia): Rasteriser {
   let skia: Promise<SkiaModule> | undefined;
@@ -60,6 +78,14 @@ export function createRasteriser(load: SkiaLoader = importSkia): Rasteriser {
     draw: Drawing,
     encode: (canvas: Canvas) => Promise<Buffer>,
   ): Promise<Buffer> => {
+    for (const [path, value] of [
+      ["width", width],
+      ["height", height],
+    ] as const) {
+      if (!Number.isSafeInteger(value) || value < 1) {
+        throw new InvalidCanvasSizeError(path);
+      }
+    }
     const { Canvas: SkiaCanvas } = await loaded();
     // skia-canvas renders on the GPU by default where it can; the same scene has to
     // give the same bytes whether or not a GPU initialised.
