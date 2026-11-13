@@ -140,9 +140,14 @@ recorded sample is written against; changing any of it changes all of them at on
   rest instead would make a seated figure stand up during every `wait`. A `drive` is
   held at its last value, with `t` frozen at its duration.
 - A segment that ends while an earlier-recorded one is still running on a channel blends
-  back out to it over its own `blend`; this is the "out" of an override. An `add`
+  back out to it over its own `blend`; this is the "out" of an override. Whether it does
+  is decided at its end, so the fade goes on if the lower one ends meanwhile. An `add`
   segment is never held and always fades out. The mode's name is `BlendMode`, `replace`
   or `add`; `reach` has no mode.
+- A `reach` is solved over the pose beneath it, while it runs and while it is held, so a
+  held hand stays on its point when an earlier-recorded call still moves the back. A
+  call recorded later than the reach that moves the body is not seen by it: the hand
+  then leaves the point, and the reach is recorded again after that call.
 - A full-body call is a `replace` pose that names all fourteen angles. One that starts
   while an earlier one is still playing is the warning `ERR_SCENE_FULL_BODY_CUT`.
 - The composed pose at a frame is `poseAtFrame` in `src/rig/compose.ts`, internal. It
@@ -285,8 +290,8 @@ change to the shape raises the version.
 - A segment's `data` is an object with a `kind`: `pose` (channels, mode, and the three
   phases in microseconds), `reach` (effector, target, phases), `drive` (functions by
   channel, mode, blend), `wait`, or `draw` (the callback). These live in
-  `src/timeline/segments.ts`. Nothing is released, so adding them did not raise the JSON
-  version.
+  `src/timeline/segments.ts`. Nothing is released yet, so this shape is still JSON
+  version 1.
 
 ## The drawing interface
 

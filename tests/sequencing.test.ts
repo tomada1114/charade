@@ -463,6 +463,132 @@ describe("the composed pose", () => {
   });
 });
 
+describe("continuity", () => {
+  /** The largest change of any channel between adjacent frames over the first 4 s. */
+  function largestStep(at: (frame: number) => Pose): number {
+    let largest = 0;
+    let before = at(0);
+    for (let frame = 1; frame <= 400; frame += 1) {
+      const after = at(frame);
+      for (const name of Object.keys(REST) as (keyof typeof REST)[]) {
+        largest = Math.max(largest, Math.abs(after[name] - before[name]));
+      }
+      before = after;
+    }
+    return largest;
+  }
+
+  // Every value below moves by at most 1 over a 0.2 s blend. Smoothstep's steepest
+  // hundredth of a second covers 7.5% of that; a pop would be several times larger.
+  it.each<[string, (a: Actor) => void]>([
+    [
+      "poses in sequence",
+      (a) => {
+        a.pose({ kneeR: 1 }, { duration: 0.5 });
+        a.pose({ kneeR: 0.2, hipR: 1 }, { duration: 0.5 });
+        a.wait(0.5);
+        a.pose({ hipR: 0 }, { duration: 0.5 });
+      },
+    ],
+    [
+      "an override that ends inside the call beneath it",
+      (a) => {
+        a.pose({ shoulderR: 1 }, { duration: 3 });
+        a.pose({ shoulderR: 2 }, { at: 1, duration: 1 });
+      },
+    ],
+    [
+      "an override that ends just before the call beneath it",
+      (a) => {
+        a.pose({ shoulderR: 1 }, { duration: 2.1 });
+        a.pose({ shoulderR: 2 }, { at: 1, duration: 1 });
+      },
+    ],
+    [
+      "an override that outlasts the call beneath it",
+      (a) => {
+        a.pose({ shoulderR: 1 }, { duration: 1.5 });
+        a.pose({ shoulderR: 2 }, { at: 1, duration: 1 });
+      },
+    ],
+    [
+      "an addition over a pose that ends first",
+      (a) => {
+        a.pose({ spine: 0.4 }, { duration: 1.1 });
+        a.pose({ spine: 0.5 }, { at: 0.5, duration: 1, mode: "add" });
+      },
+    ],
+    [
+      "a pose over an open-ended addition",
+      (a) => {
+        a.drive({ spine: (t) => Math.sin(t * 3) * 0.2 }, { mode: "add" });
+        a.pose({ spine: 0.5 }, { at: 1, duration: 1 });
+      },
+    ],
+    [
+      "a drive over a pose, ending inside it",
+      (a) => {
+        a.pose({ spine: 0.4, kneeR: 1 }, { duration: 3 });
+        a.drive({ spine: (t) => 0.1 + t * 0.3 }, { at: 0.5, duration: 1 });
+      },
+    ],
+    [
+      "a reach that ends while a pose beneath it still moves the back",
+      (a) => {
+        a.pose({ spine: 0.5 }, { duration: 3 });
+        // The arm turns by more than 1 here, so it is given a longer blend.
+        a.reach("handR", { x: 0.3, y: 0.6 }, { at: 1, duration: 1, blend: 0.5 });
+      },
+    ],
+    [
+      "a reach over a pose of the same arm, ending inside it",
+      (a) => {
+        a.pose({ shoulderR: 1, elbowR: 0.5, spine: 0.3 }, { duration: 3 });
+        a.reach("handR", { x: 0.3, y: 0.6 }, { at: 1, duration: 1 });
+      },
+    ],
+    [
+      "calls recorded in the reverse of their order in time",
+      (a) => {
+        a.pose({ kneeR: 0.4 }, { at: 1, duration: 0.5 });
+        a.pose({ kneeR: 1 }, { at: 0.5, duration: 0.5 });
+        a.pose({ kneeR: 0.7 }, { at: 0, duration: 0.5 });
+      },
+    ],
+  ])("never jumps between frames with %s", (_label, act) => {
+    expect(largestStep(play(act))).toBeLessThan(0.1);
+  });
+
+  it("goes on fading an override back when the call beneath it ends meanwhile", () => {
+    const at = play((a) => {
+      a.pose({ shoulderR: 1 }, { duration: 2.1 });
+      a.pose({ shoulderR: 2 }, { at: 1, duration: 1 });
+    });
+    expect(at(210).shoulderR).toBeCloseTo(1.5, 12);
+    expect(at(220).shoulderR).toBe(1);
+  });
+
+  it("keeps a held hand on its point while a pose beneath it still holds the back", () => {
+    const at = play((a) => {
+      a.pose({ spine: 0.5 }, { duration: 3 });
+      a.reach("handR", { x: 0.3, y: 0.6 }, { at: 1, duration: 1 });
+    });
+    for (const frame of [199, 200, 250]) {
+      const hand = forwardKinematics(at(frame)).handR;
+      expect(hand.x).toBeCloseTo(0.3, 9);
+      expect(hand.y).toBeCloseTo(0.6, 9);
+    }
+  });
+
+  it("lets a later pose of the arm take over from a held reach", () => {
+    const at = play((a) => {
+      a.reach("handR", { x: 0.3, y: 0.6 }, { duration: 0.5 });
+      a.pose({ shoulderR: 0.2, elbowR: 0.1 }, { duration: 0.5 });
+    });
+    expect(at(300)).toEqual({ ...REST, shoulderR: 0.2, elbowR: 0.1 });
+  });
+});
+
 describe("a function at depth 3", () => {
   function momentsOf(
     build: (actor: Actor, see: (t: number, m: Moment) => number) => void,

@@ -28,6 +28,10 @@ type Evaluate = (
 /** A segment that moves channels, with its times in frame units: µs × fps. */
 interface Layer {
   readonly evaluate: Evaluate;
+  /** The channels the segment names. */
+  readonly names: readonly ChannelName[];
+  /** Whether its values depend on the pose beneath it, as a reach's do. */
+  readonly solved: boolean;
   readonly mode: BlendMode;
   readonly start: number;
   readonly end: number | null;
@@ -131,12 +135,19 @@ function layerOf(segment: TimelineSegment, fps: number): Layer | undefined {
   if (evaluate === undefined) {
     return undefined;
   }
+  const { effector, channels } = data;
+  const names =
+    kind === "reach" && isEffectorName(effector)
+      ? EFFECTOR_CHAINS[effector]
+      : Object.keys(isRecord(channels) ? channels : {}).filter(isChannelName);
   const phase = (key: string): number => {
     const value = data[key];
     return typeof value === "number" ? value * fps : 0;
   };
   return {
     evaluate,
+    names,
+    solved: kind === "reach",
     mode: data["mode"] === "add" ? "add" : "replace",
     start,
     end,
@@ -209,6 +220,8 @@ export function poseAtFrame(
   const layers = track.segments.flatMap((segment) => layerOf(segment, fps) ?? []);
   const pose: MutablePose = { ...REST_POSE };
 
+  /** Per channel, the held segment whose value is the base. */
+  const holder = new Map<ChannelName, Layer>();
   const held = layers
     .filter(
       (layer) => layer.mode === "replace" && layer.end !== null && layer.end <= now,
@@ -217,14 +230,15 @@ export function poseAtFrame(
   for (const layer of held) {
     for (const [name, value] of layer.evaluate(layer.end ?? now, pose, instant)) {
       pose[name] = value;
+      holder.set(name, layer);
     }
   }
 
-  /** Per channel, the earliest start among the running segments applied so far. */
-  const runningSince = new Map<ChannelName, number>();
-  for (const layer of layers) {
+  /** The channels a running segment has moved so far. */
+  const moved = new Set<ChannelName>();
+  layers.forEach((layer, index) => {
     if (now < layer.start) {
-      continue;
+      return;
     }
     const { end } = layer;
     if (end === null || now < end) {
@@ -234,21 +248,37 @@ export function poseAtFrame(
           layer.mode === "add"
             ? pose[name] + weight * value
             : mix(pose[name], value, weight);
-        runningSince.set(
-          name,
-          Math.min(runningSince.get(name) ?? Infinity, layer.start),
-        );
+        moved.add(name);
       }
-    } else if (now - end < layer.blend) {
-      const weight = 1 - smoothstep((now - end) / layer.blend);
-      for (const [name, value] of layer.evaluate(end, pose, instant)) {
-        if (layer.mode === "add") {
-          pose[name] += weight * value;
-        } else if ((runningSince.get(name) ?? Infinity) < end) {
-          pose[name] = mix(pose[name], value, weight);
-        }
+      return;
+    }
+    const fade =
+      now - end < layer.blend ? 1 - smoothstep((now - end) / layer.blend) : 0;
+    if (fade === 0 && !layer.solved) {
+      return;
+    }
+    // Whether an earlier-recorded segment was still running on the channel when this
+    // one ended: decided at the end, so the fade goes on if that one ends meanwhile.
+    const yields = (name: ChannelName): boolean =>
+      layers
+        .slice(0, index)
+        .some(
+          (lower) =>
+            lower.names.includes(name) &&
+            lower.start < end &&
+            (lower.end === null || lower.end > end),
+        );
+    for (const [name, value] of layer.evaluate(end, pose, instant)) {
+      if (layer.mode === "add") {
+        pose[name] += fade * value;
+      } else if (yields(name)) {
+        pose[name] = mix(pose[name], value, fade);
+      } else if (holder.get(name) === layer && !moved.has(name)) {
+        // A held reach is solved again here, over the segments still running beneath
+        // it, as it was while it ran; solved only in the base it would jump at its end.
+        pose[name] = value;
       }
     }
-  }
+  });
   return pose;
 }
