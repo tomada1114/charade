@@ -14,8 +14,9 @@ import {
   type BlendMode,
   DEFAULT_BLEND_MICROS,
   type DrawData,
-  type MotionFunction,
+  type DriveData,
 } from "../timeline/segments.js";
+import { randomSource } from "../timeline/random.js";
 import { type Micros, toSeconds } from "../timeline/time.js";
 import type { Timeline } from "../timeline/timeline.js";
 import type { Actor, Row, Span, Stage } from "./handles.js";
@@ -57,6 +58,8 @@ interface ActorState {
   cursor: Micros;
   /** Whether an open-ended segment was recorded: the actor then has no cursor. */
   open: boolean;
+  /** Whether the missing cursor was reported: once per actor, so it cannot fill the cap. */
+  warned: boolean;
   readonly fullBody: { readonly start: Micros; readonly end: Micros | null }[];
 }
 
@@ -84,7 +87,7 @@ const ACTOR_OPTIONS = ["name"];
 
 const SECONDS_FIX = "Pass a finite number of seconds, 0 or more.";
 
-function isMotionFunction(value: unknown): value is MotionFunction {
+function isMotion(value: unknown): value is DriveData["motion"] {
   return typeof value === "function";
 }
 
@@ -321,6 +324,7 @@ export class SceneBuilder {
       track,
       cursor: 0,
       open: false,
+      warned: false,
       fullBody: [],
     };
     this.#actors.push(state);
@@ -330,8 +334,8 @@ export class SceneBuilder {
         this.#pose(state, channels, poseOptions),
       reach: (effector: unknown, target: unknown, reachOptions?: unknown) =>
         this.#reach(state, effector, target, reachOptions),
-      drive: (channels: unknown, driveOptions?: unknown) =>
-        this.#drive(state, channels, driveOptions),
+      drive: (motion: unknown, driveOptions?: unknown) =>
+        this.#drive(state, motion, driveOptions),
       wait: (seconds: unknown) => this.#wait(state, seconds),
     });
   }
@@ -404,24 +408,22 @@ export class SceneBuilder {
     return value;
   }
 
-  /** The entries of a channel map that name a channel and hold an accepted value. */
-  #channels<T>(
+  /** The entries of a channel map that name a channel, with a finding for each that does not. */
+  #channels(
     raw: unknown,
     call: string,
     where: Where,
-    accept: (value: unknown) => value is T,
-    reject: (name: string) => readonly [code: string, message: string, fix: string],
-  ): [name: string, value: T][] {
+  ): [name: string, value: unknown][] {
     if (!isRecord(raw)) {
       this.#report(
         "ERR_SCENE_INVALID_VALUE",
-        `${call} was not given a map of channels.`,
-        `Pass an object keyed by channel name, such as { spine: ... }.`,
+        `${call} did not give a map of channels.`,
+        `Give an object keyed by channel name, such as { spine: 0.2 }.`,
         where,
       );
       return [];
     }
-    const kept: [string, T][] = [];
+    const kept: [string, unknown][] = [];
     for (const [name, value] of Object.entries(raw)) {
       if (isEffectorName(name)) {
         const chain = EFFECTOR_CHAINS[name];
@@ -440,11 +442,8 @@ export class SceneBuilder {
           where,
           { joint: name, nearest: nearestNames(name, CHANNEL_NAMES) },
         );
-      } else if (accept(value)) {
-        kept.push([name, value]);
       } else {
-        const [code, message, fix] = reject(name);
-        this.#report(code, message, fix, where, { joint: name });
+        kept.push([name, value]);
       }
     }
     return kept;
@@ -459,11 +458,12 @@ export class SceneBuilder {
     where: Where,
   ): { readonly start: Micros; readonly end: Micros | null } {
     const given = this.#seconds(at, `${call}'s options.at`, where);
-    if (given === undefined && actor.open) {
+    if (given === undefined && actor.open && !actor.warned) {
+      actor.warned = true;
       this.#report(
         "ERR_SCENE_NO_CURSOR",
         `${call} has no time to start at: an open-ended call was recorded on this actor before it, and that never ends.`,
-        `Pass { at } to ${call}, or give the open-ended call a duration.`,
+        `Pass { at } to ${call} and to every later call on this actor, or give the open-ended call a duration.`,
         where,
         { time: [toSeconds(actor.cursor), toSeconds(actor.cursor)] },
       );
@@ -482,22 +482,24 @@ export class SceneBuilder {
     this.#open();
     const where: Where = { row: actor.row, target: actor.id };
     const bag = this.#options(options, POSE_OPTIONS, "pose", where);
-    const kept = this.#channels(
-      channels,
-      "pose",
-      where,
-      (value): value is number => typeof value === "number" && Number.isFinite(value),
-      (name) => [
-        "ERR_SCENE_OUT_OF_RANGE",
-        `The value of ${name} is not a finite number; it was ignored.`,
-        `Give ${name} a finite number.`,
-      ],
-    );
+    const values: Record<string, number> = {};
+    for (const [name, value] of this.#channels(channels, "pose", where)) {
+      if (typeof value === "number" && Number.isFinite(value)) {
+        // `+ 0` stores a `-0` as `0`, as the timeline's JSON form does.
+        values[name] = value + 0;
+      } else {
+        this.#report(
+          "ERR_SCENE_OUT_OF_RANGE",
+          `The value of ${name} is not a finite number; it was ignored.`,
+          `Give ${name} a finite number.`,
+          where,
+          { joint: name },
+        );
+      }
+    }
     const { duration, ...phases } = this.#phases(bag, "pose", where);
     const mode = this.#mode(bag["mode"], "pose", where);
     const { start, end } = this.#place(actor, "pose", bag["at"], duration, where);
-    // `+ 0` stores a `-0` as `0`, as the timeline's JSON form does.
-    const values = Object.fromEntries(kept.map(([name, value]) => [name, value + 0]));
     actor.track.segments.push({
       start,
       end,
@@ -591,15 +593,10 @@ export class SceneBuilder {
     return undefined;
   }
 
-  #drive(actor: ActorState, channels: unknown, options: unknown): Span {
+  #drive(actor: ActorState, motion: unknown, options: unknown): Span {
     this.#open();
     const where: Where = { row: actor.row, target: actor.id };
     const bag = this.#options(options, DRIVE_OPTIONS, "drive", where);
-    const kept = this.#channels(channels, "drive", where, isMotionFunction, (name) => [
-      "ERR_SCENE_INVALID_VALUE",
-      `The value of ${name} is not a function; it was ignored.`,
-      `Give ${name} a function of time, such as (t) => Math.sin(t * 3) * 0.1. A fixed value belongs in pose.`,
-    ]);
     const duration =
       this.#seconds(bag["duration"], "drive's options.duration", where) ?? null;
     const blend = Math.min(
@@ -609,12 +606,61 @@ export class SceneBuilder {
     );
     const mode = this.#mode(bag["mode"], "drive", where);
     const { start, end } = this.#place(actor, "drive", bag["at"], duration, where);
+    if (!isMotion(motion)) {
+      this.#report(
+        "ERR_SCENE_INVALID_VALUE",
+        "drive was not given a function; the call was recorded as a wait.",
+        "Pass a function of time that returns channel values, such as (t) => ({ spine: Math.sin(t * 3) * 0.1 }). Fixed values belong in pose.",
+        where,
+      );
+      actor.track.segments.push({ start, end, data: { kind: "wait" } });
+      return spanOf(start, end);
+    }
+    const channels = this.#driven(actor, motion, start, end, where);
     actor.track.segments.push({
       start,
       end,
-      data: { kind: "drive", channels: Object.fromEntries(kept), mode, blend },
+      data: { kind: "drive", motion, channels, mode, blend },
     });
     return spanOf(start, end);
+  }
+
+  /**
+   * The channels a drive names: the keys its function returns at `t = 0`. They have
+   * to be known when the call is recorded, so that an unknown name is a finding and
+   * the call overrides only its own joints.
+   */
+  #driven(
+    actor: ActorState,
+    motion: DriveData["motion"],
+    start: Micros,
+    end: Micros | null,
+    where: Where,
+  ): string[] {
+    let first: unknown;
+    try {
+      first = motion(0, {
+        time: toSeconds(start),
+        duration: end === null ? Infinity : toSeconds(end - start),
+        progress: 0,
+        random: randomSource({
+          seed: this.#settings.seed,
+          row: actor.row,
+          kind: actor.track.kind,
+          name: actor.track.name,
+          occurrence: actor.track.occurrence,
+        }),
+      });
+    } catch {
+      this.#report(
+        "ERR_SCENE_INVALID_VALUE",
+        "The function given to drive threw when it was called with t = 0; it moves nothing.",
+        "Make it return its channel values for every t from 0, without reading anything but its arguments.",
+        where,
+      );
+      return [];
+    }
+    return this.#channels(first, "drive's function", where).map(([name]) => name);
   }
 
   #wait(actor: ActorState, seconds: unknown): Span {

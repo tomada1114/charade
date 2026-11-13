@@ -16,7 +16,6 @@ import {
   type DrawFunction,
   type DrawingContext,
   type DrawOptions,
-  type DriveChannels,
   type DriveOptions,
   type EffectorName,
   type ExitCode,
@@ -450,7 +449,7 @@ describe("handle types", () => {
       [effector: EffectorName, target: Point, options?: ReachOptions | undefined]
     >();
     expectTypeOf<Actor["drive"]>().parameters.toEqualTypeOf<
-      [channels: DriveChannels, options?: DriveOptions | undefined]
+      [motion: MotionFunction, options?: DriveOptions | undefined]
     >();
     expectTypeOf<Actor["wait"]>().parameters.toEqualTypeOf<[seconds: number]>();
   });
@@ -477,24 +476,24 @@ describe("handle types", () => {
     expect(rejected).toBeTypeOf("function");
   });
 
-  it("takes a drive as functions by channel name", () => {
+  it("takes a drive as one function of time returning numbers by channel name", () => {
     const driven = (actor: Actor): Span =>
-      actor.drive({
-        spine: (t, moment) => {
-          expectTypeOf(t).toEqualTypeOf<number>();
-          expectTypeOf(moment).toEqualTypeOf<Moment>();
-          return Math.sin(t * 3) * 0.1;
-        },
+      actor.drive((t, moment) => {
+        expectTypeOf(t).toEqualTypeOf<number>();
+        expectTypeOf(moment).toEqualTypeOf<Moment>();
+        return { spine: Math.sin(t * 3) * 0.1 };
       });
     expectTypeOf(driven).returns.toEqualTypeOf<Span>();
     expectTypeOf<MotionFunction>().toEqualTypeOf<
-      (t: number, moment: Moment) => number
+      (t: number, moment: Moment) => PoseChannels
     >();
     const rejected = (actor: Actor): void => {
-      // @ts-expect-error a drive takes functions, not numbers
+      // @ts-expect-error a drive takes a function, not a map of values
       actor.drive({ spine: 0.1 });
       // @ts-expect-error spin is not a channel
-      actor.drive({ spin: (t: number) => t });
+      actor.drive((t: number) => ({ spin: t }));
+      // @ts-expect-error a hand is a target for reach, not a channel
+      actor.drive(() => ({ handR: 1 }));
     };
     expect(rejected).toBeTypeOf("function");
   });

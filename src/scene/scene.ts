@@ -228,7 +228,7 @@ function checkDuration(timeline: Timeline, findings: FindingCollector): void {
  *   const up = hero.pose({ shoulderR: 2.6, elbowR: 0.4 }, { duration: 0.5 });
  *   hero.pose({ elbowR: 1.2 }, { duration: 0.3 });
  *   hero.pose({ elbowR: 0.4 }, { duration: 0.3 });
- *   hero.drive({ spine: (t) => Math.sin(t * 3) * 0.05 }, { at: up.end, duration: 0.6 });
+ *   hero.drive((t) => ({ spine: Math.sin(t * 3) * 0.05 }), { at: up.end, duration: 0.6 });
  * });
  * console.log(waving.kind, waving.findings.length);
  * // => "charade.scene" 0

@@ -70,7 +70,7 @@ describe("the cursor", () => {
       const a = stage.actor();
       spans.push(a.pose({ kneeR: 1.2 }, { duration: 0.5 }));
       spans.push(a.reach("handR", { x: 0.2, y: 0.7 }, { duration: 0.25 }));
-      spans.push(a.drive({ spine: (t) => t }, { duration: 1 }));
+      spans.push(a.drive((t) => ({ spine: t }), { duration: 1 }));
       spans.push(a.wait(0.25));
       spans.push(a.pose({ kneeR: 0 }, { duration: 0.5 }));
     });
@@ -189,7 +189,7 @@ describe("stage.sync", () => {
   it("returns 0 when nothing has an end", () => {
     let synced = -1;
     scene({ duration: 1 }, (stage) => {
-      stage.actor().drive({ spine: (t) => t });
+      stage.actor().drive((t) => ({ spine: t }));
       stage.draw(() => undefined);
       synced = stage.sync();
     });
@@ -213,7 +213,7 @@ describe("stage.sync", () => {
     const built = scene({ rows: 2 }, (stage) => {
       const a = stage.row(0).actor();
       const b = stage.row(1).actor();
-      a.drive({ spine: (t) => t });
+      a.drive((t) => ({ spine: t }));
       b.wait(2);
       stage.sync();
       spans.push(a.pose({ kneeR: 1.2 }, { duration: 0.5 }));
@@ -237,7 +237,7 @@ describe("the composed pose", () => {
   it("overrides only the joints a later drive names over an earlier pose", () => {
     const at = play((a) => {
       a.pose({ spine: 0.4, kneeR: 1.2, hipR: 1 }, { duration: 2 });
-      a.drive({ spine: () => 0.1 }, { at: 0.5, duration: 1 });
+      a.drive(() => ({ spine: 0.1 }), { at: 0.5, duration: 1 });
     });
     expect(at(40)).toEqual({ ...REST, spine: 0.4, kneeR: 1.2, hipR: 1 });
     expect(at(100)).toEqual({ ...REST, spine: 0.1, kneeR: 1.2, hipR: 1 });
@@ -391,7 +391,7 @@ describe("the composed pose", () => {
 
   it("does not hold an addition that has nothing beneath it", () => {
     const at = play((a) => {
-      a.drive({ spine: () => 0.2 }, { duration: 1, mode: "add" });
+      a.drive(() => ({ spine: 0.2 }), { duration: 1, mode: "add" });
     });
     expect(at(50).spine).toBeCloseTo(0.2, 12);
     expect(at(110).spine).toBeCloseTo(0.1, 12);
@@ -400,7 +400,7 @@ describe("the composed pose", () => {
 
   it("runs a drive as a function of the seconds since it began", () => {
     const at = play((a) => {
-      a.drive({ spine: (t) => t * 0.1 }, { at: 1, duration: 2, blend: 0 });
+      a.drive((t) => ({ spine: t * 0.1 }), { at: 1, duration: 2, blend: 0 });
     });
     expect(at(100).spine).toBe(0);
     expect(at(150).spine).toBeCloseTo(0.05, 12);
@@ -409,7 +409,7 @@ describe("the composed pose", () => {
 
   it("holds a drive at its last value", () => {
     const at = play((a) => {
-      a.drive({ spine: (t) => t * 0.1 }, { duration: 2 });
+      a.drive((t) => ({ spine: t * 0.1 }), { duration: 2 });
     });
     expect(at(200).spine).toBeCloseTo(0.2, 12);
     expect(at(900).spine).toBeCloseTo(0.2, 12);
@@ -417,14 +417,14 @@ describe("the composed pose", () => {
 
   it("runs an open-ended drive to the end of the scene", () => {
     const at = play((a) => {
-      a.drive({ spine: (t) => t * 0.01 });
+      a.drive((t) => ({ spine: t * 0.01 }));
     });
     expect(at(1000).spine).toBeCloseTo(0.1, 12);
   });
 
   it("moves nothing when a drive's function gives no finite number", () => {
     const at = play((a) => {
-      a.drive({ spine: () => Number.NaN, chest: () => Infinity }, { duration: 1 });
+      a.drive(() => ({ spine: Number.NaN, chest: Infinity }), { duration: 1 });
     });
     expect(at(50)).toEqual(REST);
   });
@@ -521,7 +521,7 @@ describe("continuity", () => {
     [
       "a pose over an open-ended addition",
       (a) => {
-        a.drive({ spine: (t) => Math.sin(t * 3) * 0.2 }, { mode: "add" });
+        a.drive((t) => ({ spine: Math.sin(t * 3) * 0.2 }), { mode: "add" });
         a.pose({ spine: 0.5 }, { at: 1, duration: 1 });
       },
     ],
@@ -529,7 +529,7 @@ describe("continuity", () => {
       "a drive over a pose, ending inside it",
       (a) => {
         a.pose({ spine: 0.4, kneeR: 1 }, { duration: 3 });
-        a.drive({ spine: (t) => 0.1 + t * 0.3 }, { at: 0.5, duration: 1 });
+        a.drive((t) => ({ spine: 0.1 + t * 0.3 }), { at: 0.5, duration: 1 });
       },
     ],
     [
@@ -608,42 +608,75 @@ describe("a function at depth 3", () => {
 
   it("receives the seconds since its segment began, and where that is", () => {
     const { built, seen } = momentsOf((a, see) => {
-      a.drive({ spine: see }, { at: 1, duration: 2 });
+      a.drive((t, moment) => ({ spine: see(t, moment) }), { at: 1, duration: 2 });
     });
     poseOf(built.timeline, 150, 1);
-    expect(seen).toHaveLength(1);
-    expect(seen[0]?.[0]).toBe(0.5);
-    expect(seen[0]?.[1]).toMatchObject({ time: 1.5, duration: 2, progress: 0.25 });
+    expect(seen).toHaveLength(2);
+    expect(seen[1]?.[0]).toBe(0.5);
+    expect(seen[1]?.[1]).toMatchObject({ time: 1.5, duration: 2, progress: 0.25 });
   });
 
-  it("is not called while the scene is being built", () => {
+  it("is called once, at t = 0, when the call is recorded", () => {
     const { seen } = momentsOf((a, see) => {
-      a.drive({ spine: see }, { duration: 2 });
+      a.drive((t, moment) => ({ spine: see(t, moment) }), { at: 1, duration: 2 });
     });
-    expect(seen).toEqual([]);
+    expect(seen).toHaveLength(1);
+    expect(seen[0]?.[0]).toBe(0);
+    expect(seen[0]?.[1]).toMatchObject({ time: 1, duration: 2, progress: 0 });
+  });
+
+  it("is called at record time with an infinite duration when open-ended", () => {
+    const { seen } = momentsOf((a, see) => {
+      a.drive((t, moment) => ({ spine: see(t, moment) }));
+    });
+    expect(seen[0]?.[1]).toMatchObject({ time: 0, duration: Infinity, progress: 0 });
+  });
+
+  it("moves only the channels it returned at t = 0", () => {
+    const at = play((a) => {
+      a.pose({ chest: 0.3 }, { duration: 3 });
+      a.drive(
+        (t): { spine: number; chest?: number } =>
+          t < 0.5 ? { spine: 0.1 } : { spine: 0.2, chest: 0.6 },
+        { at: 0, duration: 2 },
+      );
+    });
+    expect(at(100)).toEqual({ ...REST, spine: 0.2, chest: 0.3 });
+  });
+
+  it("leaves a recorded channel alone at a time its function does not return it", () => {
+    const at = play((a) => {
+      a.pose({ spine: 0.4 }, { duration: 3 });
+      a.drive((t): { spine?: number } => (t < 0.5 ? { spine: 0.1 } : {}), {
+        at: 0,
+        duration: 2,
+      });
+    });
+    expect(at(30).spine).toBe(0.1);
+    expect(at(100).spine).toBe(0.4);
   });
 
   it("receives an infinite duration and no progress in an open-ended segment", () => {
     const { built, seen } = momentsOf((a, see) => {
-      a.drive({ spine: see }, { at: 1 });
+      a.drive((t, moment) => ({ spine: see(t, moment) }), { at: 1 });
     });
     poseOf(built.timeline, 150, 1);
-    expect(seen[0]?.[0]).toBe(0.5);
-    expect(seen[0]?.[1]).toMatchObject({ time: 1.5, duration: Infinity, progress: 0 });
+    expect(seen[1]?.[0]).toBe(0.5);
+    expect(seen[1]?.[1]).toMatchObject({ time: 1.5, duration: Infinity, progress: 0 });
   });
 
   it("is frozen at its end once the segment has ended", () => {
     const { built, seen } = momentsOf((a, see) => {
-      a.drive({ spine: see }, { at: 1, duration: 2 });
+      a.drive((t, moment) => ({ spine: see(t, moment) }), { at: 1, duration: 2 });
     });
     poseOf(built.timeline, 900, 1);
-    expect(seen[0]?.[0]).toBe(2);
-    expect(seen[0]?.[1]).toMatchObject({ time: 3, duration: 2, progress: 1 });
+    expect(seen[1]?.[0]).toBe(2);
+    expect(seen[1]?.[1]).toMatchObject({ time: 3, duration: 2, progress: 1 });
   });
 
   it("receives the random source keyed on the scene seed and its actor", () => {
     const { built, seen } = momentsOf((a, see) => {
-      a.drive({ spine: see }, { duration: 2 });
+      a.drive((t, moment) => ({ spine: see(t, moment) }), { duration: 2 });
     });
     poseOf(built.timeline, 50, 1);
     const expected = randomSource({
@@ -681,7 +714,7 @@ describe("a timeline that was not just built", () => {
     const built = scene({ fps: 100, duration: 2 }, (stage) => {
       const a = stage.actor();
       a.pose({ kneeR: 1.2 }, { duration: 0.5 });
-      a.drive({ spine: () => 0.3 }, { at: 0, duration: 1 });
+      a.drive(() => ({ spine: 0.3 }), { at: 0, duration: 1 });
     });
     const parsed = parseTimeline(serializeTimeline(built.timeline));
     if (!parsed.ok) {
@@ -699,6 +732,9 @@ describe("a timeline that was not just built", () => {
       { kind: "wait" },
       { kind: "pose" },
       { kind: "drive", channels: null },
+      { kind: "drive", channels: ["spine", 3, "wing"], motion: "sway" },
+      { kind: "drive", channels: ["spine"], motion: () => 0.2 },
+      { kind: "drive", channels: ["spine"], motion: () => ({ spine: "0.2" }) },
       { kind: "reach", effector: "tail", target: { x: 0, y: 0 } },
       { kind: "reach", effector: "handR", target: null },
       { kind: "reach", effector: "handR", target: { x: "0", y: 0 } },

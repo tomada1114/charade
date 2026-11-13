@@ -1,7 +1,7 @@
 import type { ShapeContext } from "../draw/context.js";
 import type { Point } from "../rig/kinematics.js";
 import type { ChannelName, EffectorName } from "../rig/rig.js";
-import type { BlendMode, Moment, MotionFunction } from "../timeline/segments.js";
+import type { BlendMode, Moment } from "../timeline/segments.js";
 
 /**
  * When a recorded call plays, in seconds of scene time.
@@ -50,12 +50,18 @@ export interface Span<Marks extends string = never> {
 export type PoseChannels = Readonly<Partial<Record<ChannelName, number>>>;
 
 /**
- * The functions `drive` runs channels with, one per channel it names. Channels left
- * out are not touched.
+ * Motion as a function of time, at depth 3: the values of the channels it moves, `t`
+ * seconds after its segment began.
+ *
+ * @remarks
+ * It is called once with `t = 0` when `drive` records it, and the channels it returns
+ * then are the ones the call moves; a channel it returns only later is ignored. It
+ * must be a pure function of its arguments. Reading the clock or `Math.random` makes a
+ * frame depend on when it was drawn; use `moment.random` instead.
  *
  * @public
  */
-export type DriveChannels = Readonly<Partial<Record<ChannelName, MotionFunction>>>;
+export type MotionFunction = (t: number, moment: Moment) => PoseChannels;
 
 /**
  * A free drawing at depth 4: draws one frame on `ctx`, in row units with `y` up.
@@ -123,7 +129,7 @@ export interface DriveOptions {
   /** Absolute scene time to start at, in seconds. Defaults to the actor's cursor. */
   readonly at?: number;
   /**
-   * How long the functions run, in seconds. Without it the call is open-ended: it
+   * How long the function runs, in seconds. Without it the call is open-ended: it
    * runs to the end of the scene, does not extend it, and leaves the actor without a
    * cursor, so later calls on that actor need `at`.
    */
@@ -196,13 +202,13 @@ export interface Actor {
   reach(effector: EffectorName, target: Point, options?: ReachOptions): Span;
 
   /**
-   * Run the named channels as functions of time.
+   * Run channels as a function of time.
    *
-   * @param channels - One function per channel name.
+   * @param motion - Returns the values of the channels it moves at time `t`.
    * @param options - Timing and blending.
    * @returns When the call plays.
    */
-  drive(channels: DriveChannels, options?: DriveOptions): Span;
+  drive(motion: MotionFunction, options?: DriveOptions): Span;
 
   /**
    * Hold still: move the cursor on by `seconds`.

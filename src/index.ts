@@ -51,8 +51,8 @@ export type {
   ActorOptions,
   DrawFunction,
   DrawOptions,
-  DriveChannels,
   DriveOptions,
+  MotionFunction,
   PoseChannels,
   PoseOptions,
   ReachOptions,
@@ -63,7 +63,7 @@ export type {
 export { scene } from "./scene/scene.js";
 export type { Scene, SceneOptions } from "./scene/scene.js";
 export type { RandomSource } from "./timeline/random.js";
-export type { BlendMode, Moment, MotionFunction } from "./timeline/segments.js";
+export type { BlendMode, Moment } from "./timeline/segments.js";
 export type {
   Timeline,
   TimelineRow,

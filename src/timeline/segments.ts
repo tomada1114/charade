@@ -31,18 +31,6 @@ export interface Moment {
   readonly random: RandomSource;
 }
 
-/**
- * Motion as a function of time: the value of one channel `t` seconds after its
- * segment began.
- *
- * @remarks
- * It must be a pure function of its arguments. Reading the clock or `Math.random`
- * makes a frame depend on when it was drawn; use `moment.random` instead.
- *
- * @public
- */
-export type MotionFunction = (t: number, moment: Moment) => number;
-
 /** A `pose` call: target values, and the three phases of its arrival. */
 export interface PoseData {
   readonly kind: "pose";
@@ -63,10 +51,14 @@ export interface ReachData {
   readonly followThrough: Micros;
 }
 
-/** A `drive` call: one function per channel. */
+/**
+ * A `drive` call: the author's function, and the channels it names, read from what it
+ * returned at `t = 0` when the call was recorded.
+ */
 export interface DriveData {
   readonly kind: "drive";
-  readonly channels: Readonly<Record<string, MotionFunction>>;
+  readonly motion: (t: number, moment: Moment) => unknown;
+  readonly channels: readonly string[];
   readonly mode: BlendMode;
   readonly blend: Micros;
 }

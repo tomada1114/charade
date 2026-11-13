@@ -50,19 +50,20 @@ export default scene({ rows: 2 }, (stage) => {
   friend.pose({ neck: 0.3 }, { at: wave.start, anticipation: 0.1 });
 
   // Depth 3: motion as a function of time, on the joints it names only.
-  friend.drive(
-    { spine: (t) => Math.sin(t * 3) * 0.1 },
-    { at: wave.end, duration: 1, mode: "add" },
-  );
+  friend.drive((t) => ({ spine: Math.sin(t * 3) * 0.1 }), {
+    at: wave.end,
+    duration: 1,
+    mode: "add",
+  });
 });
 ```
 
 - Time is in seconds, angles are radians, and points are in a row's own units: the
   origin on the ground at the row's centre, `y` up, a standing figure 1 unit tall.
 - `pose` moves the channels it names and holds them; `reach` puts a hand or a foot on a
-  point; `drive` runs channels as functions of time; `wait` moves the actor's cursor on.
-  When two calls overlap, the one recorded later wins for the channels it names, blended
-  in over `blend` seconds (0.2 by default).
+  point; `drive` runs channels as a function of time; `wait` moves the actor's cursor
+  on. When two calls overlap, the one recorded later wins for the channels it names,
+  blended in over `blend` seconds (0.2 by default).
 - `stage.row(i)` names a row, 0 at the top; on a one-row scene the stage is the row.
   `stage.sync()` moves every actor's cursor to the latest end. `row.draw` records a free
   drawing on a `ShapeContext`.

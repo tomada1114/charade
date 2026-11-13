@@ -106,8 +106,9 @@ recorded sample is written against; changing any of it changes all of them at on
   written with those numbers; all rows share one clock. `stage.sync()` moves every
   actor's cursor to the latest end.
 - A call without `at` after an open-ended track has no cursor to start from and is an
-  error with a fix line (`ERR_SCENE_NO_CURSOR`). It is reported on every such call, and
-  the call is placed at the latest end recorded on the actor so authoring continues.
+  error with a fix line (`ERR_SCENE_NO_CURSOR`). It is reported once per actor, at the
+  first such call, so one open-ended sway cannot fill the finding cap; that call and
+  every later one is placed at the latest end recorded on the actor.
 - The cursor is the latest end on the actor, so a call placed earlier with `at` never
   pulls it back. `wait` records a segment of its own, which is what lets a trailing wait
   lengthen the scene. `sync()` returns the time it moved to, counts free drawings as
@@ -154,13 +155,17 @@ recorded sample is written against; changing any of it changes all of them at on
   compares in frame units (`µs × fps` against `n × 1e6`), reads a segment's data field
   by field so a parsed or hand-built timeline cannot break it, and skips a channel whose
   value is not a finite number.
-- `drive` takes a function per channel, not one function returning a map, so the
-  channels it names are known when the call is recorded: that is what lets an unknown
-  name be a finding and an override be limited to its joints.
+- `drive` takes one function of time that returns a map of channel values, as in
+  `a.drive(t => ({ spine: Math.sin(t * 3) * 0.1 }))`. The channels it names are the keys
+  it returns when it is called once with `t = 0` as the call is recorded: an unknown
+  name can then be a finding, and the override is limited to those joints. At a frame a
+  key outside that set is ignored and a recorded key that is missing or not finite moves
+  nothing. A function that throws at `t = 0` or returns no object is a finding and names
+  no channel; an argument that is not a function is a finding and is recorded as a wait.
 - A function at depth 3 or 4 receives `t`, seconds since its segment began, and a second
   argument with the scene time, the segment's duration and progress, and the keyed
   random source. That argument is `Moment` (`time`, `duration`, `progress`, `random`);
-  the function types are `MotionFunction` (returns one channel's value) and
+  the function types are `MotionFunction` (returns a map of channel values) and
   `DrawFunction` (draws on a `ShapeContext`), and the source is `RandomSource`. In an
   open-ended segment `duration` is `Infinity` and `progress` stays 0.
 
@@ -202,10 +207,10 @@ pelvis (root: pelvisX, pelvisY)
   rather than by the formula, which can miss by a rounding step. Progress outside 0..1
   extrapolates, so an overshooting easing carries through, and angles are not wrapped: a
   `pelvis` going from 0 to 2π turns the figure all the way over.
-- An author names `ChannelName` (the twenty-four channels), `EffectorName`, `Point`,
-  `PoseChannels` and `DriveChannels`; those are root exports. `ChannelName` is written
-  out as literals, because a public type may not refer to an unexported one. The pose
-  type, the angle, root and face unions, the limits and the kinematics stay internal.
+- An author names `ChannelName` (the twenty-four channels), `EffectorName`, `Point`, and
+  `PoseChannels`; those are root exports. `ChannelName` is written out as literals,
+  because a public type may not refer to an unexported one. The pose type, the angle,
+  root and face unions, the limits and the kinematics stay internal.
 - An unknown channel is the finding `ERR_SCENE_UNKNOWN_CHANNEL` with the nearest names,
   and an effector used as a channel is the finding `ERR_SCENE_EFFECTOR_AS_CHANNEL`
   naming its chain; either channel is dropped and the rest of the call is recorded.
@@ -288,10 +293,10 @@ change to the shape raises the version.
   segment's `data` is typed `unknown`: what a call records is not contract, so it can
   change without a version of its own. The value types of the JSON form stay internal.
 - A segment's `data` is an object with a `kind`: `pose` (channels, mode, and the three
-  phases in microseconds), `reach` (effector, target, phases), `drive` (functions by
-  channel, mode, blend), `wait`, or `draw` (the callback). These live in
-  `src/timeline/segments.ts`. Nothing is released yet, so this shape is still JSON
-  version 1.
+  phases in microseconds), `reach` (effector, target, phases), `drive` (the function,
+  the channel names read at `t = 0`, mode, blend), `wait`, or `draw` (the callback).
+  These live in `src/timeline/segments.ts`. Nothing is released yet, so this shape is
+  still JSON version 1.
 
 ## The drawing interface
 

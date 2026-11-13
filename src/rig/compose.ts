@@ -1,5 +1,5 @@
 import { type RandomSource, randomSource } from "../timeline/random.js";
-import type { BlendMode, Moment, MotionFunction } from "../timeline/segments.js";
+import type { BlendMode, DriveData, Moment } from "../timeline/segments.js";
 import { MICROS_PER_SECOND } from "../timeline/time.js";
 import type { Timeline, TimelineSegment, TimelineTrack } from "../timeline/timeline.js";
 import { reach } from "./ik.js";
@@ -60,11 +60,31 @@ function isEffectorName(name: unknown): name is EffectorName {
   return EFFECTOR_NAMES.some((effector) => effector === name);
 }
 
-function isMotionFunction(value: unknown): value is MotionFunction {
+/** What a segment moves: its channels, and how their values are found. */
+interface Source {
+  readonly evaluate: Evaluate;
+  readonly names: readonly ChannelName[];
+}
+
+function isMotion(value: unknown): value is DriveData["motion"] {
   return typeof value === "function";
 }
 
-function reachOf(data: Readonly<Record<string, unknown>>): Evaluate | undefined {
+/** The finite numbers `values` holds for `names`; anything else moves nothing. */
+function finiteValues(
+  values: unknown,
+  names: readonly ChannelName[],
+): [ChannelName, number][] {
+  if (!isRecord(values)) {
+    return [];
+  }
+  return names.flatMap((name): [ChannelName, number][] => {
+    const value = values[name];
+    return typeof value === "number" && Number.isFinite(value) ? [[name, value]] : [];
+  });
+}
+
+function reachOf(data: Readonly<Record<string, unknown>>): Source | undefined {
   const { effector, target } = data;
   if (!isEffectorName(effector) || !isRecord(target)) {
     return undefined;
@@ -73,44 +93,60 @@ function reachOf(data: Readonly<Record<string, unknown>>): Evaluate | undefined 
   if (typeof x !== "number" || typeof y !== "number") {
     return undefined;
   }
-  return (_at, beneath) => {
-    const solved = reach(beneath, effector, { x, y });
-    return EFFECTOR_CHAINS[effector].map((name) => [name, solved[name]]);
+  const names = EFFECTOR_CHAINS[effector];
+  return {
+    names,
+    evaluate: (_at, beneath) => {
+      const solved = reach(beneath, effector, { x, y });
+      return names.map((name) => [name, solved[name]]);
+    },
   };
 }
 
-/**
- * The channels of a pose or a drive. A parsed timeline holds a placeholder where a
- * function was; that channel, like any value that is not a finite number, moves
- * nothing.
- */
-function channelsOf(
-  data: Readonly<Record<string, unknown>>,
-  start: number,
-  end: number | null,
-): Evaluate | undefined {
+function poseOf(data: Readonly<Record<string, unknown>>): Source | undefined {
   const { channels } = data;
   if (!isRecord(channels)) {
     return undefined;
   }
-  return (at, _beneath, instant) => {
-    const scale = instant.fps * MICROS_PER_SECOND;
-    const duration = end === null ? Infinity : (end - start) / scale;
-    const t = (at - start) / scale;
-    const moment: Moment = {
-      time: at / scale,
-      duration,
-      progress: end === null ? 0 : duration === 0 ? 1 : t / duration,
-      random: instant.random,
-    };
-    const values: [ChannelName, number][] = [];
-    for (const [name, entry] of Object.entries(channels)) {
-      const value = isMotionFunction(entry) ? entry(t, moment) : entry;
-      if (isChannelName(name) && typeof value === "number" && Number.isFinite(value)) {
-        values.push([name, value]);
+  const names = Object.keys(channels).filter(isChannelName);
+  return { names, evaluate: () => finiteValues(channels, names) };
+}
+
+/**
+ * A drive moves the channels recorded for it, and only those: a key its function
+ * returns outside that set is ignored. A parsed timeline holds a placeholder where
+ * the function was, which moves nothing.
+ */
+function driveOf(
+  data: Readonly<Record<string, unknown>>,
+  start: number,
+  end: number | null,
+): Source | undefined {
+  const { channels, motion } = data;
+  if (!Array.isArray(channels)) {
+    return undefined;
+  }
+  const recorded: readonly unknown[] = channels;
+  const names = recorded.filter(
+    (name): name is ChannelName => typeof name === "string" && isChannelName(name),
+  );
+  return {
+    names,
+    evaluate: (at, _beneath, instant) => {
+      if (!isMotion(motion)) {
+        return [];
       }
-    }
-    return values;
+      const scale = instant.fps * MICROS_PER_SECOND;
+      const duration = end === null ? Infinity : (end - start) / scale;
+      const t = (at - start) / scale;
+      const moment: Moment = {
+        time: at / scale,
+        duration,
+        progress: end === null ? 0 : duration === 0 ? 1 : t / duration,
+        random: instant.random,
+      };
+      return finiteValues(motion(t, moment), names);
+    },
   };
 }
 
@@ -126,27 +162,23 @@ function layerOf(segment: TimelineSegment, fps: number): Layer | undefined {
   const start = segment.start * fps;
   const end = segment.end === null ? null : segment.end * fps;
   const kind = data["kind"];
-  const evaluate =
+  const source =
     kind === "reach"
       ? reachOf(data)
-      : kind === "pose" || kind === "drive"
-        ? channelsOf(data, start, end)
-        : undefined;
-  if (evaluate === undefined) {
+      : kind === "pose"
+        ? poseOf(data)
+        : kind === "drive"
+          ? driveOf(data, start, end)
+          : undefined;
+  if (source === undefined) {
     return undefined;
   }
-  const { effector, channels } = data;
-  const names =
-    kind === "reach" && isEffectorName(effector)
-      ? EFFECTOR_CHAINS[effector]
-      : Object.keys(isRecord(channels) ? channels : {}).filter(isChannelName);
   const phase = (key: string): number => {
     const value = data[key];
     return typeof value === "number" ? value * fps : 0;
   };
   return {
-    evaluate,
-    names,
+    ...source,
     solved: kind === "reach",
     mode: data["mode"] === "add" ? "add" : "replace",
     start,

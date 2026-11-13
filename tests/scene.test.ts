@@ -292,7 +292,7 @@ describe("scene duration", () => {
 
   it("records a finding for a scene with only open-ended calls", () => {
     const built = scene((stage) => {
-      stage.actor().drive({ spine: (t) => t });
+      stage.actor().drive((t) => ({ spine: t }));
       stage.draw(() => undefined);
     });
     expect(codes(built)).toEqual(["ERR_SCENE_NO_DURATION"]);
@@ -300,7 +300,7 @@ describe("scene duration", () => {
 
   it("accepts open-ended calls when a duration is set", () => {
     const built = scene({ duration: 3 }, (stage) => {
-      stage.actor().drive({ spine: (t) => t });
+      stage.actor().drive((t) => ({ spine: t }));
     });
     expect(built.findings).toEqual([]);
   });
@@ -516,7 +516,7 @@ describe("handles", () => {
       "actor.drive",
       (stage: Stage): (() => unknown) => {
         const actor = stage.row(0).actor();
-        return () => actor.drive({ spine: (t) => t });
+        return () => actor.drive((t) => ({ spine: t }));
       },
     ],
     [
@@ -624,7 +624,7 @@ describe("recording", () => {
 
   it("serialises a scene with depth 3 or 4 functions as lossy", () => {
     const driven = scene({ duration: 1 }, (stage) => {
-      stage.actor().drive({ spine: (t) => t });
+      stage.actor().drive((t) => ({ spine: t }));
     });
     const drawn = scene({ duration: 1 }, (stage) => {
       stage.draw(() => undefined);
@@ -634,17 +634,23 @@ describe("recording", () => {
   });
 
   it("keeps the function a drive or a drawing was given", () => {
-    const sway = (t: number): number => Math.sin(t * 3) * 0.1;
+    const sway = (t: number): { spine: number } => ({ spine: Math.sin(t * 3) * 0.1 });
     const dust = (): void => undefined;
     const built = scene({ duration: 1 }, (stage) => {
-      stage.actor().drive({ spine: sway }, { blend: 0.1, mode: "add" });
+      stage.actor().drive(sway, { blend: 0.1, mode: "add" });
       stage.draw(dust, { at: 0.5, duration: 0.25 });
     });
     expect(trackOf(built, 0, 0).segments).toEqual([
       {
         start: 0,
         end: null,
-        data: { kind: "drive", channels: { spine: sway }, mode: "add", blend: 100_000 },
+        data: {
+          kind: "drive",
+          motion: sway,
+          channels: ["spine"],
+          mode: "add",
+          blend: 100_000,
+        },
       },
     ]);
     expect(trackOf(built, 0, 1).segments).toEqual([
@@ -656,7 +662,7 @@ describe("recording", () => {
   it("returns an open-ended span for a call without a duration", () => {
     const spans: Span[] = [];
     scene({ duration: 2 }, (stage) => {
-      spans.push(stage.actor().drive({ spine: (t) => t }, { at: 0.5 }));
+      spans.push(stage.actor().drive((t) => ({ spine: t }), { at: 0.5 }));
       spans.push(stage.draw(() => undefined));
       spans.push(stage.draw(() => undefined, { at: 1, duration: 0.5 }));
     });
@@ -669,7 +675,7 @@ describe("recording", () => {
 
   it("shortens a drive's blend to its duration", () => {
     const built = scene((stage) => {
-      stage.actor().drive({ spine: (t) => t }, { duration: 0.1 });
+      stage.actor().drive((t) => ({ spine: t }), { duration: 0.1 });
     });
     expect(trackOf(built).segments[0]?.data).toMatchObject({ blend: 100_000 });
   });
@@ -681,7 +687,7 @@ describe("findings while authoring", () => {
     const built = scene({ duration: 3 }, (stage) => {
       const a = stage.actor();
       a.wait(0.5);
-      a.drive({ spine: (t) => t });
+      a.drive((t) => ({ spine: t }));
       spans.push(a.pose({ kneeR: 1.2 }, { duration: 0.5 }));
     });
     const finding = onlyFinding(built);
@@ -696,10 +702,40 @@ describe("findings while authoring", () => {
     expect(spans[0]).toMatchObject({ start: 0.5, end: 1 });
   });
 
+  it("records it once for an actor, and still places every later call", () => {
+    const spans: Span[] = [];
+    const built = scene({ duration: 3 }, (stage) => {
+      const a = stage.actor();
+      a.drive((t) => ({ spine: t }));
+      for (let index = 0; index < 25; index += 1) {
+        spans.push(a.wait(0.1));
+      }
+    });
+    expect(codes(built)).toEqual(["ERR_SCENE_NO_CURSOR"]);
+    expect(built.truncated).toBe(false);
+    expect(spans[0]).toMatchObject({ start: 0, end: 0.1 });
+    expect(spans[24]).toMatchObject({ start: 2.4, end: 2.5 });
+  });
+
+  it("records it for each actor that has no cursor", () => {
+    const built = scene({ rows: 2, duration: 3 }, (stage) => {
+      for (const row of [stage.row(0), stage.row(1)]) {
+        const a = row.actor();
+        a.drive((t) => ({ spine: t }));
+        a.wait(1);
+        a.wait(1);
+      }
+    });
+    expect(built.findings.map((finding) => [finding.code, finding.row])).toEqual([
+      ["ERR_SCENE_NO_CURSOR", 0],
+      ["ERR_SCENE_NO_CURSOR", 1],
+    ]);
+  });
+
   it("records it for a wait as well", () => {
     const built = scene({ duration: 3 }, (stage) => {
       const a = stage.actor();
-      a.drive({ spine: (t) => t });
+      a.drive((t) => ({ spine: t }));
       a.wait(1);
     });
     expect(codes(built)).toEqual(["ERR_SCENE_NO_CURSOR"]);
@@ -708,10 +744,10 @@ describe("findings while authoring", () => {
   it("accepts a call with at after an open-ended one", () => {
     const built = scene({ duration: 3 }, (stage) => {
       const a = stage.actor();
-      a.drive({ spine: (t) => t });
+      a.drive((t) => ({ spine: t }));
       a.pose({ kneeR: 1.2 }, { at: 1, duration: 0.5 });
       a.reach("handR", { x: 0.2, y: 0.8 }, { at: 0 });
-      a.drive({ chest: (t) => t }, { at: 2, duration: 0.5 });
+      a.drive((t) => ({ chest: t }), { at: 2, duration: 0.5 });
     });
     expect(built.findings).toEqual([]);
   });
@@ -735,7 +771,10 @@ describe("findings while authoring", () => {
 
   it("gives no nearest name to a word unlike any channel", () => {
     const built = acting((a) => {
-      a.drive(untyped({ wingspan: (t: number) => t }), { duration: 0.5 });
+      a.drive(
+        untyped((t: number) => ({ wingspan: t })),
+        { duration: 0.5 },
+      );
     });
     expect(onlyFinding(built)).toMatchObject({
       code: "ERR_SCENE_UNKNOWN_CHANNEL",
@@ -745,7 +784,7 @@ describe("findings while authoring", () => {
 
   it.each([
     ["pose", (a: Actor): unknown => a.pose(untyped({ handR: 1 }))],
-    ["drive", (a: Actor): unknown => a.drive(untyped({ handR: (t: number) => t }))],
+    ["drive", (a: Actor): unknown => a.drive(untyped((t: number) => ({ handR: t })))],
   ])("names the chain when %s uses an effector as a channel", (_label, call) => {
     const built = scene({ duration: 1 }, (stage) => {
       call(stage.actor());
@@ -779,19 +818,66 @@ describe("findings while authoring", () => {
     },
   );
 
-  it("records a drive value that is not a function and drops the channel", () => {
+  it("reads the channels a drive names from what its function returns at t = 0", () => {
     const built = acting((a) => {
-      a.drive(untyped({ spine: 0.1, chest: (t: number) => t }), { duration: 1 });
+      a.drive(
+        untyped((t: number) => ({ spine: t, kneR: t, chest: Number.NaN })),
+        {
+          duration: 1,
+        },
+      );
+    });
+    expect(onlyFinding(built)).toMatchObject({
+      code: "ERR_SCENE_UNKNOWN_CHANNEL",
+      joint: "kneR",
+      nearest: ["kneeR", "kneeL"],
+    });
+    expect(trackOf(built).segments[1]?.data).toMatchObject({
+      kind: "drive",
+      channels: ["spine", "chest"],
+    });
+  });
+
+  it.each([
+    ["a map of functions", { spine: (t: number) => t }],
+    ["a number", 0.1],
+    ["nothing", undefined],
+  ])("records a drive given %s and keeps its time as a wait", (_label, motion) => {
+    const spans: Span[] = [];
+    const built = acting((a) => {
+      spans.push(a.drive(untyped(motion), { duration: 0.5 }));
     });
     expect(onlyFinding(built)).toMatchObject({
       code: "ERR_SCENE_INVALID_VALUE",
-      joint: "spine",
+      severity: "error",
+      target: "row0/actor/actor/0",
     });
-    expect(trackOf(built).segments[1]?.data).toEqual({
-      kind: "drive",
-      channels: { chest: expect.any(Function) as unknown },
-      mode: "replace",
-      blend: 200_000,
+    expect(spans[0]).toMatchObject({ start: 1, end: 1.5 });
+    expect(trackOf(built).segments[1]?.data).toEqual({ kind: "wait" });
+  });
+
+  it.each([
+    [
+      "throws at t = 0",
+      (): unknown => {
+        throw new Error("the author's bug");
+      },
+    ],
+    ["returns a number", (): unknown => 0.1],
+    ["returns nothing", (): unknown => undefined],
+    ["returns an array", (): unknown => [0.1]],
+  ])("records a drive whose function %s, naming no channel", (_label, motion) => {
+    const built = acting((a) => {
+      a.drive(untyped(motion), { duration: 0.5 });
+    });
+    expect(onlyFinding(built)).toMatchObject({
+      code: "ERR_SCENE_INVALID_VALUE",
+      severity: "error",
+    });
+    expect(trackOf(built).segments[1]).toMatchObject({
+      start: 1_000_000,
+      end: 1_500_000,
+      data: { kind: "drive", channels: [] },
     });
   });
 
@@ -832,7 +918,7 @@ describe("findings while authoring", () => {
   it.each([
     [
       "drive",
-      (a: Actor): unknown => a.drive({ spine: (t) => t }, { at: 0, blend: -1 }),
+      (a: Actor): unknown => a.drive((t) => ({ spine: t }), { at: 0, blend: -1 }),
     ],
     ["reach", (a: Actor): unknown => a.reach("handR", { x: 0, y: 1 }, { blend: -1 })],
     ["draw", (_a: Actor, s: Stage): unknown => s.draw(() => undefined, { at: -1 })],
@@ -858,7 +944,7 @@ describe("findings while authoring", () => {
     [
       "drive",
       (a: Actor): unknown =>
-        a.drive({ spine: (t) => t }, untyped({ at: 0, ease: "out" })),
+        a.drive((t) => ({ spine: t }), untyped({ at: 0, ease: "out" })),
     ],
     [
       "draw",
@@ -905,7 +991,7 @@ describe("findings while authoring", () => {
   ])("records %s and replaces instead", (_label, mode, nearest) => {
     const built = acting((a) => {
       a.pose({ spine: 0.1 }, untyped({ mode }));
-      a.drive({ spine: (t) => t }, untyped({ mode, duration: 1 }));
+      a.drive((t) => ({ spine: t }), untyped({ mode, duration: 1 }));
     });
     expect(built.findings).toHaveLength(2);
     expect(built.findings[0]).toMatchObject({
