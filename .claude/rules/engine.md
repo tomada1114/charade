@@ -83,10 +83,10 @@ recorded sample is written against; changing any of it changes all of them at on
   when it is a whole number), as is a missing `build`: the rest of the scene is still
   checked. `stage.actor()` or `stage.draw()` on a scene with more rows is also a
   finding, `ERR_SCENE_ROW_REQUIRED`, recorded on row 0, since row 0 is a placeholder to
-  continue with. Only three things are thrown: a promise returned by `build`
-  (`AsyncBuildError`), a row the scene does not have (`UnknownRowError`), and a handle
-  used after `scene()` returned (`SceneClosedError`, which is also what an async build
-  meets after its `await`).
+  continue with; it is reported once per scene, so a loop cannot fill the cap. Only
+  three things are thrown: a promise returned by `build` (`AsyncBuildError`), a row the
+  scene does not have (`UnknownRowError`), and a handle used after `scene()` returned
+  (`SceneClosedError`, which is also what an async build meets after its `await`).
 - A second actor in a row is a finding (`ERR_SCENE_ROW_HAS_ACTOR`) and is still recorded
   on its own track.
 - An author's channel map is copied when the call is recorded; the scene never freezes

@@ -1,14 +1,13 @@
 import { type RandomSource, randomSource } from "../timeline/random.js";
-import type { BlendMode, DriveData, Moment } from "../timeline/segments.js";
+import { type BlendMode, isMotion, type Moment } from "../timeline/segments.js";
 import { MICROS_PER_SECOND } from "../timeline/time.js";
 import type { Timeline, TimelineSegment, TimelineTrack } from "../timeline/timeline.js";
 import { reach } from "./ik.js";
 import {
-  CHANNEL_NAMES,
   type ChannelName,
   EFFECTOR_CHAINS,
-  EFFECTOR_NAMES,
-  type EffectorName,
+  isChannelName,
+  isEffectorName,
   type Pose,
   REST_POSE,
 } from "./rig.js";
@@ -52,22 +51,10 @@ function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
   return typeof value === "object" && value !== null;
 }
 
-function isChannelName(name: string): name is ChannelName {
-  return CHANNEL_NAMES.some((channel) => channel === name);
-}
-
-function isEffectorName(name: unknown): name is EffectorName {
-  return EFFECTOR_NAMES.some((effector) => effector === name);
-}
-
 /** What a segment moves: its channels, and how their values are found. */
 interface Source {
   readonly evaluate: Evaluate;
   readonly names: readonly ChannelName[];
-}
-
-function isMotion(value: unknown): value is DriveData["motion"] {
-  return typeof value === "function";
 }
 
 /** The finite numbers `values` holds for `names`; anything else moves nothing. */
@@ -127,13 +114,12 @@ function driveOf(
     return undefined;
   }
   const recorded: readonly unknown[] = channels;
-  const names = recorded.filter(
-    (name): name is ChannelName => typeof name === "string" && isChannelName(name),
-  );
+  const names = recorded.filter(isChannelName);
   return {
     names,
     evaluate: (at, _beneath, instant) => {
-      if (!isMotion(motion)) {
+      // A function that threw or named nothing at `t = 0` is not called again.
+      if (!isMotion(motion) || names.length === 0) {
         return [];
       }
       const scale = instant.fps * MICROS_PER_SECOND;

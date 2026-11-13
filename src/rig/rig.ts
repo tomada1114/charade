@@ -84,6 +84,10 @@ export const CHANNEL_NAMES: readonly ChannelName[] = [
   ...FACE_NAMES,
 ];
 
+export function isChannelName(value: unknown): value is ChannelName {
+  return CHANNEL_NAMES.some((channel) => channel === value);
+}
+
 /** Every channel of the figure at one instant: angles, root and face. */
 export type Pose = Readonly<Record<ChannelName, number>>;
 
@@ -101,6 +105,10 @@ export const EFFECTOR_NAMES: readonly EffectorName[] = [
  * @public
  */
 export type EffectorName = "handL" | "handR" | "footL" | "footR";
+
+export function isEffectorName(value: unknown): value is EffectorName {
+  return EFFECTOR_NAMES.some((effector) => effector === value);
+}
 
 /** The two angles inverse kinematics sets to put an effector on its target. */
 export const EFFECTOR_CHAINS: Readonly<

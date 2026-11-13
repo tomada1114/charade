@@ -6,7 +6,8 @@ import {
   CHANNEL_NAMES,
   EFFECTOR_CHAINS,
   EFFECTOR_NAMES,
-  type EffectorName,
+  isChannelName,
+  isEffectorName,
 } from "../rig/rig.js";
 import {
   type ActorSegmentData,
@@ -15,6 +16,7 @@ import {
   DEFAULT_BLEND_MICROS,
   type DrawData,
   type DriveData,
+  isMotion,
 } from "../timeline/segments.js";
 import { randomSource } from "../timeline/random.js";
 import { type Micros, toSeconds } from "../timeline/time.js";
@@ -87,16 +89,8 @@ const ACTOR_OPTIONS = ["name"];
 
 const SECONDS_FIX = "Pass a finite number of seconds, 0 or more.";
 
-function isMotion(value: unknown): value is DriveData["motion"] {
-  return typeof value === "function";
-}
-
 function isDrawFunction(value: unknown): value is DrawData["draw"] {
   return typeof value === "function";
-}
-
-function isEffectorName(value: unknown): value is EffectorName {
-  return EFFECTOR_NAMES.some((name) => name === value);
 }
 
 function isBlendMode(value: unknown): value is BlendMode {
@@ -126,6 +120,7 @@ export class SceneBuilder {
   readonly #actors: ActorState[] = [];
   #latest: Micros = 0;
   #closed = false;
+  #rowRequiredReported = false;
 
   constructor(settings: StageSettings, findings: FindingCollector) {
     this.#settings = settings;
@@ -185,7 +180,7 @@ export class SceneBuilder {
 
   #row(index: number): Row {
     this.#open();
-    const handle = this.#handles[index];
+    const handle = Number.isSafeInteger(index) ? this.#handles[index] : undefined;
     if (handle === undefined) {
       throw new UnknownRowError(this.#settings.rows);
     }
@@ -195,7 +190,9 @@ export class SceneBuilder {
   /** Row 0 for a call made on the stage itself, which is only right on a one-row scene. */
   #stageRow(call: "actor" | "draw"): RowState {
     this.#open();
-    if (this.#settings.rows > 1) {
+    if (this.#settings.rows > 1 && !this.#rowRequiredReported) {
+      // Once per scene, so a loop of stage calls cannot fill the findings cap.
+      this.#rowRequiredReported = true;
       this.#report(
         "ERR_SCENE_ROW_REQUIRED",
         `stage.${call}() was called on a scene with ${String(this.#settings.rows)} rows; it was recorded on row 0.`,
@@ -434,7 +431,7 @@ export class SceneBuilder {
           where,
           { joint: name, nearest: [...chain] },
         );
-      } else if (!CHANNEL_NAMES.some((channel) => channel === name)) {
+      } else if (!isChannelName(name)) {
         this.#report(
           "ERR_SCENE_UNKNOWN_CHANNEL",
           `No channel is named ${name}; it was ignored.`,

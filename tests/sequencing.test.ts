@@ -429,6 +429,21 @@ describe("the composed pose", () => {
     expect(at(50)).toEqual(REST);
   });
 
+  it("does not call again a drive's function that threw at t = 0", () => {
+    let calls = 0;
+    const built = scene({ fps: 100 }, (stage) => {
+      stage.actor().drive(
+        () => {
+          calls += 1;
+          throw new Error("boom");
+        },
+        { duration: 1 },
+      );
+    });
+    expect(poseOf(built.timeline, 50)).toEqual(REST);
+    expect(calls).toBe(1);
+  });
+
   it("puts a hand on the point it reaches for, moving only that arm", () => {
     const at = play((a) => {
       a.reach("handR", { x: 0.2, y: 0.7 }, { duration: 0.5 });

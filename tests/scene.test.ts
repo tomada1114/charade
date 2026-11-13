@@ -340,6 +340,7 @@ describe("rows", () => {
     ["a fractional row", 1.5],
     ["a row that is not a number", Number.NaN],
     ["a huge row", Number.MAX_SAFE_INTEGER],
+    ["a row named by an array property", "length" as unknown as number],
   ])("fails on the line that names %s", (_label, index) => {
     let after = false;
     const error = thrownBy(() =>
@@ -389,6 +390,16 @@ describe("rows", () => {
     // The call was still recorded, on row 0, so the rest of the scene is checked.
     expect(built.timeline.rows[0]?.tracks).toHaveLength(1);
     expect(built.timeline.rows[1]?.tracks).toHaveLength(0);
+  });
+
+  it("reports stage calls on a several-row scene once per scene", () => {
+    const built = scene({ rows: 2, duration: 1 }, (stage) => {
+      for (let i = 0; i < 25; i += 1) {
+        stage.draw(() => undefined);
+      }
+    });
+    expect(onlyFinding(built).code).toBe("ERR_SCENE_ROW_REQUIRED");
+    expect(built.truncated).toBe(false);
   });
 
   it("does not report stage.row(i) calls on a scene with several rows", () => {

@@ -63,6 +63,10 @@ export interface DriveData {
   readonly blend: Micros;
 }
 
+export function isMotion(value: unknown): value is DriveData["motion"] {
+  return typeof value === "function";
+}
+
 /** A `wait` call, or the placeholder of a call that could not be recorded. */
 export interface WaitData {
   readonly kind: "wait";
