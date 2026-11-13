@@ -70,29 +70,20 @@ export function reach(pose: Pose, effector: EffectorName, target: Point): Pose {
   const directions = segmentDirections(pose);
   const [rootAngleName, middleAngleName] = EFFECTOR_CHAINS[effector];
   const isLeg = effector === "footL" || effector === "footR";
-  const root = isLeg ? pelvisPoint(pose) : shoulderPoint(pose);
+  const root = isLeg ? pelvisPoint(pose) : shoulderPoint(pose, directions);
   // The direction the first bone points when its own angle is 0.
   const parent = isLeg ? directions.base - Math.PI / 2 : directions.chest - Math.PI;
-  const solution = isLeg
-    ? solveTwoBone(
-        SEGMENT_LENGTHS.thigh,
-        SEGMENT_LENGTHS.shin,
-        target.x - root.x,
-        target.y - root.y,
-        "clockwise",
-        parent,
-      )
-    : solveTwoBone(
-        SEGMENT_LENGTHS.upperArm,
-        SEGMENT_LENGTHS.forearm,
-        target.x - root.x,
-        target.y - root.y,
-        "counterClockwise",
-        parent,
-      );
+  const solution = solveTwoBone(
+    isLeg ? SEGMENT_LENGTHS.thigh : SEGMENT_LENGTHS.upperArm,
+    isLeg ? SEGMENT_LENGTHS.shin : SEGMENT_LENGTHS.forearm,
+    target.x - root.x,
+    target.y - root.y,
+    isLeg ? "clockwise" : "counterClockwise",
+    parent,
+  );
   const result: Record<ChannelName, number> = { ...pose };
-  // Centring the turn on the limit's midpoint puts the cut behind and below the
-  // joint, where no reach lands; at [-π, π) it would sit on an arm straight overhead.
+  // Centring the turn on the limit's midpoint puts the cut behind and above the
+  // joint, inside the range no limit allows; at [-π, π) it would sit on an arm straight overhead.
   const { min, max } = ANGLE_LIMITS[rootAngleName];
   const centre = (min + max) / 2;
   result[rootAngleName] = centre + wrapAngle(solution.direction - parent - centre);

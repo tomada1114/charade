@@ -200,7 +200,9 @@ export function interpolatePose(from: Pose, to: Pose, progress: number): Pose {
   }
   const result: Record<ChannelName, number> = { ...from };
   for (const name of CHANNEL_NAMES) {
-    result[name] = (1 - progress) * from[name] + progress * to[name];
+    // This form, unlike (1 - p)·a + p·b, keeps a held channel exact, so an angle held
+    // at its limit is never pushed past it by a rounding step.
+    result[name] = from[name] + progress * (to[name] - from[name]);
   }
   return result;
 }

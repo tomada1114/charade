@@ -301,6 +301,17 @@ describe("interpolatePose", () => {
     expect(result.eyeOpen).toBe(1);
   });
 
+  it.each([0.063, 0.3, 0.5, 0.77])(
+    "keeps a channel held at its limit exactly at progress %s",
+    (progress) => {
+      // (1 - p)·2.6 + p·2.6 is 2.6000000000000005 at p 0.063, past the knee's limit.
+      const held = posed({ kneeR: 2.6 });
+      const result = interpolatePose(held, posed({ kneeR: 2.6, hipR: 1 }), progress);
+      expect(result.kneeR).toBe(2.6);
+      expect(anglesOutsideLimits(result)).toEqual([]);
+    },
+  );
+
   it("extrapolates past progress 1, so an overshooting easing carries through", () => {
     expect(interpolatePose(from, to, 1.5).hipR).toBeCloseTo(1.2, DIGITS);
     expect(interpolatePose(from, to, -0.5).hipR).toBeCloseTo(0, DIGITS);

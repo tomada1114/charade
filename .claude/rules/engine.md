@@ -124,6 +124,8 @@ pelvis (root: pelvisX, pelvisY)
 - The face is eight symmetric numbers: `eyeOpen`, `gazeX`, `gazeY`, `browHeight`,
   `browTilt`, `mouthCurve`, `mouthOpen`, `mouthWidth`. At rest the eyes are open
   (`eyeOpen` 1), the mouth is its normal width (`mouthWidth` 1), and the rest are 0.
+  Their ranges are `eyeOpen` 0..1.5, `mouthOpen` 0..1, `mouthWidth` 0.5..1.5, and the
+  other five −1..1.
 - `pose` and `drive` take one flat map of channels: angles, root and face. Two maps are
   interpolated linearly per channel, and progress 0 and 1 return the endpoints exactly
   rather than by the formula, which can miss by a rounding step. Progress outside 0..1
@@ -152,7 +154,8 @@ pelvis (root: pelvisX, pelvisY)
   succeed still draws a figure the check can flag. IK does not clamp to the limits: a
   foot target on the hip folds the knee to π, which the limit check flags. The first
   angle is read in the full turn centred on its limit's midpoint, which puts the cut
-  behind and below the joint; centred on 0, an arm straight overhead would sit on it.
+  behind and above the joint, inside the range no limit allows; centred on 0, an arm
+  straight overhead would sit on it.
 
 ## Space and angles
 

@@ -73,8 +73,10 @@ export function pelvisPoint(pose: Pose): Point {
 }
 
 /** The shoulder point of `pose`, where both arms hang. */
-export function shoulderPoint(pose: Pose): Point {
-  const directions = segmentDirections(pose);
+export function shoulderPoint(
+  pose: Pose,
+  directions: SegmentDirections = segmentDirections(pose),
+): Point {
   const waist = step(pelvisPoint(pose), directions.spine, SEGMENT_LENGTHS.spine);
   return step(waist, directions.chest, SEGMENT_LENGTHS.chest);
 }
