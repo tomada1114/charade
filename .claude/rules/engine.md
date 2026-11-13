@@ -220,8 +220,33 @@ change to the shape raises the version.
   excludes bitmap images and patterns, pixel readback, the back-reference to the canvas,
   and skia-only extensions. Pixel readback would break determinism; an image is a host
   object the recording context cannot log.
+- Booleans count with numbers and strings (`arc`'s direction), and so do arrays of
+  numbers (`setLineDash`, `roundRect`'s radii, typed `number | number[]` because
+  skia-canvas's mutable array parameter rejects a `readonly` one). Host-object overloads
+  are left out: `Path2D`, `DOMMatrix`, `DOMPointInit`, `Element`. So is `getTransform`,
+  whose result is a `DOMMatrix`.
+- Four members pass the rule and are still left out. `isPointInPath` and
+  `isPointInStroke` are a hit test the recording context cannot answer without a
+  rasteriser's geometry. skia-canvas implements neither `isContextLost` nor
+  `fontVariantCaps`, so with them its context could not be handed over as this
+  interface. `imageSmoothingEnabled` and `imageSmoothingQuality` belong to the image
+  family: they only govern how an image is resampled.
+- The names are `DrawingContext` (the full interface) and `ShapeContext` (the depth 4
+  type); `DrawingContext extends ShapeContext` with the text members. The handles and
+  shapes they return are `Gradient` (only `addColorStop`, structural so a real context's
+  gradient satisfies it) and `TextMeasurement` (`width` and the six bounding box
+  distances both real contexts report). All four are root exports.
 - Properties are declared with a wide getter and a narrow setter. A plain writable
-  property rejects one of the two real contexts (same spike).
+  property rejects one of the two real contexts (same spike). The pair differs only
+  where the two contexts differ: `fillStyle` and `strokeStyle` read as `string | object`
+  (a pattern or skia's texture) and take `string | Gradient`;
+  `globalCompositeOperation`, `textAlign` and `fontStretch` read as `string` and take
+  the standard keywords. Every other property is a plain one, since its two types agree.
+  The lint rule against unrelated accessor types is disabled on those five lines alone.
+- The DOM context's assignability is a type test in `tests/types.test.ts`: the root
+  `tsconfig.json` sets no `lib`, so its default DOM lib covers the tests, while
+  `tsconfig.build.json` pins `ES2023` and keeps DOM out of `src`. skia-canvas's
+  assignability is checked once it is a dependency.
 - The interface is receive-only for consumers: they are handed one and never implement
   it, so adding a member is a minor change. The recording context in this repository
   implements every member.

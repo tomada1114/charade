@@ -60,6 +60,26 @@ console.log(checkReport(findings).summary);
 // => { errors: 0, warnings: 1, truncated: false }
 ```
 
+- `DrawingContext` is the drawing context the engine draws a frame on: the standard
+  Canvas 2D members whose arguments and results are numbers, strings or this package's
+  own `Gradient` and `TextMeasurement`. `ShapeContext` is the same without the text
+  members, and is what a depth 4 drawing callback receives. Both are receive-only: you
+  are handed one, never implement it.
+
+```ts
+import type { ShapeContext } from "charade";
+
+function drawBall(ctx: ShapeContext): void {
+  const shade = ctx.createRadialGradient(0, 0.1, 0, 0, 0.1, 0.1);
+  shade.addColorStop(0, "#ffd166");
+  shade.addColorStop(1, "#e4572e");
+  ctx.beginPath();
+  ctx.arc(0, 0.1, 0.1, 0, Math.PI * 2);
+  ctx.fillStyle = shade;
+  ctx.fill();
+}
+```
+
 See the generated TypeDoc documentation from `pnpm docs:build` for the full API
 reference.
 

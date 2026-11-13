@@ -31,4 +31,10 @@ export type {
   Severity,
   SourceLocation,
 } from "./check/findings.js";
+export type {
+  DrawingContext,
+  Gradient,
+  ShapeContext,
+  TextMeasurement,
+} from "./draw/context.js";
 export { CharadeError, UnknownFlagError } from "./errors.js";
