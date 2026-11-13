@@ -178,12 +178,12 @@ export interface ShapeContext {
   /**
    * Adds a quadratic Bézier curve.
    *
-   * @param cpx - The control point's `x`.
-   * @param cpy - The control point's `y`.
+   * @param controlX - The control point's `x`.
+   * @param controlY - The control point's `y`.
    * @param x - The end point's `x`.
    * @param y - The end point's `y`.
    */
-  quadraticCurveTo(cpx: number, cpy: number, x: number, y: number): void;
+  quadraticCurveTo(controlX: number, controlY: number, x: number, y: number): void;
   /**
    * Adds a circular arc.
    *
