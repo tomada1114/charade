@@ -109,6 +109,14 @@ function pureLayerImports(extraPatterns) {
           regex: String.raw`^(\.\./)+(export(/|$)|cli(\.[jt]s)?$|cli/)`,
           message: `The export layer or the CLI ${PURE_LAYER_IS_PURE}`,
         },
+        {
+          // The patterns above read a specifier's leading `../` run as its
+          // depth, so `./../export/x.js` or `../rig/../export/x.js` would
+          // slip past them.
+          regex: String.raw`(^|/)(?!\.\.(/|$))[^/]+/\.\.?(/|$)`,
+          message:
+            "Write a relative import in normal form: every `../` first, then no `./` or `../` after a directory name.",
+        },
         ...extraPatterns,
       ],
     },
@@ -288,11 +296,15 @@ export default defineConfig([
       ],
       "no-restricted-properties": [
         "error",
-        {
-          object: "Math",
-          property: "random",
+        ...[
+          ["Math", "random"],
+          ["crypto", "getRandomValues"],
+          ["crypto", "randomUUID"],
+        ].map(([object, property]) => ({
+          object,
+          property,
           message: `Unseeded random ${PURE_LAYER_IS_PURE} Use the seeded random source from the timeline layer.`,
-        },
+        })),
       ],
     },
   },

@@ -407,16 +407,18 @@ describe("the layer boundary in eslint.config.mjs", () => {
     return config.rules ?? {};
   }
 
+  // `up` climbs from the file to src/, so a nested file is tested against the
+  // specifier that really reaches the export layer and the CLI.
   const pureFiles = [
-    ["a rig module", "src/rig/ik.ts"],
-    ["a timeline module", "src/timeline/time.ts"],
-    ["a check module", "src/check/findings.ts"],
-    ["a draw module", "src/draw/context.ts"],
-    ["a scene module", probes.scene],
-    ["a nested vocabulary module", probes.vocabulary],
+    ["a rig module", "src/rig/ik.ts", "../"],
+    ["a timeline module", "src/timeline/time.ts", "../"],
+    ["a check module", "src/check/findings.ts", "../"],
+    ["a draw module", "src/draw/context.ts", "../"],
+    ["a scene module", probes.scene, "../"],
+    ["a nested vocabulary module", probes.vocabulary, "../../"],
   ] as const;
 
-  describe.each(pureFiles)("in %s (%s)", (_label, relative) => {
+  describe.each(pureFiles)("in %s (%s)", (_label, relative, up) => {
     it.each([
       [
         "node:fs",
@@ -433,9 +435,17 @@ describe("the layer boundary in eslint.config.mjs", () => {
       ],
       [
         "the export layer",
-        'import { a } from "../export/raster.js";\nexport const b = a;\n',
+        `import { a } from "${up}export/raster.js";\nexport const b = a;\n`,
       ],
-      ["the CLI", 'import { a } from "../cli.js";\nexport const b = a;\n'],
+      ["the CLI", `import { a } from "${up}cli.js";\nexport const b = a;\n`],
+      [
+        "the export layer through ./",
+        `import { a } from "./${up}export/raster.js";\nexport const b = a;\n`,
+      ],
+      [
+        "the export layer through another directory",
+        `import { a } from "${up}assets/../export/raster.js";\nexport const b = a;\n`,
+      ],
     ])("rejects importing %s", async (_name, code) => {
       expect(await boundaryReports(relative, code)).toEqual(["no-restricted-imports"]);
     });
@@ -449,10 +459,17 @@ describe("the layer boundary in eslint.config.mjs", () => {
       expect(await boundaryReports(relative, code)).toEqual(["no-restricted-globals"]);
     });
 
-    it("rejects Math.random", async () => {
-      expect(
-        await boundaryReports(relative, "export const r = Math.random();\n"),
-      ).toEqual(["no-restricted-properties"]);
+    it.each([
+      ["Math.random", "export const r = Math.random();\n"],
+      [
+        "crypto.getRandomValues",
+        "export const r = crypto.getRandomValues(new Uint8Array(1));\n",
+      ],
+      ["crypto.randomUUID", "export const r = crypto.randomUUID();\n"],
+    ])("rejects %s", async (_name, code) => {
+      expect(await boundaryReports(relative, code)).toEqual([
+        "no-restricted-properties",
+      ]);
     });
 
     it("accepts a same-layer import whose directory shares a builtin's name", async () => {
