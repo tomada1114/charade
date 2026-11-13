@@ -354,3 +354,220 @@ describe("the .claude/skills entry in tsconfig.json", () => {
     });
   });
 });
+
+describe("the layer boundary in eslint.config.mjs", () => {
+  const BOUNDARY_RULES = [
+    "no-restricted-imports",
+    "no-restricted-globals",
+    "no-restricted-properties",
+  ];
+
+  // Paths no later issue will create: typescript-eslint refuses a default-project
+  // file once it joins the real project.
+  const probes = {
+    scene: "src/scene/layer-boundary-probe.ts",
+    vocabulary: "src/vocabulary/props/layer-boundary-probe.ts",
+    exporter: "src/export/layer-boundary-probe.ts",
+  };
+
+  // A separate instance: only these probes, which do not exist on disk, need
+  // the default project.
+  const linter = new ESLint({
+    cwd: repoRoot,
+    overrideConfig: {
+      languageOptions: {
+        parserOptions: {
+          projectService: { allowDefaultProject: Object.values(probes) },
+        },
+      },
+    },
+  });
+
+  /** The boundary rule ids ESLint reports for `code` linted as `relative`. */
+  async function boundaryReports(relative: string, code: string): Promise<string[]> {
+    const [result] = await linter.lintText(code, {
+      filePath: path.join(repoRoot, relative),
+    });
+    const messages = result?.messages ?? [];
+    // Without this, a "reports nothing" case passes on a file that never parsed.
+    expect(
+      messages.filter((message) => message.fatal === true || message.ruleId === null),
+    ).toEqual([]);
+    return messages
+      .map((message) => message.ruleId ?? "")
+      .filter((ruleId) => BOUNDARY_RULES.includes(ruleId));
+  }
+
+  async function effectiveRules(
+    relative: string,
+  ): Promise<Record<string, RuleSetting | undefined>> {
+    const config = (await eslint.calculateConfigForFile(
+      path.join(repoRoot, relative),
+    )) as EffectiveConfig;
+    return config.rules ?? {};
+  }
+
+  const pureFiles = [
+    ["a rig module", "src/rig/ik.ts"],
+    ["a timeline module", "src/timeline/time.ts"],
+    ["a check module", "src/check/findings.ts"],
+    ["a draw module", "src/draw/context.ts"],
+    ["a scene module", probes.scene],
+    ["a nested vocabulary module", probes.vocabulary],
+  ] as const;
+
+  describe.each(pureFiles)("in %s (%s)", (_label, relative) => {
+    it.each([
+      [
+        "node:fs",
+        'import { readFileSync } from "node:fs";\nexport const read = readFileSync;\n',
+      ],
+      ["fs", 'import { readFileSync } from "fs";\nexport const read = readFileSync;\n'],
+      [
+        "fs/promises",
+        'import { readFile } from "fs/promises";\nexport const read = readFile;\n',
+      ],
+      [
+        "skia-canvas",
+        'import { Canvas } from "skia-canvas";\nexport const C = Canvas;\n',
+      ],
+      [
+        "the export layer",
+        'import { a } from "../export/raster.js";\nexport const b = a;\n',
+      ],
+      ["the CLI", 'import { a } from "../cli.js";\nexport const b = a;\n'],
+    ])("rejects importing %s", async (_name, code) => {
+      expect(await boundaryReports(relative, code)).toEqual(["no-restricted-imports"]);
+    });
+
+    it.each([
+      ["Date", "export const now = Date.now();\n"],
+      ["performance", "export const now = performance.now();\n"],
+      ["globalThis.Date", "export const now = globalThis.Date.now();\n"],
+      ["process", "export const env = process.env;\n"],
+    ])("rejects the global %s", async (_name, code) => {
+      expect(await boundaryReports(relative, code)).toEqual(["no-restricted-globals"]);
+    });
+
+    it("rejects Math.random", async () => {
+      expect(
+        await boundaryReports(relative, "export const r = Math.random();\n"),
+      ).toEqual(["no-restricted-properties"]);
+    });
+
+    it("accepts a same-layer import whose directory shares a builtin's name", async () => {
+      expect(
+        await boundaryReports(
+          relative,
+          'import { a } from "./util/a.js";\nimport { b } from "../events/b.js";\nexport const c = [a, b];\n',
+        ),
+      ).toEqual([]);
+    });
+  });
+
+  describe("in the vocabulary", () => {
+    it.each([
+      ["another layer", "../../rig/rig.js"],
+      ["a root module other than the entry", "../../errors.js"],
+      ["src/internal", "../../internal/x.js"],
+    ])("rejects importing %s", async (_label, specifier) => {
+      expect(
+        await boundaryReports(
+          probes.vocabulary,
+          `import { a } from "${specifier}";\nexport const b = a;\n`,
+        ),
+      ).toEqual(["no-restricted-imports"]);
+    });
+
+    it.each([
+      ["the root entry", "../../index.js"],
+      ["another vocabulary module", "../actions/walk.js"],
+    ])("accepts importing %s", async (_label, specifier) => {
+      expect(
+        await boundaryReports(
+          probes.vocabulary,
+          `import { a } from "${specifier}";\nexport const b = a;\n`,
+        ),
+      ).toEqual([]);
+    });
+  });
+
+  it.each([
+    ["the CLI entry", "src/cli.ts"],
+    ["an export-layer module", probes.exporter],
+  ])("lets %s import node:fs and skia-canvas", async (_label, relative) => {
+    const code =
+      'import { readFileSync } from "node:fs";\nimport { Canvas } from "skia-canvas";\nexport const io = [readFileSync, Canvas, Date.now(), Math.random()];\n';
+    expect(await boundaryReports(relative, code)).toEqual([]);
+  });
+
+  describe("keeps the settings the boundary blocks overlap", () => {
+    function syntaxSelectors(setting: RuleSetting | undefined): unknown[] {
+      return typeof setting === "number"
+        ? []
+        : (setting?.slice(1) ?? []).map((entry) => readKey(entry, "selector"));
+    }
+
+    it("keeps the src/** rules on a pure-layer file", async () => {
+      const rules = await effectiveRules("src/rig/ik.ts");
+      expect(syntaxSelectors(rules["no-restricted-syntax"])).toEqual([
+        "ExportAllDeclaration",
+      ]);
+      expect(ruleSeverity(rules["no-restricted-exports"])).toBe(2);
+      expect(
+        ruleSeverity(rules["@typescript-eslint/switch-exhaustiveness-check"]),
+      ).toBe(2);
+      expect(ruleSeverity(rules["no-console"])).toBe(2);
+    });
+
+    it("keeps all three export restrictions on src/index.ts and adds no boundary rule", async () => {
+      const rules = await effectiveRules("src/index.ts");
+      expect(syntaxSelectors(rules["no-restricted-syntax"])).toEqual([
+        "ExportAllDeclaration",
+        "ExportNamedDeclaration[source.value=/^\\.\\/internal\\//]",
+        "ExportAllDeclaration[source.value=/^\\.\\/internal\\//]",
+      ]);
+      expect(ruleSeverity(rules["no-restricted-imports"])).toBeUndefined();
+    });
+
+    it.each([
+      ["the CLI entry", "src/cli.ts"],
+      ["an export-layer module", "src/export/raster.ts"],
+    ])("applies no boundary rule to %s", async (_label, relative) => {
+      const rules = await effectiveRules(relative);
+      for (const rule of BOUNDARY_RULES) {
+        expect(ruleSeverity(rules[rule])).toBeUndefined();
+      }
+      expect(syntaxSelectors(rules["no-restricted-syntax"])).toEqual([
+        "ExportAllDeclaration",
+      ]);
+    });
+
+    it("keeps no-console off for the CLI entry", async () => {
+      expect(ruleSeverity((await effectiveRules("src/cli.ts"))["no-console"])).toBe(0);
+    });
+
+    it("keeps src/internal unimportable from tests", async () => {
+      const setting = (await effectiveRules("tests/tooling-ignores.test.ts"))[
+        "no-restricted-imports"
+      ];
+      const groups =
+        typeof setting === "number"
+          ? []
+          : (setting?.slice(1) ?? []).flatMap((entry) => {
+              const patterns = readKey(entry, "patterns");
+              return Array.isArray(patterns)
+                ? patterns.map((pattern: unknown) => readKey(pattern, "group"))
+                : [];
+            });
+      expect(groups).toEqual([
+        [
+          "**/src/internal",
+          "**/src/internal/**",
+          "**/dist/internal",
+          "**/dist/internal/**",
+        ],
+      ]);
+    });
+  });
+});
