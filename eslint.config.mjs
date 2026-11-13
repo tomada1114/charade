@@ -58,6 +58,71 @@ function isUniversalProfile() {
   return Array.isArray(types) && types.length === 0;
 }
 
+/** Node's built-in module names without the `node:` prefix. */
+const BARE_BUILTINS = builtinModules.filter((name) => !name.startsWith("node:"));
+
+/** The globals that exist only under Node. */
+const NODE_GLOBALS = [
+  "process",
+  "Buffer",
+  "global",
+  "__dirname",
+  "__filename",
+  "require",
+  "module",
+  "exports",
+  "setImmediate",
+  "clearImmediate",
+];
+
+/** The pure layers of the table in AGENTS.md § Architecture. */
+const PURE_LAYERS = ["scene", "timeline", "rig", "draw", "check", "vocabulary"];
+
+const PURE_LAYER_IS_PURE =
+  'is not allowed in a pure layer: see "Architecture" in AGENTS.md. Only src/export/ and src/cli.ts are Node-only.';
+
+/**
+ * `no-restricted-imports` options for every pure layer, plus any extra
+ * patterns one layer adds.
+ *
+ * @remarks
+ * Options replace rather than merge across config objects, so a narrower
+ * block for one layer must restate these or it would switch them off there.
+ * Bare builtin names go in `paths`, not in a gitignore-style `group`: a bare
+ * `util` pattern also matches a relative `../util/a.js`.
+ *
+ * @param {Record<string, unknown>[]} extraPatterns - Patterns one layer adds.
+ * @returns {import("eslint").Linter.RuleEntry} The rule entry.
+ */
+function pureLayerImports(extraPatterns) {
+  return [
+    "error",
+    {
+      paths: BARE_BUILTINS.map((name) => ({
+        name,
+        message: `A Node built-in ${PURE_LAYER_IS_PURE}`,
+      })),
+      patterns: [
+        { regex: "^node:", message: `A Node built-in ${PURE_LAYER_IS_PURE}` },
+        { regex: "^skia-canvas(/|$)", message: `skia-canvas ${PURE_LAYER_IS_PURE}` },
+        {
+          regex: String.raw`^(\.\./)+(export(/|$)|cli(\.[jt]s)?$|cli/)`,
+          message: `The export layer or the CLI ${PURE_LAYER_IS_PURE}`,
+        },
+        {
+          // The patterns above read a specifier's leading `../` run as its
+          // depth, so `./../export/x.js` or `../rig/../export/x.js` would
+          // slip past them.
+          regex: String.raw`(^|/)(?!\.\.(/|$))[^/]+/\.\.?(/|$)`,
+          message:
+            "Write a relative import in normal form: every `../` first, then no `./` or `../` after a directory name.",
+        },
+        ...extraPatterns,
+      ],
+    },
+  ];
+}
+
 /** @type {import("eslint").Linter.Config[]} */
 const universalSourceRestrictions = isUniversalProfile()
   ? [
@@ -70,10 +135,7 @@ const universalSourceRestrictions = isUniversalProfile()
             {
               patterns: [
                 {
-                  group: [
-                    "node:*",
-                    ...builtinModules.filter((name) => !name.startsWith("node:")),
-                  ],
+                  group: ["node:*", ...BARE_BUILTINS],
                   message:
                     "The universal-library profile must run outside Node. Keep Node-only code in a separate package.",
                 },
@@ -82,18 +144,7 @@ const universalSourceRestrictions = isUniversalProfile()
           ],
           "no-restricted-globals": [
             "error",
-            ...[
-              "process",
-              "Buffer",
-              "global",
-              "__dirname",
-              "__filename",
-              "require",
-              "module",
-              "exports",
-              "setImmediate",
-              "clearImmediate",
-            ].map((name) => ({
+            ...NODE_GLOBALS.map((name) => ({
               name,
               message: "The universal-library profile cannot depend on Node globals.",
             })),
@@ -219,6 +270,61 @@ export default defineConfig([
     },
   },
   ...universalSourceRestrictions,
+  {
+    // After the universal profile's block, and a superset of it, so switching
+    // that profile on cannot loosen a pure layer.
+    name: "boundaries/pure-layers",
+    files: [`src/{${PURE_LAYERS.join(",")}}/**/*.ts`],
+    rules: {
+      "no-restricted-imports": pureLayerImports([]),
+      "no-restricted-globals": [
+        "error",
+        {
+          // Also catches `globalThis.Date` and the like.
+          checkGlobalObject: true,
+          globals: [
+            ...["Date", "performance"].map((name) => ({
+              name,
+              message: `The clock ${PURE_LAYER_IS_PURE} Frame n is a function of the timeline and n alone.`,
+            })),
+            ...NODE_GLOBALS.map((name) => ({
+              name,
+              message: `A Node-only global ${PURE_LAYER_IS_PURE}`,
+            })),
+          ],
+        },
+      ],
+      "no-restricted-properties": [
+        "error",
+        ...[
+          ["Math", "random"],
+          ["crypto", "getRandomValues"],
+          ["crypto", "randomUUID"],
+        ].map(([object, property]) => ({
+          object,
+          property,
+          message: `Unseeded random ${PURE_LAYER_IS_PURE} Use the seeded random source from the timeline layer.`,
+        })),
+      ],
+    },
+  },
+  {
+    // A specifier does not say how deep its file is, so "only the root entry"
+    // is enforced as "not into another top-level module of src/" (export and
+    // cli are already in the shared patterns). A new layer or root module has
+    // to be added to this list.
+    name: "boundaries/vocabulary-uses-the-root-entry",
+    files: ["src/vocabulary/**/*.ts"],
+    rules: {
+      "no-restricted-imports": pureLayerImports([
+        {
+          regex: String.raw`^(\.\./)+(scene|timeline|rig|draw|check|internal|errors)(/|\.[jt]s$|$)`,
+          message:
+            'Built-in vocabulary uses the same public API a user has: import it from the root entry (src/index.ts). See "Architecture" in AGENTS.md.',
+        },
+      ]),
+    },
+  },
   {
     name: "automation/node-scripts",
     files: ["scripts/**/*.mjs", ".claude/skills/**/*.mjs"],
