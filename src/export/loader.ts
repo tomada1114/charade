@@ -1,4 +1,4 @@
-import { existsSync } from "node:fs";
+import { statSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
@@ -171,15 +171,27 @@ const TS_FOR_JS: Readonly<Record<string, string>> = {
   ".cjs": ".cts",
 };
 
+/** Whether `file` names a regular file. */
+function isFile(file: string): boolean {
+  return statSync(file, { throwIfNoEntry: false })?.isFile() === true;
+}
+
+// A bare or `#` specifier reaches its file through a package's `exports` or `imports`
+// map, so its spelling need not end the way the file's path does.
+const PATH_SPECIFIER = /^(?:\.{1,2}\/|\/|file:)/;
+
 /** The specifier that names the existing `.ts` file meant by `specifier`, if any. */
 function tsSuggestion(
   specifier: string,
   file: string,
   exists: (file: string) => boolean,
 ): string | undefined {
+  if (specifier !== file && !PATH_SPECIFIER.test(specifier)) {
+    return undefined;
+  }
   const extension = path.extname(file);
   const replacement = TS_FOR_JS[extension];
-  if (replacement !== undefined) {
+  if (replacement !== undefined && specifier.endsWith(extension)) {
     const candidate = file.slice(0, -extension.length) + replacement;
     return exists(candidate)
       ? specifier.slice(0, -extension.length) + replacement
@@ -303,7 +315,7 @@ const installOnce = (): InstalledHook => (installed ??= installResolveHook());
  * @throws A {@link SceneLoadError} for every failure.
  */
 export async function loadScene(file: string, options: LoadOptions): Promise<Scene> {
-  const exists = options.exists ?? existsSync;
+  const exists = options.exists ?? isFile;
   const absolute = path.resolve(file);
   if (!exists(absolute)) {
     throw new SceneNotFoundError(file);

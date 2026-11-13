@@ -403,7 +403,7 @@ function usageErrorFrom(
 type Parsed =
   | { readonly kind: "run"; readonly invocation: Invocation }
   | { readonly kind: "help"; readonly text: string }
-  | { readonly kind: "error"; readonly error: Reportable; readonly usage: string };
+  | { readonly kind: "error"; readonly error: Reportable };
 
 function parseCommand(command: CommandName, args: readonly string[]): Parsed {
   const spec = COMMANDS[command];
@@ -417,11 +417,7 @@ function parseCommand(command: CommandName, args: readonly string[]): Parsed {
       allowPositionals: true,
     }));
   } catch (error) {
-    return {
-      kind: "error",
-      error: usageErrorFrom(error, args, spec.options, command),
-      usage: commandUsage(command),
-    };
+    return { kind: "error", error: usageErrorFrom(error, args, spec.options, command) };
   }
   if (values["help"] === true) {
     return { kind: "help", text: commandUsage(command) };
@@ -431,11 +427,7 @@ function parseCommand(command: CommandName, args: readonly string[]): Parsed {
     const value = values[name];
     return typeof value === "string" ? value : undefined;
   };
-  const fail = (error: Reportable): Parsed => ({
-    kind: "error",
-    error,
-    usage: commandUsage(command),
-  });
+  const fail = (error: Reportable): Parsed => ({ kind: "error", error });
   const help = `${NAME} ${command} --help`;
 
   if (command === "catalog") {
@@ -459,38 +451,39 @@ function parseCommand(command: CommandName, args: readonly string[]): Parsed {
   if (extra.length > 0) {
     return fail(new UnexpectedArgumentError(command, help));
   }
+  const atText = text("at");
+  let at: At | undefined;
   try {
-    const atText = text("at");
-    const at = atText === undefined ? undefined : parseAt(atText, `${command}.at`);
-    switch (command) {
-      case "render":
-        return { kind: "run", invocation: { command, scene, out: text("out"), json } };
-      case "check":
-        return {
-          kind: "run",
-          invocation: { command, scene, strict: values["strict"] === true, at, json },
-        };
-      case "frame":
-        if (at === undefined) {
-          return fail(
-            new MissingFlagError("frame.at", `${NAME} frame scene.ts --at 1.5`),
-          );
-        }
-        return {
-          kind: "run",
-          invocation: { command, scene, at, out: text("out"), json },
-        };
-      case "sheet":
-        return {
-          kind: "run",
-          invocation: { command, scene, out: text("out"), ghost: text("ghost"), json },
-        };
-    }
+    at = atText === undefined ? undefined : parseAt(atText, `${command}.at`);
   } catch (error) {
     if (error instanceof InvalidAtError) {
       return fail(error);
     }
     throw error;
+  }
+  switch (command) {
+    case "render":
+      return { kind: "run", invocation: { command, scene, out: text("out"), json } };
+    case "check":
+      return {
+        kind: "run",
+        invocation: { command, scene, strict: values["strict"] === true, at, json },
+      };
+    case "frame":
+      if (at === undefined) {
+        return fail(
+          new MissingFlagError("frame.at", `${NAME} frame scene.ts --at 1.5`),
+        );
+      }
+      return {
+        kind: "run",
+        invocation: { command, scene, at, out: text("out"), json },
+      };
+    case "sheet":
+      return {
+        kind: "run",
+        invocation: { command, scene, out: text("out"), ghost: text("ghost"), json },
+      };
   }
 }
 
@@ -501,7 +494,7 @@ function parse(argv: readonly string[]): Parsed {
     return parseCommand(first, rest);
   }
   if (first !== undefined && !first.startsWith("-")) {
-    return { kind: "error", error: new UnknownCommandError(first), usage: usage() };
+    return { kind: "error", error: new UnknownCommandError(first) };
   }
   let help: boolean | undefined;
   try {
@@ -517,13 +510,12 @@ function parse(argv: readonly string[]): Parsed {
     return {
       kind: "error",
       error: usageErrorFrom(error, argv, COMMON_OPTIONS, undefined),
-      usage: usage(),
     };
   }
   if (help === true) {
     return { kind: "help", text: usage() };
   }
-  return { kind: "error", error: new NoCommandError(), usage: usage() };
+  return { kind: "error", error: new NoCommandError() };
 }
 
 /** Whether `--json` was asked for, read before parsing so a usage error honours it. */
@@ -651,7 +643,7 @@ export async function runCli(
     case "error":
       return failed(
         parsed.error,
-        parsed.error.code === "ERR_CLI_NO_COMMAND" ? parsed.usage : undefined,
+        parsed.error.code === "ERR_CLI_NO_COMMAND" ? usage() : undefined,
       );
     case "run":
       break;

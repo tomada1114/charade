@@ -222,6 +222,23 @@ describe("classifyLoadError", () => {
   });
 
   it.each([
+    { label: "a subpath import", specifier: "#lib/x", file: "/s/lib/x.js" },
+    { label: "a package main", specifier: "pkg", file: "/s/node_modules/pkg/index.js" },
+  ])(
+    "suggests no .ts spelling for $label mapped to a missing file",
+    ({ specifier, file }) => {
+      const error = nodeError("ERR_MODULE_NOT_FOUND", {
+        url: pathToFileURL(file).href,
+      });
+      const failures = [{ specifier, parentURL: "file:///s/scene.ts", error }];
+      expect(classifyLoadError(error, { failures, exists: () => true })).toMatchObject({
+        code: "ERR_LOAD_MODULE_NOT_FOUND",
+        specifier,
+      });
+    },
+  );
+
+  it.each([
     { specifier: "lodash", name: "lodash" },
     { specifier: "lodash/fp", name: "lodash" },
     { specifier: "@scope/pkg/sub", name: "@scope/pkg" },
@@ -348,6 +365,17 @@ describe("loadScene", () => {
         exists: () => false,
       }),
     ).rejects.toMatchObject({ code: "ERR_LOAD_SCENE_NOT_FOUND", path: "missing.ts" });
+  });
+
+  it("reports a folder given as the scene path as no scene file", async () => {
+    const folder = mkdtempSync(path.join(tmpdir(), "charade-folder-"));
+    try {
+      await expect(
+        loadScene(folder, { notice: () => undefined, install }),
+      ).rejects.toMatchObject({ code: "ERR_LOAD_SCENE_NOT_FOUND", path: folder });
+    } finally {
+      rmSync(folder, { recursive: true, force: true });
+    }
   });
 
   it("imports the scene by URL and returns its default export", async () => {
