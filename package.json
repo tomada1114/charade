@@ -90,5 +90,8 @@
   },
   "bin": {
     "charade": "./dist/cli.js"
+  },
+  "dependencies": {
+    "skia-canvas": "^4.0.0"
   }
 }

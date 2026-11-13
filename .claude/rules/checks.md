@@ -77,6 +77,12 @@ recorded sample is how an unintended change in appearance fails a test.
   `ERR_CLI_` (usage), `ERR_LOAD_` (loading a scene), `ERR_SCENE_` (authoring calls),
   `ERR_DEFINE_` (definitions), `ERR_CHECK_` (computed over the timeline), `ERR_RENDER_`,
   and `ERR_ENV_` (ffmpeg, fonts, the native binary).
+- skia-canvas or its native binary failing to load throws `SkiaUnavailableError`
+  (`ERR_ENV_SKIA_UNAVAILABLE`, internal to `src/export/raster.ts`), carrying a `fix`
+  line and the loader's error as `cause`; the code is not chosen by skia's message text.
+  A canvas size that is not a positive whole number throws `InvalidCanvasSizeError`
+  (`ERR_RENDER_INVALID_SIZE`, same module) before skia is loaded, since skia would
+  resize it quietly and the raw output would lose its `width × height × 4` length.
 - An unknown name or a bad parameter while a scene runs is recorded as a finding and
   authoring continues with a placeholder, so one run reports every mistake instead of
   the first. Recording stops at twenty findings (`FINDING_CAP`), keeping the first ones;
