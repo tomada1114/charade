@@ -90,6 +90,18 @@ describe("serializeTimeline", () => {
       "timeline.rows[0].tracks[0].segments[0].data.x",
     ],
     ["undefined", undefined, "timeline.rows[0].tracks[0].segments[0].data.x"],
+    [
+      "an array hole",
+      new Array<number>(1),
+      "timeline.rows[0].tracks[0].segments[0].data.x[0]",
+    ],
+    ["a Map", new Map([["a", 1]]), "timeline.rows[0].tracks[0].segments[0].data.x"],
+    ["a Date", new Date(0), "timeline.rows[0].tracks[0].segments[0].data.x"],
+    [
+      "a typed array",
+      new Float64Array([1]),
+      "timeline.rows[0].tracks[0].segments[0].data.x",
+    ],
   ])("rejects %s, which JSON would change", (_label, value, path) => {
     const data = { x: value } as unknown as TimelineValue;
     try {
@@ -187,6 +199,22 @@ describe("parseTimeline", () => {
         '"rows":[]',
         '"rows":[{"tracks":[{"kind":"actor","name":"hero","occurrence":0,' +
           '"segments":[{"data":null,"end":null,"start":0.5}]}]}]',
+      ),
+    ],
+    [
+      "a segment that ends before it starts",
+      valid.replace(
+        '"rows":[]',
+        '"rows":[{"tracks":[{"kind":"actor","name":"hero","occurrence":0,' +
+          '"segments":[{"data":null,"end":1,"start":2}]}]}]',
+      ),
+    ],
+    [
+      "segment data with a number JSON reads as an infinity",
+      valid.replace(
+        '"rows":[]',
+        '"rows":[{"tracks":[{"kind":"actor","name":"hero","occurrence":0,' +
+          '"segments":[{"data":{"x":[1e400]},"end":null,"start":0}]}]}]',
       ),
     ],
     [

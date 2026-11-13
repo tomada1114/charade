@@ -33,10 +33,13 @@ export function bakeMotion(
   }
   const count = Math.ceil((end - start) / BAKE_STEP_MICROS) + 1;
   const channels: Record<string, number[]> = {};
+  let channelCount = 0;
   for (let index = 0; index < count; index += 1) {
     const values = sample(start + index * BAKE_STEP_MICROS);
     const names = Object.keys(values);
-    if (index > 0 && names.length !== Object.keys(channels).length) {
+    if (index === 0) {
+      channelCount = names.length;
+    } else if (names.length !== channelCount) {
       throw new TimelineRangeError("sample");
     }
     for (const name of names) {

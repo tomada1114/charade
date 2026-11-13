@@ -160,9 +160,11 @@ change to the shape raises the version.
   UTF-16 code unit, written by hand because an engine puts integer-like keys first.
 - The placeholder is `{"$omitted":"function"}` and `lossy` is always present. A parsed
   document keeps the placeholder as data, so writing it back gives the same text.
-- A non-finite number or `undefined` is rejected when writing, since JSON would change
-  it. Reading checks every field and reports invalid JSON, another version, or a wrong
-  shape as a result.
+- A non-finite number, `undefined`, an array hole or an object that is not plain (a
+  `Map`, a `Date`, a typed array) is rejected when writing, since JSON would change it.
+  Reading rejects a segment that ends before it starts and a number JSON reads as an
+  infinity. Reading checks every field and reports invalid JSON, another version, or a
+  wrong shape as a result.
 - The timeline types are internal: none is a root export until the scene layer decides
   what a scene exposes.
 

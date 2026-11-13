@@ -81,10 +81,16 @@ function write(value: unknown, state: { lossy: boolean }, path: string): string 
   }
   if (Array.isArray(value)) {
     const items: readonly unknown[] = value;
-    return `[${items.map((item, index) => write(item, state, `${path}[${String(index)}]`)).join(",")}]`;
+    // Array.from visits holes as undefined, which is rejected; map would skip them and
+    // join would write `[1,,2]`.
+    const written = Array.from(items, (item, index) =>
+      write(item, state, `${path}[${String(index)}]`),
+    );
+    return `[${written.join(",")}]`;
   }
-  if (!isRecord(value)) {
-    // NaN, an infinity, undefined, a bigint or a symbol: JSON would drop or change it.
+  if (!isPlainObject(value)) {
+    // NaN, an infinity, undefined, a bigint, a symbol, or an object such as a Map, a
+    // Date or a typed array: JSON would drop or change it.
     throw new TimelineRangeError(path);
   }
   // Written by hand rather than by JSON.stringify: an engine puts integer-like keys
@@ -99,6 +105,26 @@ function write(value: unknown, state: { lossy: boolean }, path: string): string 
 
 function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isPlainObject(value: unknown): value is Readonly<Record<string, unknown>> {
+  if (!isRecord(value)) {
+    return false;
+  }
+  const prototype: unknown = Object.getPrototypeOf(value);
+  return prototype === Object.prototype || prototype === null;
+}
+
+/** Whether a parsed value holds only finite numbers: JSON.parse reads `1e400` as Infinity. */
+function isFiniteData(value: unknown): boolean {
+  if (typeof value === "number") {
+    return Number.isFinite(value);
+  }
+  if (Array.isArray(value)) {
+    const items: readonly unknown[] = value;
+    return items.every(isFiniteData);
+  }
+  return isRecord(value) ? Object.values(value).every(isFiniteData) : true;
 }
 
 function hasExactKeys(
@@ -150,11 +176,16 @@ function isTrack(value: unknown): value is Track {
 }
 
 function isSegment(value: unknown): value is Segment {
-  // `data` came out of JSON.parse, so it is already a JSON value.
+  // `data` came out of JSON.parse, so it is already a JSON value, though possibly
+  // with an overflowed number.
+  if (!isRecord(value) || !hasExactKeys(value, ["data", "end", "start"])) {
+    return false;
+  }
+  const start = value["start"];
+  const end = value["end"];
   return (
-    isRecord(value) &&
-    hasExactKeys(value, ["data", "end", "start"]) &&
-    isMicros(value["start"]) &&
-    (value["end"] === null || isMicros(value["end"]))
+    isMicros(start) &&
+    (end === null || (isMicros(end) && end >= start)) &&
+    isFiniteData(value["data"])
   );
 }

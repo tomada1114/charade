@@ -1,4 +1,4 @@
-import { firstFrameAtOrAfter, frameCount, type Micros } from "./time.js";
+import { firstFrameAtOrAfter, type Micros } from "./time.js";
 
 /** A function a scene put on the timeline at depth 3 or 4. It does not serialise. */
 export type TimelineFunction = (...args: never[]) => unknown;
@@ -81,12 +81,8 @@ export function computeDuration(timeline: Timeline): DurationResult {
   if (micros === undefined) {
     return { ok: false, reason: "no-bounded-segment" };
   }
-  return {
-    ok: true,
-    micros,
-    lastFrame: firstFrameAtOrAfter(micros, timeline.fps),
-    frameCount: frameCount(micros, timeline.fps),
-  };
+  const lastFrame = firstFrameAtOrAfter(micros, timeline.fps);
+  return { ok: true, micros, lastFrame, frameCount: lastFrame + 1 };
 }
 
 function lastBoundedEnd(rows: readonly Row[]): Micros | undefined {
