@@ -1,6 +1,11 @@
 // The DOM lib is already in this program by default; naming it keeps R6's check working
 // if `lib` is ever set. The build config (lib ES2023, src only) still has no DOM.
 /// <reference lib="dom" />
+import type {
+  CanvasGradient as SkiaGradient,
+  CanvasRenderingContext2D as SkiaContext,
+  TextMetrics as SkiaTextMetrics,
+} from "skia-canvas";
 import { describe, expect, expectTypeOf, it } from "vitest";
 
 import {
@@ -212,6 +217,13 @@ describe("drawing context types", () => {
     expectTypeOf<CanvasRenderingContext2D>().toExtend<DrawingContext>();
     expectTypeOf<CanvasGradient>().toExtend<Gradient>();
     expectTypeOf<TextMetrics>().toExtend<TextMeasurement>();
+  });
+
+  it("accepts skia-canvas's 2D context as the full interface", () => {
+    expectTypeOf<SkiaContext>().not.toBeAny();
+    expectTypeOf<SkiaContext>().toExtend<DrawingContext>();
+    expectTypeOf<SkiaGradient>().toExtend<Gradient>();
+    expectTypeOf<SkiaTextMetrics>().toExtend<TextMeasurement>();
   });
 
   it("makes the full interface the shape context plus text", () => {

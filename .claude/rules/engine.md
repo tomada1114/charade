@@ -352,8 +352,9 @@ change to the shape raises the version.
   The lint rule against unrelated accessor types is disabled on those five lines alone.
 - The DOM context's assignability is a type test in `tests/types.test.ts`: the root
   `tsconfig.json` sets no `lib`, so its default DOM lib covers the tests, while
-  `tsconfig.build.json` pins `ES2023` and keeps DOM out of `src`. skia-canvas's
-  assignability is checked once it is a dependency.
+  `tsconfig.build.json` pins `ES2023` and keeps DOM out of `src`. skia-canvas's context,
+  gradient and text metrics are asserted assignable in the same file, against the
+  installed version's declarations.
 - The interface is receive-only for consumers: they are handed one and never implement
   it, so adding a member is a minor change. The recording context in this repository
   implements every member.

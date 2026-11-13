@@ -47,13 +47,17 @@ stay free of Node-only modules.
 - Every canvas is created with GPU rendering off. skia-canvas turns it on where the
   platform supports it (<https://skia-canvas.org/api/canvas>, checked 2026-11-12), and
   the same scene on the same machine has to yield byte-identical frames whether or not a
-  GPU initialised. Render speed is not what this package competes on.
+  GPU initialised. Render speed is not what this package competes on. The mechanism is
+  skia-canvas 4's constructor option, `new Canvas(width, height, { gpu: false })`.
 - When a scene has text, names no font file, and no font from the per-OS list is
   installed, drawing continues with the rasteriser's fallback and `check` and `render`
   report it with how to fix it. Stopping would block the first video on a bare Linux
   machine.
 - Every frame is painted on an opaque background; alpha is dropped when the frame is
-  converted for the encoder.
+  converted for the encoder. The rasteriser (`src/export/raster.ts`) exports with
+  `matte` set to the paper colour, so a drawing that resets the context or makes no
+  calls is still opaque; its raw output is unpremultiplied RGBA, `width × height × 4`
+  bytes, alpha 255 everywhere.
 
 ## Encoding
 

@@ -5,9 +5,8 @@ export layer and nothing else imports it. It was chosen over a headless browser,
 is a non-goal, and it is a part that could be swapped without changing what a scene
 author writes.
 
-This file is the standing verdict. The pull request that first adds the dependency still
-carries the full review record from the skill body, and settles the items marked
-unchecked below.
+This file is the standing verdict. The pull request that first added the dependency
+carried the full review record from the skill body.
 
 ## Facts
 
@@ -29,14 +28,42 @@ is given.
 - On Linux it uses the system fontconfig when `/etc/fonts` exists
   (<https://skia-canvas.org/getting-started>).
 
-## Unchecked
+## Settled when it was added
 
-- What `follow-redirects` and `https-proxy-agent` are used for. Its manifest has a
-  `download` script (`node lib/prebuild.mjs download --or-compile`); whether anything
-  runs that path in a normal install, and so whether the package makes a network request
-  outside `npm install`, is not established.
-- The transitive package count beyond the three direct dependencies.
-- Open security advisories and npm provenance for 4.0.0.
+Checked 2026-11-12 against the installed 4.0.0 (`node_modules/skia-canvas`), the
+registry and the GitHub advisory database, when issue #15 added it.
+
+- `follow-redirects` and `https-proxy-agent` are the HTTP client and proxy agent for two
+  paths only. At run time, `lib/urls.js` `fetchURL`, called only from
+  `lib/classes/imagery.js` when `loadImage`, `loadImageData` or `loadCanvas` is given an
+  `http(s)` URL; this package never calls those. At install time, `lib/prebuild.mjs`,
+  run only by the manifest's `download` script, which no package manager runs on its
+  own: the manifest declares no `preinstall`, `install`, `postinstall` or `prepare`, and
+  the native loader (`lib/classes/neon.js` `loadNative`) never calls it; it throws
+  instead. So rasterising makes no network request. `detect-libc` picks the musl or
+  glibc binary on Linux at load time.
+- Transitive packages: pnpm resolves 18 under `skia-canvas`
+  (`pnpm list --prod --depth Infinity`): skia-canvas, eight platform binaries, and
+  `detect-libc`, `follow-redirects`, `https-proxy-agent`, `agent-base`,
+  `proxy-agent-negotiate`, `debug`, `ms`, `supports-color`, `has-flag`. pnpm
+  auto-installs `debug`'s optional peer `supports-color` (and its `has-flag`); npm does
+  not. An npm consumer of the packed tarball gets 9 packages besides charade, one of
+  them the platform binary, about 28 MB on macOS arm64; the linux-x64-glibc binary
+  package is about 38 MB unpacked. Every one is MIT, except `detect-libc`, Apache-2.0.
+  None of those installed here declares an install lifecycle script.
+- Advisories: `pnpm audit --prod` and `npm install` of the packed tarball report none.
+  The GitHub advisory database (`gh api /advisories?ecosystem=npm&affects=<name>`) has
+  none for skia-canvas, `detect-libc` or `agent-base`. `follow-redirects` has advisories
+  up to `<= 1.16.1` (GHSA-mrwp-f3q8-3g9p has the widest range); skia-canvas's range
+  `^1.16.1` still admits 1.16.1, and the lockfile resolves 1.16.2, which none affects.
+  `debug`'s advisories stop at 4.4.2; 4.4.3 is resolved.
+- Provenance: `npm view <name>@4.0.0 dist.attestations` shows SLSA v1 provenance for
+  skia-canvas and all eight `@skia-canvas/<platform>` binaries; skia-canvas's
+  attestation names `.github/workflows/publish.yml` in
+  `github.com/samizdatco/skia-canvas` at `refs/tags/v4.0.0`. None of the eight binary
+  packages declares any script, and each is MIT.
+- Continuity: one maintainer on npm (`samizdatco`); 3.0.8 on 2025-09-25, then 4.0.0
+  release candidates from 2026-10 and 4.0.0 on 2026-10-12, `latest` and `next`.
 
 ## Consequences
 

@@ -56,8 +56,9 @@ install; keep the dependency declared in `dependencies`, never bundle it into th
 tarball, and do not treat the mocked unit/automation case as a substitute for either
 real command.
 
-This package's one runtime dependency is skia-canvas; its standing verdict, with what is
-still unchecked, is [references/skia-canvas.md](references/skia-canvas.md).
+This package's one runtime dependency is skia-canvas; its standing verdict, with what
+was checked when it was added, is
+[references/skia-canvas.md](references/skia-canvas.md).
 
 ## What a `peerDependencies` entry actually does here
 
