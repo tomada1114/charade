@@ -29,11 +29,35 @@ recorded sample is how an unintended change in appearance fails a test.
 - Every numeric argument is logged as an integer, `Math.round(v * 1e4)`, with negative
   zero normalised to zero. Number formatting is deterministic; the last digit of a
   computed value is not.
-- `NaN` or an infinity in an argument throws instead of being logged.
+- `NaN` or an infinity in an argument throws instead of being logged, as does a number
+  whose scaled form overflows. The class is `NonFiniteDrawingError`
+  (`ERR_SCENE_NON_FINITE_DRAWING`, since it arises from a scene's drawing), internal to
+  `src/check/recorder.ts`, carrying the member as `call` and the zero-based `argument`
+  position, never the value. A property write counts: the write throws and the state
+  keeps its old value. An `undefined` in a required argument, before a given one, or
+  written to a property throws the same class, since a real context reads it as `NaN`.
 - A property write is logged as a call. A gradient is logged by its creation index.
+- An entry is `{ call, args }`. A property write's `call` is the property's name and
+  `args` holds the one value; a method's `args` holds the arguments given, so an omitted
+  optional argument, or a trailing `undefined` in an optional position, is absent.
+  Strings and booleans are kept as they are, arrays element by element, and a gradient
+  is `{ gradient: index }`, which no number collides with. A colour stop is logged as
+  `addColorStop` with the gradient first. Reads are not logged; query methods
+  (`getLineDash`, `measureText`) are.
+- A gradient another context created has no index to log by and throws
+  `ForeignGradientError` (`ERR_SCENE_FOREIGN_GRADIENT`, carrying `call`).
+- The recording context is `RecordingContext` in `src/check/recorder.ts`, internal: the
+  engine and the sample tests use it, and a consumer is never handed one. Its getters
+  return the last value written, starting from the standard defaults, and `save`,
+  `restore` and `reset` keep that state as a real context does.
 - The recording context measures text with a deterministic fake, so a bubble's layout in
   the log is not the layout of the real output. Text is tested through this fake only;
   no font file is committed to the repository.
+- The fake reads the first `<n>px` in `font` as the size `s` (10 when there is none).
+  `width` is 0.6 × `s` per code point, both ascents 0.8 × `s` and both descents 0.2 ×
+  `s`. `actualBoundingBoxLeft` is 0 for `start` and `left`, `width / 2` for `center`,
+  and `width` for `right` and `end`; `actualBoundingBoxRight` is the rest of the width.
+  `letterSpacing` and the rest of the font are ignored.
 - Records are vitest snapshots: no script of their own, no file access in the test, and
   a readable diff in the pull request. Updating a snapshot is blind to what changed, so
   the look step belongs to the flow that adds or changes an item, not to the test.
@@ -63,8 +87,9 @@ recorded sample is how an unintended change in appearance fails a test.
   `SourceLocation` (`file`, `line`, `column`), and `FindingCollector`, which records up
   to the cap. A finding's location fields are `row`, `target`, `joint`, `time` (seconds)
   and `frames`, all optional; `measured` holds the measured values and `nearest` the
-  nearest valid names. Thrown classes live in `src/errors.ts` and extend `CharadeError`;
-  `UnknownFlagError` (`ERR_CLI_UNKNOWN_FLAG`) carries the flag's dotted `path`.
+  nearest valid names. Exported thrown classes live in `src/errors.ts`, an internal one
+  beside the layer that throws it, and all extend `CharadeError`; `UnknownFlagError`
+  (`ERR_CLI_UNKNOWN_FLAG`) carries the flag's dotted `path`.
 - Leaving the frame is a warning. A figure that walks off is ordinary acting, and the
   first README video ends with one.
 - Reading the clock or an unseeded random number is detected by replacing `Date`,

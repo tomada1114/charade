@@ -1,3 +1,6 @@
+// The DOM lib is already in this program by default; naming it keeps R6's check working
+// if `lib` is ever set. The build config (lib ES2023, src only) still has no DOM.
+/// <reference lib="dom" />
 import { describe, expect, expectTypeOf, it } from "vitest";
 
 import {
@@ -5,12 +8,16 @@ import {
   type CheckReport,
   checkReport,
   COULD_NOT_RUN,
+  type DrawingContext,
   type ExitCode,
   exitCodeFor,
   type Finding,
   type FindingCollector,
+  type Gradient,
   type Severity,
+  type ShapeContext,
   type SourceLocation,
+  type TextMeasurement,
   UnknownFlagError,
 } from "../src/index.js";
 
@@ -169,5 +176,103 @@ describe("thrown error types", () => {
       // @ts-expect-error the constructor takes no value argument
       new UnknownFlagError("check.strict", "--strict=maybe");
     expect(rejected).toBeTypeOf("function");
+  });
+});
+
+describe("drawing context types", () => {
+  it("accepts the DOM's 2D context as the full interface", () => {
+    expectTypeOf<CanvasRenderingContext2D>().toExtend<DrawingContext>();
+    expectTypeOf<CanvasGradient>().toExtend<Gradient>();
+    expectTypeOf<TextMetrics>().toExtend<TextMeasurement>();
+  });
+
+  it("makes the full interface the shape context plus text", () => {
+    expectTypeOf<DrawingContext>().toExtend<ShapeContext>();
+    expectTypeOf<Exclude<keyof DrawingContext, keyof ShapeContext>>().toEqualTypeOf<
+      | "fillText"
+      | "strokeText"
+      | "measureText"
+      | "font"
+      | "textAlign"
+      | "textBaseline"
+      | "direction"
+      | "letterSpacing"
+      | "wordSpacing"
+      | "fontKerning"
+      | "fontStretch"
+      | "textRendering"
+    >();
+  });
+
+  it("leaves text out of the shape context", () => {
+    expectTypeOf<
+      Extract<
+        keyof ShapeContext,
+        | "fillText"
+        | "strokeText"
+        | "measureText"
+        | "font"
+        | "textAlign"
+        | "textBaseline"
+        | "direction"
+        | "letterSpacing"
+        | "wordSpacing"
+        | "fontKerning"
+        | "fontStretch"
+        | "textRendering"
+        | "fontVariantCaps"
+      >
+    >().toEqualTypeOf<never>();
+  });
+
+  it("leaves images, patterns, pixel readback and the canvas out", () => {
+    expectTypeOf<
+      Extract<
+        keyof DrawingContext,
+        | "drawImage"
+        | "createPattern"
+        | "getImageData"
+        | "putImageData"
+        | "createImageData"
+        | "imageSmoothingEnabled"
+        | "canvas"
+      >
+    >().toEqualTypeOf<never>();
+  });
+
+  it("reads a style as any paint and writes a colour or a gradient", () => {
+    const paint = (ctx: ShapeContext, gradient: Gradient): void => {
+      ctx.fillStyle = "#fff";
+      ctx.strokeStyle = gradient;
+    };
+    expectTypeOf<ShapeContext["fillStyle"]>().toEqualTypeOf<string | object>();
+    expect(paint).toBeTypeOf("function");
+    const rejected = (ctx: ShapeContext): void => {
+      // @ts-expect-error a style takes a colour or a gradient, not any object
+      ctx.fillStyle = { color: "red" };
+    };
+    expect(rejected).toBeTypeOf("function");
+  });
+
+  it("reads a keyword property as a string and writes a standard keyword", () => {
+    const align = (ctx: DrawingContext): void => {
+      ctx.textAlign = "center";
+    };
+    expectTypeOf<DrawingContext["textAlign"]>().toEqualTypeOf<string>();
+    expect(align).toBeTypeOf("function");
+    const rejected = (ctx: DrawingContext): void => {
+      // @ts-expect-error justify is not a standard value
+      ctx.textAlign = "justify";
+    };
+    expect(rejected).toBeTypeOf("function");
+  });
+
+  it("returns gradients and measurements as this package's types", () => {
+    expectTypeOf<
+      ReturnType<ShapeContext["createLinearGradient"]>
+    >().toEqualTypeOf<Gradient>();
+    expectTypeOf<
+      ReturnType<DrawingContext["measureText"]>
+    >().toEqualTypeOf<TextMeasurement>();
   });
 });
