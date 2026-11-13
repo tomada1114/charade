@@ -20,6 +20,7 @@ const automationTests = [
   "tests/docs.test.ts",
   "tests/git-env.test.ts",
   "tests/labels.test.ts",
+  "tests/loader.test.ts",
   "tests/node-tools.test.ts",
   "tests/package-smoke.test.ts",
   "tests/package.test.ts",

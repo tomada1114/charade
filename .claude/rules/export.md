@@ -38,6 +38,22 @@ stay free of Node-only modules.
   a helper imported as `.js` or without an extension, a missing package, syntax that
   needs transformation (`enum`, parameter properties, a runtime namespace), a type
   imported without `import type`, and a `.ts` file under a `node_modules` path.
+- The hook is `src/export/hook.ts`; it resolves this copy as `../index.js` from its own
+  URL and records each failed resolution (specifier, importer, the error instance that
+  `import()` rejects with), so a fix line names the specifier as written without reading
+  Node's message. The local version is read from the scene folder's resolution of
+  `charade/package.json`, before the hook is registered, without importing it.
+- The loader is `src/export/loader.ts`, keyed on Node's `code`: `ERR_MODULE_NOT_FOUND`
+  with a `url` and an existing `.ts` twin is `ERR_LOAD_HELPER_EXTENSION` (its fix names
+  the `.ts` specifier), without a twin `ERR_LOAD_MODULE_NOT_FOUND`, and without a `url`
+  `ERR_LOAD_PACKAGE_NOT_FOUND`; `ERR_UNSUPPORTED_TYPESCRIPT_SYNTAX` is
+  `ERR_LOAD_UNSUPPORTED_SYNTAX`; `ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING` is
+  `ERR_LOAD_TS_IN_NODE_MODULES`. A codeless `SyntaxError` naming a missing export is
+  `ERR_LOAD_MISSING_EXPORT`, the one case read from the message, since V8 gives it no
+  code and a plain syntax error is also a codeless `SyntaxError`. A missing scene file
+  is `ERR_LOAD_SCENE_NOT_FOUND`, a default export without `kind: "charade.scene"` is
+  `ERR_LOAD_NOT_A_SCENE`, and anything else, a scene that throws included, is
+  `ERR_LOAD_FAILED` with the original as `cause`. All are internal and carry `fix`.
 
 ## Rasterising
 
@@ -88,6 +104,16 @@ stay free of Node-only modules.
 - The scene is the only source of seed, frame rate and size. There are no override
   flags, so a video is a function of its file.
 - `--at` takes seconds, as a scene does: `1.5` and `1.5s` are seconds, `45f` is a frame.
+  One parser, `parseAt` in `src/cli.ts`, takes ASCII digits only: no sign, exponent,
+  leading or trailing dot, and no frame past the safe integers; anything else is
+  `ERR_CLI_INVALID_AT`.
+- The command comes first. A usage error is `ERR_CLI_NO_COMMAND`,
+  `ERR_CLI_UNKNOWN_COMMAND`, `ERR_CLI_UNKNOWN_FLAG` (the flag's dotted path, named from
+  `parseArgs` tokens), `ERR_CLI_MISSING_VALUE`, `ERR_CLI_UNEXPECTED_VALUE`,
+  `ERR_CLI_UNEXPECTED_ARGUMENT`, `ERR_CLI_MISSING_SCENE` or `ERR_CLI_MISSING_FLAG`. A
+  failure under `--json` is `{ version: 1, ok: false, error: { code, message, fix } }`;
+  as text it is `error <code>: <message>` and a `fix:` line on stderr. A command whose
+  body is not built yet answers `ERR_CLI_NOT_IMPLEMENTED`.
 - `sheet` picks twelve evenly spaced frames including the first and the last by default,
   or the times, range or row it is given, labels every cell with its time and frame
   number, and scales the sheet to a width an agent's image input can take. `--ghost`
