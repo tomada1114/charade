@@ -80,6 +80,8 @@ export function drawFigure(
   polyline(ctx, [s.pelvis, s.kneeL, s.ankleL, s.toeL]);
   polyline(ctx, [s.pelvis, s.waist, s.shoulders, s.headBase]);
   drawHead(ctx, pose, s.headCentre, sign);
+  // The head leaves the face's line width set.
+  ctx.lineWidth = FIGURE_LINE;
   polyline(ctx, [s.pelvis, s.kneeR, s.ankleR, s.toeR]);
   polyline(ctx, [s.shoulders, s.elbowR, s.handR]);
 }
@@ -119,7 +121,8 @@ function drawHead(ctx: DrawingContext, pose: Pose, centre: Point, sign: number):
 
   ctx.fillStyle = INK;
   ctx.lineWidth = FACE_LINE;
-  const open = pose.eyeOpen;
+  // An arrival's overshoot can take eyeOpen below 0, and a negative arc radius throws.
+  const open = Math.max(0, pose.eyeOpen);
   const eyeHalfHeight = EYE_HALF_WIDTH * open;
   const pupil = PUPIL_RADIUS * Math.min(open, 1);
   for (const side of [-1, 1]) {

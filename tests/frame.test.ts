@@ -424,3 +424,34 @@ describe("free drawings", () => {
     expect(alpha).toBe(1);
   });
 });
+
+describe("the figure's strokes", () => {
+  const rest = scene({ duration: 1 }, (stage) => {
+    stage.actor().wait(1);
+  });
+
+  it("draws every limb at the figure's line weight, the near ones included", () => {
+    const widths = actorLog(rest.timeline, 0)
+      .filter((entry) => entry.call === "lineWidth")
+      .map((entry) => entry.args[0]);
+    // 0.025 units for the figure, 0.01 for the face, then back to 0.025 after the head.
+    expect(widths.at(0)).toBe(250);
+    expect(widths.at(-1)).toBe(250);
+    expect(widths).toContain(100);
+  });
+
+  it("never gives an arc a negative radius when eyeOpen overshoots below 0", () => {
+    const blink = scene({ duration: 1 }, (stage) => {
+      stage.actor().pose({ eyeOpen: 0 }, { followThrough: 0.2 });
+    });
+    const frames = Array.from({ length: 31 }, (_, n) => actorLog(blink.timeline, n));
+    const radii = frames
+      .flat()
+      .filter((entry) => entry.call === "arc")
+      .map((entry) => entry.args[2]);
+    expect(radii.length).toBeGreaterThan(0);
+    for (const radius of radii) {
+      expect(radius).toBeGreaterThanOrEqual(0);
+    }
+  });
+});
