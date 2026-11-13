@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import * as api from "../src/index.js";
-import { CharadeError, UnknownFlagError } from "../src/index.js";
+import {
+  AsyncBuildError,
+  CharadeError,
+  SceneClosedError,
+  UnknownFlagError,
+  UnknownRowError,
+} from "../src/index.js";
 
 /** A concrete subclass, written the way every charade error is written. */
 class SampleError extends CharadeError {
@@ -61,8 +67,11 @@ const exportedErrorNames = Object.entries(api)
  * exports, so a class cannot be added and left uncovered.
  */
 const representativeErrors: Record<string, Error> = {
+  AsyncBuildError: new AsyncBuildError(),
   SampleError: new SampleError("a sample failure"),
+  SceneClosedError: new SceneClosedError(),
   UnknownFlagError: new UnknownFlagError("check.strict"),
+  UnknownRowError: new UnknownRowError(4),
 };
 
 /**

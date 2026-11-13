@@ -37,4 +37,36 @@ export type {
   ShapeContext,
   TextMeasurement,
 } from "./draw/context.js";
-export { CharadeError, UnknownFlagError } from "./errors.js";
+export {
+  AsyncBuildError,
+  CharadeError,
+  SceneClosedError,
+  UnknownFlagError,
+  UnknownRowError,
+} from "./errors.js";
+export type { Point } from "./rig/kinematics.js";
+export type { ChannelName, EffectorName } from "./rig/rig.js";
+export type {
+  Actor,
+  ActorOptions,
+  DrawFunction,
+  DrawOptions,
+  DriveChannels,
+  DriveOptions,
+  PoseChannels,
+  PoseOptions,
+  ReachOptions,
+  Row,
+  Span,
+  Stage,
+} from "./scene/handles.js";
+export { scene } from "./scene/scene.js";
+export type { Scene, SceneOptions } from "./scene/scene.js";
+export type { RandomSource } from "./timeline/random.js";
+export type { BlendMode, Moment, MotionFunction } from "./timeline/segments.js";
+export type {
+  Timeline,
+  TimelineRow,
+  TimelineSegment,
+  TimelineTrack,
+} from "./timeline/timeline.js";

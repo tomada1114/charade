@@ -1,7 +1,15 @@
 import { type Pose, SEGMENT_LENGTHS } from "./rig.js";
 
+/**
+ * A point in a row's own units: the origin on the ground line at the row's centre,
+ * `y` up, a standing figure 1 unit tall.
+ *
+ * @public
+ */
 export interface Point {
+  /** Distance right of the row's centre. */
   readonly x: number;
+  /** Height above the ground line. */
   readonly y: number;
 }
 

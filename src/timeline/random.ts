@@ -13,8 +13,14 @@ export interface RandomKey {
 }
 
 /**
- * The keyed random source handed to an item. Each value is a pure function of the key
- * and the draw index; there is no stream to advance, so draws can be made in any order.
+ * The seeded random source handed to a function at depth 3 or 4.
+ *
+ * @remarks
+ * It is keyed on the scene seed and the item the function belongs to. Each value is a
+ * pure function of that key and the draw index: there is no stream to advance, so the
+ * same index gives the same value on every frame, in any order.
+ *
+ * @public
  */
 export interface RandomSource {
   /** An unsigned 32-bit integer for draw `draw` (default 0). */

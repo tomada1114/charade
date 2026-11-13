@@ -4,21 +4,50 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
 
 import {
+  type Actor,
+  type ActorOptions,
+  AsyncBuildError,
+  type BlendMode,
+  type ChannelName,
   CharadeError,
   type CheckReport,
   checkReport,
   COULD_NOT_RUN,
+  type DrawFunction,
   type DrawingContext,
+  type DrawOptions,
+  type DriveChannels,
+  type DriveOptions,
+  type EffectorName,
   type ExitCode,
   exitCodeFor,
   type Finding,
   type FindingCollector,
   type Gradient,
+  type Moment,
+  type MotionFunction,
+  type Point,
+  type PoseChannels,
+  type PoseOptions,
+  type RandomSource,
+  type ReachOptions,
+  type Row,
+  type Scene,
+  scene,
+  type SceneClosedError,
+  type SceneOptions,
   type Severity,
   type ShapeContext,
   type SourceLocation,
+  type Span,
+  type Stage,
   type TextMeasurement,
+  type Timeline,
+  type TimelineRow,
+  type TimelineSegment,
+  type TimelineTrack,
   UnknownFlagError,
+  UnknownRowError,
 } from "../src/index.js";
 
 class FirstError extends CharadeError {
@@ -274,5 +303,290 @@ describe("drawing context types", () => {
     expectTypeOf<
       ReturnType<DrawingContext["measureText"]>
     >().toEqualTypeOf<TextMeasurement>();
+  });
+});
+
+describe("scene types", () => {
+  it("returns a Scene from both call forms", () => {
+    const built = scene({ duration: 1 }, () => undefined);
+    expectTypeOf(built).toEqualTypeOf<Scene>();
+    expectTypeOf(scene(() => undefined)).toEqualTypeOf<Scene>();
+    expectTypeOf(scene).parameter(0).toExtend<object>();
+  });
+
+  it("keeps the kind and the version as literals", () => {
+    expectTypeOf<Scene["kind"]>().toEqualTypeOf<"charade.scene">();
+    expectTypeOf<Scene["version"]>().toEqualTypeOf<1>();
+    expectTypeOf<keyof Scene>().toEqualTypeOf<
+      | "kind"
+      | "version"
+      | "width"
+      | "height"
+      | "font"
+      | "timeline"
+      | "findings"
+      | "truncated"
+    >();
+    expectTypeOf<Scene["findings"]>().toEqualTypeOf<readonly Finding[]>();
+    expectTypeOf<Scene["font"]>().toEqualTypeOf<string | null>();
+    expectTypeOf<Scene["timeline"]>().toEqualTypeOf<Timeline>();
+  });
+
+  it("makes the scene read-only", () => {
+    const rejected = (built: Scene): void => {
+      // @ts-expect-error a built scene is frozen data
+      built.width = 1920;
+    };
+    expect(rejected).toBeTypeOf("function");
+  });
+
+  it("makes every scene option an optional number, but for the font", () => {
+    expectTypeOf<SceneOptions>().toEqualTypeOf<{
+      readonly width?: number;
+      readonly height?: number;
+      readonly fps?: number;
+      readonly rows?: number;
+      readonly seed?: number;
+      readonly font?: string;
+      readonly duration?: number;
+    }>();
+    expectTypeOf<{ readonly fps: number }>().toExtend<SceneOptions>();
+  });
+
+  it("hands build the stage and ignores what it returns", () => {
+    const built = scene({ rows: 4, duration: 1 }, (stage) => {
+      expectTypeOf(stage).toEqualTypeOf<Stage>();
+      return stage.row(3);
+    });
+    expectTypeOf(built).toEqualTypeOf<Scene>();
+  });
+
+  it("rejects an option the scene does not have, and a missing build", () => {
+    const rejected = (): void => {
+      // @ts-expect-error fsp is not a scene option
+      scene({ fsp: 24 }, () => undefined);
+      // @ts-expect-error options alone are not a scene
+      scene({ fps: 24 });
+    };
+    expect(rejected).toBeTypeOf("function");
+    expectTypeOf(scene({ fps: 24 }, () => undefined)).toEqualTypeOf<Scene>();
+  });
+
+  it("exposes the timeline as rows of tracks of segments", () => {
+    expectTypeOf<Timeline["rows"]>().toEqualTypeOf<readonly TimelineRow[]>();
+    expectTypeOf<TimelineRow["tracks"]>().toEqualTypeOf<readonly TimelineTrack[]>();
+    expectTypeOf<TimelineTrack["segments"]>().toEqualTypeOf<
+      readonly TimelineSegment[]
+    >();
+    expectTypeOf<TimelineSegment>().toEqualTypeOf<{
+      readonly start: number;
+      readonly end: number | null;
+      readonly data: unknown;
+    }>();
+    expectTypeOf<Timeline["duration"]>().toEqualTypeOf<number | null>();
+  });
+});
+
+describe("span types", () => {
+  it("is four read-only fields in seconds", () => {
+    expectTypeOf<keyof Span>().toEqualTypeOf<"start" | "end" | "duration" | "marks">();
+    expectTypeOf<Span["start"]>().toEqualTypeOf<number>();
+    expectTypeOf<Span["end"]>().toEqualTypeOf<number>();
+    expectTypeOf<Span["duration"]>().toEqualTypeOf<number>();
+  });
+
+  it("has no marks unless the call states some", () => {
+    expectTypeOf<keyof Span["marks"]>().toEqualTypeOf<never>();
+    expectTypeOf<Span["marks"]>().not.toHaveProperty("release");
+  });
+
+  it("types the marks a call states by name", () => {
+    const release = (span: Span<"release" | "catch">): number => span.marks.release;
+    expectTypeOf(release).returns.toEqualTypeOf<number>();
+    expectTypeOf<Span<"release">["marks"]>().toEqualTypeOf<
+      Readonly<Record<"release", number>>
+    >();
+  });
+
+  it("accepts a span with marks where a plain span is asked for", () => {
+    expectTypeOf<Span<"release">>().toExtend<Span>();
+    expectTypeOf<Span>().not.toExtend<Span<"release">>();
+  });
+
+  it("is what every recording call returns", () => {
+    expectTypeOf<Actor["pose"]>().returns.toEqualTypeOf<Span>();
+    expectTypeOf<Actor["reach"]>().returns.toEqualTypeOf<Span>();
+    expectTypeOf<Actor["drive"]>().returns.toEqualTypeOf<Span>();
+    expectTypeOf<Actor["wait"]>().returns.toEqualTypeOf<Span>();
+    expectTypeOf<Row["draw"]>().returns.toEqualTypeOf<Span>();
+  });
+});
+
+describe("handle types", () => {
+  it("makes the stage a row with row() and sync()", () => {
+    expectTypeOf<Stage>().toExtend<Row>();
+    expectTypeOf<Exclude<keyof Stage, keyof Row>>().toEqualTypeOf<"row" | "sync">();
+    expectTypeOf<Stage["row"]>().toEqualTypeOf<(index: number) => Row>();
+    expectTypeOf<Stage["sync"]>().toEqualTypeOf<() => number>();
+  });
+
+  it("gives a row an id, an index, an actor and free drawing", () => {
+    expectTypeOf<keyof Row>().toEqualTypeOf<"id" | "index" | "actor" | "draw">();
+    expectTypeOf<Row["actor"]>().toEqualTypeOf<(options?: ActorOptions) => Actor>();
+    expectTypeOf<Row["draw"]>().toEqualTypeOf<
+      (draw: DrawFunction, options?: DrawOptions) => Span
+    >();
+  });
+
+  it("gives an actor an id and its four calls", () => {
+    expectTypeOf<keyof Actor>().toEqualTypeOf<
+      "id" | "pose" | "reach" | "drive" | "wait"
+    >();
+    expectTypeOf<Actor["id"]>().toEqualTypeOf<string>();
+    expectTypeOf<Actor["pose"]>().parameters.toEqualTypeOf<
+      [channels: PoseChannels, options?: PoseOptions | undefined]
+    >();
+    expectTypeOf<Actor["reach"]>().parameters.toEqualTypeOf<
+      [effector: EffectorName, target: Point, options?: ReachOptions | undefined]
+    >();
+    expectTypeOf<Actor["drive"]>().parameters.toEqualTypeOf<
+      [channels: DriveChannels, options?: DriveOptions | undefined]
+    >();
+    expectTypeOf<Actor["wait"]>().parameters.toEqualTypeOf<[seconds: number]>();
+  });
+
+  it("names the channels and the effectors", () => {
+    expectTypeOf<"kneeR" | "pelvisX" | "mouthCurve">().toExtend<ChannelName>();
+    expectTypeOf<EffectorName>().toEqualTypeOf<"handL" | "handR" | "footL" | "footR">();
+    expectTypeOf<EffectorName>().not.toExtend<ChannelName>();
+    expectTypeOf<Point>().toEqualTypeOf<{ readonly x: number; readonly y: number }>();
+  });
+
+  it("takes a pose as numbers by channel name", () => {
+    const posed = (actor: Actor): Span => actor.pose({ kneeR: 1.2, eyeOpen: 0.5 });
+    expectTypeOf(posed).returns.toEqualTypeOf<Span>();
+    expectTypeOf<PoseChannels["kneeR"]>().toEqualTypeOf<number | undefined>();
+    const rejected = (actor: Actor): void => {
+      // @ts-expect-error kneR is not a channel
+      actor.pose({ kneR: 1.2 });
+      // @ts-expect-error a hand is a target for reach, not a channel
+      actor.pose({ handR: 1 });
+      // @ts-expect-error a pose takes numbers, not functions
+      actor.pose({ kneeR: (t: number) => t });
+    };
+    expect(rejected).toBeTypeOf("function");
+  });
+
+  it("takes a drive as functions by channel name", () => {
+    const driven = (actor: Actor): Span =>
+      actor.drive({
+        spine: (t, moment) => {
+          expectTypeOf(t).toEqualTypeOf<number>();
+          expectTypeOf(moment).toEqualTypeOf<Moment>();
+          return Math.sin(t * 3) * 0.1;
+        },
+      });
+    expectTypeOf(driven).returns.toEqualTypeOf<Span>();
+    expectTypeOf<MotionFunction>().toEqualTypeOf<
+      (t: number, moment: Moment) => number
+    >();
+    const rejected = (actor: Actor): void => {
+      // @ts-expect-error a drive takes functions, not numbers
+      actor.drive({ spine: 0.1 });
+      // @ts-expect-error spin is not a channel
+      actor.drive({ spin: (t: number) => t });
+    };
+    expect(rejected).toBeTypeOf("function");
+  });
+
+  it("takes a reach as an effector and a point", () => {
+    const reached = (actor: Actor): Span =>
+      actor.reach("handR", { x: 0.2, y: 0.8 }, { at: 1.2 });
+    expectTypeOf(reached).returns.toEqualTypeOf<Span>();
+    const rejected = (actor: Actor): void => {
+      // @ts-expect-error a knee is an angle, not a target
+      actor.reach("kneeR", { x: 0.2, y: 0.8 });
+      // @ts-expect-error a reach has no mode
+      actor.reach("handR", { x: 0.2, y: 0.8 }, { mode: "add" });
+    };
+    expect(rejected).toBeTypeOf("function");
+  });
+
+  it("types mode as replace or add", () => {
+    expectTypeOf<BlendMode>().toEqualTypeOf<"replace" | "add">();
+    expectTypeOf<PoseOptions["mode"]>().toEqualTypeOf<BlendMode | undefined>();
+    expectTypeOf<DriveOptions["mode"]>().toEqualTypeOf<BlendMode | undefined>();
+    expectTypeOf<keyof PoseOptions>().toEqualTypeOf<
+      "at" | "duration" | "blend" | "mode" | "anticipation" | "followThrough"
+    >();
+    expectTypeOf<keyof ReachOptions>().toEqualTypeOf<
+      "at" | "duration" | "blend" | "anticipation" | "followThrough"
+    >();
+    expectTypeOf<keyof DriveOptions>().toEqualTypeOf<
+      "at" | "duration" | "blend" | "mode"
+    >();
+    expectTypeOf<keyof DrawOptions>().toEqualTypeOf<"at" | "duration" | "name">();
+    const rejected = (actor: Actor): void => {
+      // @ts-expect-error multiply is not a mode
+      actor.pose({ spine: 0.1 }, { mode: "multiply" });
+    };
+    expect(rejected).toBeTypeOf("function");
+  });
+
+  it("hands a depth 4 drawing the shape context, the time and the moment", () => {
+    const drawn = (row: Row): Span =>
+      row.draw((ctx, t, moment) => {
+        expectTypeOf(ctx).toEqualTypeOf<ShapeContext>();
+        expectTypeOf(t).toEqualTypeOf<number>();
+        expectTypeOf(moment).toEqualTypeOf<Moment>();
+      });
+    expectTypeOf(drawn).returns.toEqualTypeOf<Span>();
+    expectTypeOf<Parameters<DrawFunction>[0]>().not.toHaveProperty("fillText");
+  });
+
+  it("gives a function the scene time, its segment and the random source", () => {
+    expectTypeOf<Moment>().toEqualTypeOf<{
+      readonly time: number;
+      readonly duration: number;
+      readonly progress: number;
+      readonly random: RandomSource;
+    }>();
+    expectTypeOf<RandomSource["float"]>().toEqualTypeOf<(draw?: number) => number>();
+    expectTypeOf<RandomSource["uint32"]>().toEqualTypeOf<(draw?: number) => number>();
+  });
+});
+
+describe("scene error types", () => {
+  it("keeps each code as its literal", () => {
+    expectTypeOf<AsyncBuildError["code"]>().toEqualTypeOf<"ERR_SCENE_ASYNC_BUILD">();
+    expectTypeOf<UnknownRowError["code"]>().toEqualTypeOf<"ERR_SCENE_UNKNOWN_ROW">();
+    expectTypeOf<SceneClosedError["code"]>().toEqualTypeOf<"ERR_SCENE_CLOSED">();
+  });
+
+  it("narrows the three by code", () => {
+    const classify = (
+      error: AsyncBuildError | UnknownRowError | SceneClosedError,
+    ): void => {
+      if (error.code === "ERR_SCENE_UNKNOWN_ROW") {
+        expectTypeOf(error).toEqualTypeOf<UnknownRowError>();
+        expectTypeOf(error.rows).toEqualTypeOf<number>();
+      } else {
+        expectTypeOf(error).toEqualTypeOf<AsyncBuildError | SceneClosedError>();
+      }
+    };
+    classify(new UnknownRowError(4));
+    classify(new AsyncBuildError());
+  });
+
+  it("holds the row count and no rejected index", () => {
+    expectTypeOf<Exclude<keyof UnknownRowError, keyof Error>>().toEqualTypeOf<
+      "code" | "rows"
+    >();
+    expectTypeOf(UnknownRowError).toBeConstructibleWith(4);
+    expectTypeOf(UnknownRowError).toBeConstructibleWith(4, { cause: new Error() });
+    const rejected = (): UnknownRowError =>
+      // @ts-expect-error the constructor takes the row count, not a message
+      new UnknownRowError("row 4");
+    expect(rejected).toBeTypeOf("function");
   });
 });

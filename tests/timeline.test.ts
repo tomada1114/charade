@@ -16,7 +16,7 @@ import {
 } from "../src/timeline/time.js";
 import {
   computeDuration,
-  type Segment,
+  type TimelineSegment,
   type Timeline,
 } from "../src/timeline/timeline.js";
 
@@ -30,12 +30,12 @@ function rangeErrorOf(run: () => unknown): TimelineRangeError | undefined {
   return undefined;
 }
 
-function segment(start: number, end: number | null): Segment {
+function segment(start: number, end: number | null): TimelineSegment {
   return { start, end, data: null };
 }
 
 function timeline(
-  segments: readonly Segment[][],
+  segments: readonly TimelineSegment[][],
   duration: number | null = null,
   fps = 30,
 ): Timeline {
