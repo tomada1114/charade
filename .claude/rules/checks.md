@@ -103,9 +103,15 @@ recorded sample is how an unintended change in appearance fails a test.
   (each with `nearest`), `ERR_SCENE_EFFECTOR_AS_CHANNEL`, `ERR_SCENE_OUT_OF_RANGE` (a
   number was expected), `ERR_SCENE_INVALID_VALUE` (another type was expected),
   `ERR_SCENE_NO_CURSOR`, `ERR_SCENE_ROW_REQUIRED`, `ERR_SCENE_ROW_HAS_ACTOR`,
-  `ERR_SCENE_NO_DURATION`, and the warning `ERR_SCENE_FULL_BODY_CUT`. An authoring
-  finding carries its `row` and the handle's id as `target`, and the channel as `joint`;
-  it has no `source` yet, since reading a call site from a stack trace is not built.
+  `ERR_SCENE_NO_DURATION`, the vocabulary findings `ERR_SCENE_UNKNOWN_ACTION`,
+  `ERR_SCENE_UNKNOWN_EXPRESSION`, `ERR_SCENE_UNKNOWN_PROP`,
+  `ERR_SCENE_UNKNOWN_BACKDROP`, `ERR_SCENE_UNKNOWN_EFFECT` and `ERR_SCENE_UNKNOWN_MARK`
+  (each with `nearest`), `ERR_SCENE_MISSING_PARAMETER` and `ERR_SCENE_MISSING_MARK`, and
+  the warning `ERR_SCENE_FULL_BODY_CUT`. `define…` throws `ReservedParameterError`,
+  `InvalidDefaultError` and `InvalidDefinitionError` (`ERR_DEFINE_`, each carrying
+  `kind` and `path`). An authoring finding carries its `row` and the handle's id as
+  `target`, and the channel as `joint`; it has no `source` yet, since reading a call
+  site from a stack trace is not built.
 - Drawing a frame throws when one item throws: an actor whose `drive` function throws at
   a frame after `t = 0`, a free drawing's callback that throws, or a drawing call the
   context rejects, such as the recorder's `ERR_SCENE_NON_FINITE_DRAWING` for `NaN`. The

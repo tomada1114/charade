@@ -73,10 +73,14 @@ recorded sample is written against; changing any of it changes all of them at on
   `version: 1`, `width`, `height`, `font`, `timeline`, `findings`, `truncated`; the
   frame rate, seed and rows are read from `timeline`), the handles `Stage` (a `Row` plus
   `row(i)` and `sync()`), `Row` and `Actor`, and their option types `ActorOptions`,
-  `PoseOptions`, `ReachOptions`, `DriveOptions` and `DrawOptions`. Handles are
-  interfaces an author is handed and never implements, so a later issue adds a method as
-  a minor change. `row.actor` and `row.draw` take an options bag rather than a
-  positional name, so placement and layering can be added the same way.
+  `PoseOptions`, `ReachOptions`, `DriveOptions` and `DrawOptions`. The vocabulary calls
+  add `Actor.do` and `Actor.express`, `Row.prop`, `Row.backdrop` and `Row.effect`, the
+  handles `Clip` (what an action's `build` records on) and `Prop`, and the option types
+  `ActionOptions`, `ExpressOptions`, `ItemOptions` and `PlaceOptions`;
+  `.claude/rules/vocabulary.md` holds how they behave. Handles are interfaces an author
+  is handed and never implements, so a later issue adds a method as a minor change.
+  `row.actor` and `row.draw` take an options bag rather than a positional name, so
+  placement and layering can be added the same way.
 - An id is `row<i>` for a row and `row<i>/<kind>/<name>/<occurrence>` for an item; an
   actor's default name is `actor` and a drawing's is `draw`.
 - A bad scene option is a finding and its default is used (`rows` is clamped into 1–4
@@ -311,9 +315,12 @@ change to the shape raises the version.
   change without a version of its own. The value types of the JSON form stay internal.
 - A segment's `data` is an object with a `kind`: `pose` (channels, mode, and the three
   phases in microseconds), `reach` (effector, target, phases), `drive` (the function,
-  the channel names read at `t = 0`, mode, blend), `wait`, or `draw` (the callback).
-  These live in `src/timeline/segments.ts`. Nothing is released yet, so this shape is
-  still JSON version 1.
+  the channel names read at `t = 0`, mode, blend), `wait`, `draw` (the callback),
+  `place` (a prop's ground point `x`, `y`), or `prop`, `backdrop` and `effect` (name,
+  definition or `null`, resolved params). An action records its clip's calls on the
+  actor's track as ordinary segments, and an expression records a `pose`. These live in
+  `src/timeline/segments.ts`. Nothing is released yet, so this shape is still JSON
+  version 1.
 
 ## The drawing interface
 

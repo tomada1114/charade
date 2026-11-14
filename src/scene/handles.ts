@@ -2,6 +2,22 @@ import type { ShapeContext } from "../draw/context.js";
 import type { Point } from "../rig/kinematics.js";
 import type { ChannelName, EffectorName } from "../rig/rig.js";
 import type { BlendMode, Moment } from "../timeline/segments.js";
+import type {
+  BuiltinName,
+  BuiltinActions,
+  BuiltinBackdrops,
+  BuiltinEffects,
+  BuiltinExpressions,
+  BuiltinProps,
+} from "./builtins.js";
+import type {
+  ActionDefinition,
+  BackdropDefinition,
+  EffectDefinition,
+  ExpressionDefinition,
+  PropDefinition,
+} from "./define.js";
+import type { ItemArgs, ParamSpec } from "./params.js";
 
 /**
  * When a recorded call plays, in seconds of scene time.
@@ -217,6 +233,213 @@ export interface Actor {
    * @returns When the wait plays.
    */
   wait(seconds: number): Span;
+
+  /**
+   * Do an action, given as its definition.
+   *
+   * @param action - The action's definition.
+   * @param options - The action's parameters, and the call's timing and mood.
+   * @returns When the action plays, with the marks it states.
+   */
+  do<P extends ParamSpec, Marks extends string>(
+    action: ActionDefinition<P, Marks>,
+    ...options: ItemArgs<P, ActionOptions>
+  ): Span<Marks>;
+  /**
+   * Do a built-in action, given by name.
+   *
+   * @param name - The built-in action's name.
+   * @param options - The action's parameters, and the call's timing and mood.
+   * @returns When the action plays, with the marks it states.
+   */
+  do<N extends BuiltinName<BuiltinActions>>(
+    name: N,
+    ...options: BuiltinActions[N] extends ActionDefinition<infer P>
+      ? ItemArgs<P, ActionOptions>
+      : never
+  ): Span<
+    BuiltinActions[N] extends ActionDefinition<ParamSpec, infer Marks> ? Marks : never
+  >;
+
+  /**
+   * Show an expression, given as its definition or a built-in name.
+   *
+   * @param expression - The expression's definition.
+   * @param options - The expression's parameters, and the call's timing.
+   * @returns When the expression plays.
+   */
+  express<P extends ParamSpec>(
+    expression: ExpressionDefinition<P>,
+    ...options: ItemArgs<P, ExpressOptions>
+  ): Span;
+  /**
+   * Show a built-in expression, given by name.
+   *
+   * @param name - The built-in expression's name.
+   * @param options - The expression's parameters, and the call's timing.
+   * @returns When the expression plays.
+   */
+  express<N extends BuiltinName<BuiltinExpressions>>(
+    name: N,
+    ...options: BuiltinExpressions[N] extends ExpressionDefinition<infer P>
+      ? ItemArgs<P, ExpressOptions>
+      : never
+  ): Span;
+}
+
+/**
+ * Options of `actor.do`, in the same bag as the action's parameters.
+ *
+ * @public
+ */
+export interface ActionOptions {
+  /** Absolute scene time to start at, in seconds. Defaults to the actor's cursor. */
+  readonly at?: number;
+  /**
+   * How long the action occupies the actor, in seconds. The action reads it as
+   * `clip.duration`; without it the action lasts as long as what it records.
+   */
+  readonly duration?: number;
+  /**
+   * The expression the face shows while the action plays. An action lists the moods
+   * that also change its body.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents -- no names until the generated index fills the map
+  readonly mood?: BuiltinName<BuiltinExpressions> | ExpressionDefinition;
+  /** The blend of the action's calls that do not set their own, in seconds. */
+  readonly blend?: number;
+  /** The mode of the action's calls that do not set their own. */
+  readonly mode?: BlendMode;
+}
+
+/**
+ * Options of `actor.express`, in the same bag as the expression's parameters.
+ *
+ * @public
+ */
+export interface ExpressOptions {
+  /** Absolute scene time to start at, in seconds. Defaults to the actor's cursor. */
+  readonly at?: number;
+  /** How long the call occupies the actor, in seconds. Defaults to its blend. */
+  readonly duration?: number;
+  /** Seconds the face takes to change. Defaults to 0.2. */
+  readonly blend?: number;
+  /** `replace` (the default) takes over the face; `add` adds to it. */
+  readonly mode?: BlendMode;
+}
+
+/**
+ * Options of `row.prop`, `row.backdrop` and `row.effect`, in the same bag as the
+ * item's parameters.
+ *
+ * @public
+ */
+export interface ItemOptions {
+  /** Absolute scene time the item appears at, in seconds. Defaults to 0. */
+  readonly at?: number;
+  /** How long the item is shown, in seconds. Without it, to the end of the scene. */
+  readonly duration?: number;
+}
+
+/**
+ * Options of `prop.place`.
+ *
+ * @public
+ */
+export interface PlaceOptions {
+  /**
+   * Scene time the prop moves at, in seconds. Defaults to 0; inside an action's
+   * `build`, time 0 is the action's start.
+   */
+  readonly at?: number;
+}
+
+/**
+ * A prop in a row. An action that moves it takes the handle as a parameter.
+ *
+ * @remarks
+ * The prop stands with its ground point on the row's origin until it is placed.
+ * You are handed a prop by `row.prop()`; you never implement this interface.
+ *
+ * @public
+ */
+export interface Prop {
+  /** Names the prop in findings: its row, kind, name and occurrence index. */
+  readonly id: string;
+
+  /**
+   * Put the prop's ground point on `point`, from `at` on, until it is placed again.
+   *
+   * @param point - Where the ground point goes, in row units.
+   * @param options - When.
+   * @returns When the placement holds; it is open-ended.
+   */
+  place(point: Point, options?: PlaceOptions): Span;
+}
+
+/**
+ * What an action's `build` records on: the actor's depth 2 and 3 calls, with time 0
+ * at the action's start.
+ *
+ * @remarks
+ * `at` in a clip's calls, the spans they return and the times given to `mark` are
+ * all in the action's own time. A call without `at` follows the clip's own cursor,
+ * which starts at 0. You are handed a clip by `do`; you never implement this
+ * interface.
+ *
+ * @public
+ */
+export interface Clip<Marks extends string = string> {
+  /** Names the actor the clip records on. */
+  readonly id: string;
+  /** The duration the scene asked for in seconds, or `null` when it did not. */
+  readonly duration: number | null;
+  /** The name of the mood the scene asked for, or `null` when it did not. */
+  readonly mood: string | null;
+
+  /**
+   * As `actor.pose`, in the action's time.
+   *
+   * @param channels - Target values by channel name.
+   * @param options - Timing, blending and the timing curve.
+   * @returns When the call plays, in the action's time.
+   */
+  pose(channels: PoseChannels, options?: PoseOptions): Span;
+
+  /**
+   * As `actor.reach`, in the action's time.
+   *
+   * @param effector - Which hand or foot.
+   * @param target - Where it goes, in row units.
+   * @param options - Timing, blending and the timing curve.
+   * @returns When the call plays, in the action's time.
+   */
+  reach(effector: EffectorName, target: Point, options?: ReachOptions): Span;
+
+  /**
+   * As `actor.drive`, in the action's time.
+   *
+   * @param motion - Returns the values of the channels it moves at time `t`.
+   * @param options - Timing and blending.
+   * @returns When the call plays, in the action's time.
+   */
+  drive(motion: MotionFunction, options?: DriveOptions): Span;
+
+  /**
+   * As `actor.wait`.
+   *
+   * @param seconds - How long to wait.
+   * @returns When the wait plays, in the action's time.
+   */
+  wait(seconds: number): Span;
+
+  /**
+   * Say when one of the action's marks falls.
+   *
+   * @param name - One of the marks the action states.
+   * @param at - When, in seconds of the action's time.
+   */
+  mark(name: Marks, at: number): void;
 }
 
 /**
@@ -249,6 +472,81 @@ export interface Row {
    * @returns When the drawing is shown.
    */
   draw(draw: DrawFunction, options?: DrawOptions): Span;
+
+  /**
+   * Put a prop in the row, given as its definition.
+   *
+   * @param prop - The prop's definition.
+   * @param options - The prop's parameters, and when it is shown.
+   * @returns The prop's handle.
+   */
+  prop<P extends ParamSpec>(
+    prop: PropDefinition<P>,
+    ...options: ItemArgs<P, ItemOptions>
+  ): Prop;
+  /**
+   * Put a built-in prop in the row, given by name.
+   *
+   * @param name - The built-in prop's name.
+   * @param options - The prop's parameters, and when it is shown.
+   * @returns The prop's handle.
+   */
+  prop<N extends BuiltinName<BuiltinProps>>(
+    name: N,
+    ...options: BuiltinProps[N] extends PropDefinition<infer P>
+      ? ItemArgs<P, ItemOptions>
+      : never
+  ): Prop;
+
+  /**
+   * Show a backdrop behind the row, given as its definition.
+   *
+   * @param backdrop - The backdrop's definition.
+   * @param options - The backdrop's parameters, and when it is shown.
+   * @returns When the backdrop is shown.
+   */
+  backdrop<P extends ParamSpec>(
+    backdrop: BackdropDefinition<P>,
+    ...options: ItemArgs<P, ItemOptions>
+  ): Span;
+  /**
+   * Show a built-in backdrop behind the row, given by name.
+   *
+   * @param name - The built-in backdrop's name.
+   * @param options - The backdrop's parameters, and when it is shown.
+   * @returns When the backdrop is shown.
+   */
+  backdrop<N extends BuiltinName<BuiltinBackdrops>>(
+    name: N,
+    ...options: BuiltinBackdrops[N] extends BackdropDefinition<infer P>
+      ? ItemArgs<P, ItemOptions>
+      : never
+  ): Span;
+
+  /**
+   * Show an effect in the row, given as its definition.
+   *
+   * @param effect - The effect's definition.
+   * @param options - The effect's parameters, and when it is shown.
+   * @returns When the effect is shown.
+   */
+  effect<P extends ParamSpec>(
+    effect: EffectDefinition<P>,
+    ...options: ItemArgs<P, ItemOptions>
+  ): Span;
+  /**
+   * Show a built-in effect in the row, given by name.
+   *
+   * @param name - The built-in effect's name.
+   * @param options - The effect's parameters, and when it is shown.
+   * @returns When the effect is shown.
+   */
+  effect<N extends BuiltinName<BuiltinEffects>>(
+    name: N,
+    ...options: BuiltinEffects[N] extends EffectDefinition<infer P>
+      ? ItemArgs<P, ItemOptions>
+      : never
+  ): Span;
 }
 
 /**

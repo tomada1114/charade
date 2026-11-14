@@ -165,3 +165,131 @@ export class SceneClosedError extends CharadeError {
     );
   }
 }
+
+/**
+ * The kind of a vocabulary item: what `defineAction` and its siblings make.
+ *
+ * @public
+ */
+export type ItemKind = "action" | "expression" | "prop" | "backdrop" | "effect";
+
+/**
+ * A definition declared a parameter whose name the call's options already use.
+ *
+ * @remarks
+ * Options and timing share one bag with the parameters, so a parameter may not be
+ * named `at`, `duration`, `mood`, `blend` or `mode`. `path` is the parameter's dotted
+ * path in the definition, such as `params.at`.
+ *
+ * @example
+ * ```ts
+ * const error = new ReservedParameterError("action", "params.at");
+ * console.log(error.code, error.kind, error.path);
+ * // => "ERR_DEFINE_RESERVED_PARAMETER" "action" "params.at"
+ * ```
+ *
+ * @public
+ */
+export class ReservedParameterError extends CharadeError {
+  /** Stable discriminator, unchanged across non-breaking releases. */
+  readonly code = "ERR_DEFINE_RESERVED_PARAMETER" as const;
+
+  /** The kind of item being defined. */
+  readonly kind: ItemKind;
+
+  /** The dotted path of the parameter, such as `params.at`. */
+  readonly path: string;
+
+  /**
+   * @param kind - The kind of item being defined.
+   * @param path - The dotted path of the parameter.
+   * @param options - Standard `Error` options, such as the `cause`.
+   */
+  constructor(kind: ItemKind, path: string, options?: ErrorOptions) {
+    super(
+      `The ${kind} declares ${path}, a name its options use; at, duration, mood, blend and mode are taken.`,
+      options,
+    );
+    this.kind = kind;
+    this.path = path;
+  }
+}
+
+/**
+ * A parameter's `default` is not a value the parameter allows.
+ *
+ * @remarks
+ * A number's default lies outside its `min` and `max`, an enum's is not one of its
+ * `values`, a default has the wrong type, or a `prop` parameter has one at all.
+ * `path` names the default, such as `params.speed.default`; the value is not carried.
+ *
+ * @example
+ * ```ts
+ * const error = new InvalidDefaultError("action", "params.speed.default");
+ * console.log(error.code, error.path);
+ * // => "ERR_DEFINE_INVALID_DEFAULT" "params.speed.default"
+ * ```
+ *
+ * @public
+ */
+export class InvalidDefaultError extends CharadeError {
+  /** Stable discriminator, unchanged across non-breaking releases. */
+  readonly code = "ERR_DEFINE_INVALID_DEFAULT" as const;
+
+  /** The kind of item being defined. */
+  readonly kind: ItemKind;
+
+  /** The dotted path of the default, such as `params.speed.default`. */
+  readonly path: string;
+
+  /**
+   * @param kind - The kind of item being defined.
+   * @param path - The dotted path of the default.
+   * @param options - Standard `Error` options, such as the `cause`.
+   */
+  constructor(kind: ItemKind, path: string, options?: ErrorOptions) {
+    super(`The ${kind}'s ${path} is not a value the parameter allows.`, options);
+    this.kind = kind;
+    this.path = path;
+  }
+}
+
+/**
+ * A definition is missing a member or has one of the wrong shape.
+ *
+ * @remarks
+ * Types are erased before a scene runs, so `defineAction` and its siblings check the
+ * shape when they run: a non-empty `name`, a `description`, a parameter specification
+ * whose every key has a known `type` and a `doc` line, and a `build` or `draw`
+ * function. `path` names the member, such as `name` or `params.speed.type`.
+ *
+ * @example
+ * ```ts
+ * const error = new InvalidDefinitionError("prop", "draw");
+ * console.log(error.code, error.kind, error.path);
+ * // => "ERR_DEFINE_INVALID_DEFINITION" "prop" "draw"
+ * ```
+ *
+ * @public
+ */
+export class InvalidDefinitionError extends CharadeError {
+  /** Stable discriminator, unchanged across non-breaking releases. */
+  readonly code = "ERR_DEFINE_INVALID_DEFINITION" as const;
+
+  /** The kind of item being defined. */
+  readonly kind: ItemKind;
+
+  /** The dotted path of the member, such as `params.speed.type`. */
+  readonly path: string;
+
+  /**
+   * @param kind - The kind of item being defined.
+   * @param path - The dotted path of the member.
+   * @param options - Standard `Error` options, such as the `cause`.
+   */
+  constructor(kind: ItemKind, path: string, options?: ErrorOptions) {
+    super(`The ${kind}'s ${path} is missing or has the wrong shape.`, options);
+    this.kind = kind;
+    this.path = path;
+  }
+}
