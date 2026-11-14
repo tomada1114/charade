@@ -637,7 +637,7 @@ describe("a.do with a definition", () => {
   });
 
   it.each([
-    ["a mark the action does not state", "relase", 0.5, ["release"]],
+    ["a mark the action does not state", "releaseAt", 0.5, ["release"]],
     ["a mark that is not a string", 1, 0.5, []],
   ])("reports %s", (_label, name, at, nearest) => {
     const action = defineAction({
