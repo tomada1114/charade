@@ -4,6 +4,9 @@ import * as api from "../src/index.js";
 import {
   AsyncBuildError,
   CharadeError,
+  InvalidDefaultError,
+  InvalidDefinitionError,
+  ReservedParameterError,
   SceneClosedError,
   UnknownFlagError,
   UnknownRowError,
@@ -68,6 +71,9 @@ const exportedErrorNames = Object.entries(api)
  */
 const representativeErrors: Record<string, Error> = {
   AsyncBuildError: new AsyncBuildError(),
+  InvalidDefaultError: new InvalidDefaultError("action", "params.speed.default"),
+  InvalidDefinitionError: new InvalidDefinitionError("prop", "draw"),
+  ReservedParameterError: new ReservedParameterError("action", "params.at"),
   SampleError: new SampleError("a sample failure"),
   SceneClosedError: new SceneClosedError(),
   UnknownFlagError: new UnknownFlagError("check.strict"),

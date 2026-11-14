@@ -80,3 +80,22 @@ export interface DrawData {
 
 /** What a segment of an actor's track records. */
 export type ActorSegmentData = PoseData | ReachData | DriveData | WaitData;
+
+/** A prop's placement: where its ground point is from the segment's start on. */
+export interface PlaceData {
+  readonly kind: "place";
+  readonly x: number;
+  readonly y: number;
+}
+
+/**
+ * A prop, backdrop or effect while it is shown: its name, its definition when it was
+ * passed as one (`null` for a built-in named by a string), and its resolved
+ * parameters.
+ */
+export interface ItemData {
+  readonly kind: "prop" | "backdrop" | "effect";
+  readonly name: string;
+  readonly definition: object | null;
+  readonly params: Readonly<Record<string, unknown>>;
+}

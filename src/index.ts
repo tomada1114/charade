@@ -40,26 +40,87 @@ export type {
 export {
   AsyncBuildError,
   CharadeError,
+  InvalidDefaultError,
+  InvalidDefinitionError,
+  ReservedParameterError,
   SceneClosedError,
   UnknownFlagError,
   UnknownRowError,
 } from "./errors.js";
+export type { ItemKind } from "./errors.js";
 export type { Point } from "./rig/kinematics.js";
 export type { ChannelName, EffectorName } from "./rig/rig.js";
+export {
+  builtinActions,
+  builtinBackdrops,
+  builtinEffects,
+  builtinExpressions,
+  builtinProps,
+} from "./scene/builtins.js";
 export type {
+  BuiltinActions,
+  BuiltinBackdrops,
+  BuiltinEffects,
+  BuiltinExpressions,
+  BuiltinProps,
+} from "./scene/builtins.js";
+export {
+  defineAction,
+  defineBackdrop,
+  defineEffect,
+  defineExpression,
+  defineProp,
+} from "./scene/define.js";
+export type {
+  ActionDefinition,
+  ActionInput,
+  BackdropDefinition,
+  Definition,
+  DrawnDefinition,
+  DrawnInput,
+  EffectDefinition,
+  ExpressionDefinition,
+  ExpressionInput,
+  FaceChannels,
+  NoParams,
+  PropDefinition,
+} from "./scene/define.js";
+export type {
+  ActionOptions,
   Actor,
   ActorOptions,
+  Clip,
   DrawFunction,
   DrawOptions,
   DriveOptions,
+  ExpressOptions,
+  ItemOptions,
   MotionFunction,
+  PlaceOptions,
   PoseChannels,
   PoseOptions,
+  Prop,
   ReachOptions,
   Row,
   Span,
   Stage,
 } from "./scene/handles.js";
+export type {
+  BooleanParam,
+  ColorParam,
+  EnumParam,
+  ItemArgs,
+  NumberParam,
+  Param,
+  ParamArgs,
+  ParamSpec,
+  ParamValue,
+  PointParam,
+  PropParam,
+  RequiredParamKeys,
+  ResolvedParams,
+  TextParam,
+} from "./scene/params.js";
 export { scene } from "./scene/scene.js";
 export type { Scene, SceneOptions } from "./scene/scene.js";
 export type { RandomSource } from "./timeline/random.js";

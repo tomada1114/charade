@@ -9,9 +9,45 @@ import type {
 import { describe, expect, expectTypeOf, it } from "vitest";
 
 import {
+  type ActionDefinition,
+  type ActionOptions,
   type Actor,
   type ActorOptions,
   AsyncBuildError,
+  type BackdropDefinition,
+  type BuiltinActions,
+  builtinActions,
+  type BuiltinBackdrops,
+  builtinBackdrops,
+  type BuiltinEffects,
+  builtinEffects,
+  type BuiltinExpressions,
+  builtinExpressions,
+  type BuiltinProps,
+  builtinProps,
+  type Clip,
+  defineAction,
+  defineBackdrop,
+  defineEffect,
+  defineExpression,
+  defineProp,
+  type Definition,
+  type EffectDefinition,
+  type ExpressionDefinition,
+  type ExpressOptions,
+  type FaceChannels,
+  InvalidDefaultError,
+  InvalidDefinitionError,
+  type ItemKind,
+  type ItemOptions,
+  type NoParams,
+  type ParamArgs,
+  type ParamSpec,
+  type PlaceOptions,
+  type Prop,
+  type PropDefinition,
+  ReservedParameterError,
+  type ResolvedParams,
   type BlendMode,
   type ChannelName,
   CharadeError,
@@ -441,17 +477,19 @@ describe("handle types", () => {
     expectTypeOf<Stage["sync"]>().toEqualTypeOf<() => number>();
   });
 
-  it("gives a row an id, an index, an actor and free drawing", () => {
-    expectTypeOf<keyof Row>().toEqualTypeOf<"id" | "index" | "actor" | "draw">();
+  it("gives a row an id, an index, an actor, free drawing and its items", () => {
+    expectTypeOf<keyof Row>().toEqualTypeOf<
+      "id" | "index" | "actor" | "draw" | "prop" | "backdrop" | "effect"
+    >();
     expectTypeOf<Row["actor"]>().toEqualTypeOf<(options?: ActorOptions) => Actor>();
     expectTypeOf<Row["draw"]>().toEqualTypeOf<
       (draw: DrawFunction, options?: DrawOptions) => Span
     >();
   });
 
-  it("gives an actor an id and its four calls", () => {
+  it("gives an actor an id, its four calls, and do and express", () => {
     expectTypeOf<keyof Actor>().toEqualTypeOf<
-      "id" | "pose" | "reach" | "drive" | "wait"
+      "id" | "pose" | "reach" | "drive" | "wait" | "do" | "express"
     >();
     expectTypeOf<Actor["id"]>().toEqualTypeOf<string>();
     expectTypeOf<Actor["pose"]>().parameters.toEqualTypeOf<
@@ -599,5 +637,271 @@ describe("scene error types", () => {
       // @ts-expect-error the constructor takes the row count, not a message
       new UnknownRowError("row 4");
     expect(rejected).toBeTypeOf("function");
+  });
+});
+
+const speedParams = {
+  speed: { type: "number", default: 1, min: 0.5, max: 2, doc: "How fast." },
+  side: { type: "enum", values: ["left", "right"], doc: "Which side." },
+  target: { type: "prop", doc: "What is moved." },
+} as const;
+
+describe("parameter types", () => {
+  // R5
+  it("makes a key without a default required and one with a default optional", () => {
+    expectTypeOf<ParamArgs<typeof speedParams>>().toEqualTypeOf<
+      {
+        readonly side: "left" | "right";
+        readonly target: Prop;
+      } & { readonly speed?: number }
+    >();
+    const accepted: ParamArgs<typeof speedParams>[] = [];
+    const reject = (prop: Prop): void => {
+      // @ts-expect-error side has no default, so it is required
+      accepted.push({ target: prop });
+      accepted.push({ side: "left", target: prop });
+    };
+    expect(reject).toBeTypeOf("function");
+  });
+
+  it("gives build every parameter, defaults filled in", () => {
+    expectTypeOf<ResolvedParams<typeof speedParams>>().toEqualTypeOf<{
+      readonly speed: number;
+      readonly side: "left" | "right";
+      readonly target: Prop;
+    }>();
+  });
+
+  it("types every parameter kind's value", () => {
+    defineProp({
+      name: "all",
+      description: "",
+      params: {
+        a: { type: "boolean", default: true, doc: "d" },
+        b: { type: "color", default: "#000", doc: "d" },
+        c: { type: "point", doc: "d" },
+        d: { type: "text", doc: "d" },
+      },
+      draw(_ctx, params) {
+        expectTypeOf(params).toEqualTypeOf<{
+          readonly a: boolean;
+          readonly b: string;
+          readonly c: Point;
+          readonly d: string;
+        }>();
+      },
+    });
+  });
+});
+
+describe("definition types", () => {
+  const params = { speed: speedParams.speed } as const;
+  const wave = defineAction({
+    name: "wave",
+    description: "",
+    params,
+    marks: ["peak"],
+    build(clip, resolved) {
+      expectTypeOf(clip).toEqualTypeOf<Clip<"peak">>();
+      expectTypeOf(resolved).toEqualTypeOf<ResolvedParams<typeof params>>();
+    },
+  });
+
+  it("infers the parameters and the marks, unwidened", () => {
+    expectTypeOf(wave).toEqualTypeOf<ActionDefinition<typeof params, "peak">>();
+    expectTypeOf(
+      defineAction({ name: "x", description: "", build: () => undefined }),
+    ).toEqualTypeOf<ActionDefinition<NoParams, never>>();
+  });
+
+  it("keeps a specific definition assignable to the general type", () => {
+    expectTypeOf(wave).toExtend<ActionDefinition>();
+    expectTypeOf(wave).toExtend<Definition>();
+    const smug = defineExpression({ name: "s", description: "", build: () => ({}) });
+    expectTypeOf(smug).toEqualTypeOf<ExpressionDefinition<NoParams>>();
+    expectTypeOf(smug).toExtend<ExpressionDefinition>();
+    const drawn = { name: "p", description: "", draw: (): void => undefined };
+    expectTypeOf(defineProp(drawn)).toEqualTypeOf<PropDefinition<NoParams>>();
+    expectTypeOf(defineBackdrop(drawn)).toEqualTypeOf<BackdropDefinition<NoParams>>();
+    expectTypeOf(defineEffect(drawn)).toEqualTypeOf<EffectDefinition<NoParams>>();
+    expectTypeOf<PropDefinition<typeof params>>().toExtend<PropDefinition>();
+  });
+
+  it("types an expression's result as face channels", () => {
+    expectTypeOf<ExpressionDefinition["build"]>().returns.toEqualTypeOf<FaceChannels>();
+    expectTypeOf<keyof FaceChannels>().toEqualTypeOf<
+      | "eyeOpen"
+      | "gazeX"
+      | "gazeY"
+      | "browHeight"
+      | "browTilt"
+      | "mouthCurve"
+      | "mouthOpen"
+      | "mouthWidth"
+    >();
+  });
+
+  it("names the five kinds", () => {
+    expectTypeOf<Definition["kind"]>().toEqualTypeOf<ItemKind>();
+    expectTypeOf<ItemKind>().toEqualTypeOf<
+      "action" | "expression" | "prop" | "backdrop" | "effect"
+    >();
+  });
+
+  it("rejects a parameter specification that is not plain data", () => {
+    const rejected = (): unknown =>
+      defineAction({
+        name: "x",
+        description: "",
+        // @ts-expect-error "date" is not a parameter type
+        params: { when: { type: "date", doc: "d" } },
+        build: () => undefined,
+      });
+    expect(rejected).toBeTypeOf("function");
+    expectTypeOf<{
+      readonly a: { readonly type: "text"; readonly doc: "d" };
+    }>().toExtend<ParamSpec>();
+  });
+});
+
+describe("using definitions", () => {
+  const params = { speed: speedParams.speed, side: speedParams.side } as const;
+  const sway = defineAction({
+    name: "sway",
+    description: "",
+    params,
+    marks: ["peak"],
+    build: () => undefined,
+  });
+  const free = defineAction({ name: "free", description: "", build: () => undefined });
+
+  it("returns a span with the action's marks", () => {
+    const record = (actor: Actor): void => {
+      expectTypeOf(actor.do(sway, { side: "left" })).toEqualTypeOf<Span<"peak">>();
+      expectTypeOf(actor.do(free)).toEqualTypeOf<Span>();
+      actor.do(free, { at: 1, duration: 2, blend: 0.1, mode: "add" });
+    };
+    expect(record).toBeTypeOf("function");
+  });
+
+  it("requires the bag when a parameter is required, and rejects an unknown key", () => {
+    const rejected = (actor: Actor): void => {
+      // @ts-expect-error side is required
+      actor.do(sway);
+      // @ts-expect-error sped is neither a parameter nor an option
+      actor.do(sway, { side: "left", sped: 1 });
+      // @ts-expect-error 2 is not one of the side's values
+      actor.do(sway, { side: 2 });
+    };
+    expect(rejected).toBeTypeOf("function");
+  });
+
+  it("takes no built-in name while the maps are empty", () => {
+    expectTypeOf<keyof BuiltinActions>().toEqualTypeOf<never>();
+    expectTypeOf<keyof BuiltinExpressions>().toEqualTypeOf<never>();
+    expectTypeOf<keyof BuiltinProps>().toEqualTypeOf<never>();
+    expectTypeOf<keyof BuiltinBackdrops>().toEqualTypeOf<never>();
+    expectTypeOf<keyof BuiltinEffects>().toEqualTypeOf<never>();
+    expectTypeOf(builtinActions).toEqualTypeOf<BuiltinActions>();
+    expectTypeOf(builtinExpressions).toEqualTypeOf<BuiltinExpressions>();
+    expectTypeOf(builtinProps).toEqualTypeOf<BuiltinProps>();
+    expectTypeOf(builtinBackdrops).toEqualTypeOf<BuiltinBackdrops>();
+    expectTypeOf(builtinEffects).toEqualTypeOf<BuiltinEffects>();
+    const rejected = (actor: Actor): void => {
+      // @ts-expect-error no built-in action exists yet
+      actor.do("sitDown");
+    };
+    expect(rejected).toBeTypeOf("function");
+  });
+
+  it("takes a mood as an expression definition", () => {
+    const smug = defineExpression({ name: "smug", description: "", build: () => ({}) });
+    expectTypeOf<ActionOptions["mood"]>().toEqualTypeOf<
+      ExpressionDefinition | undefined
+    >();
+    expectTypeOf(smug).toExtend<NonNullable<ActionOptions["mood"]>>();
+  });
+
+  it("types express, prop, backdrop, effect and place", () => {
+    const grin = defineExpression({
+      name: "grin",
+      description: "",
+      params: { width: { type: "number", default: 1, doc: "d" } },
+      build: ({ width }) => ({ mouthWidth: width }),
+    });
+    const ball = defineProp({
+      name: "ball",
+      description: "",
+      params: { radius: { type: "number", doc: "d" } },
+      draw: () => undefined,
+    });
+    const record = (actor: Actor, row: Row): void => {
+      expectTypeOf(
+        actor.express(grin, { width: 1.2, blend: 0.1 }),
+      ).toEqualTypeOf<Span>();
+      expectTypeOf(row.prop(ball, { radius: 0.1, at: 1 })).toEqualTypeOf<Prop>();
+      // @ts-expect-error radius is required
+      row.prop(ball);
+      const plain = defineBackdrop({
+        name: "plain",
+        description: "",
+        draw: () => undefined,
+      });
+      expectTypeOf(row.backdrop(plain, { duration: 2 })).toEqualTypeOf<Span>();
+      const sweat = defineEffect({
+        name: "sweat",
+        description: "",
+        draw: () => undefined,
+      });
+      expectTypeOf(row.effect(sweat)).toEqualTypeOf<Span>();
+      expectTypeOf(
+        row.prop(ball, { radius: 0.1 }).place({ x: 1, y: 0 }, { at: 1 }),
+      ).toEqualTypeOf<Span>();
+    };
+    expect(record).toBeTypeOf("function");
+    expectTypeOf<keyof ExpressOptions>().toEqualTypeOf<
+      "at" | "duration" | "blend" | "mode"
+    >();
+    expectTypeOf<keyof ItemOptions>().toEqualTypeOf<"at" | "duration">();
+    expectTypeOf<keyof PlaceOptions>().toEqualTypeOf<"at">();
+    expectTypeOf<keyof ActionOptions>().toEqualTypeOf<
+      "at" | "duration" | "mood" | "blend" | "mode"
+    >();
+  });
+
+  it("gives a clip the actor's depth 2 and 3 calls and mark", () => {
+    expectTypeOf<keyof Clip>().toEqualTypeOf<
+      "id" | "duration" | "mood" | "pose" | "reach" | "drive" | "wait" | "mark"
+    >();
+    expectTypeOf<Clip["duration"]>().toEqualTypeOf<number | null>();
+    expectTypeOf<Clip<"release">["mark"]>().parameters.toEqualTypeOf<
+      [name: "release", at: number]
+    >();
+    expectTypeOf<keyof Prop>().toEqualTypeOf<"id" | "place">();
+  });
+});
+
+describe("definition errors", () => {
+  it("carries the kind and the path, never the rejected value", () => {
+    for (const error of [
+      new ReservedParameterError("action", "params.at"),
+      new InvalidDefaultError("action", "params.a.default"),
+      new InvalidDefinitionError("prop", "draw"),
+    ]) {
+      expectTypeOf(error.kind).toEqualTypeOf<ItemKind>();
+      expectTypeOf(error.path).toEqualTypeOf<string>();
+    }
+    expectTypeOf<
+      ReservedParameterError["code"]
+    >().toEqualTypeOf<"ERR_DEFINE_RESERVED_PARAMETER">();
+    expectTypeOf<
+      InvalidDefaultError["code"]
+    >().toEqualTypeOf<"ERR_DEFINE_INVALID_DEFAULT">();
+    expectTypeOf<
+      InvalidDefinitionError["code"]
+    >().toEqualTypeOf<"ERR_DEFINE_INVALID_DEFINITION">();
+    expectTypeOf<Exclude<keyof InvalidDefaultError, keyof Error>>().toEqualTypeOf<
+      "code" | "kind" | "path"
+    >();
   });
 });

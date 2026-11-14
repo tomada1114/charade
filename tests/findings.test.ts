@@ -10,6 +10,9 @@ import {
   FINDING_CAP,
   type Finding,
   FindingCollector,
+  InvalidDefaultError,
+  InvalidDefinitionError,
+  ReservedParameterError,
   SceneClosedError,
   UnknownFlagError,
   UnknownRowError,
@@ -76,6 +79,9 @@ describe("the code namespace", () => {
   it("has a representative code for every concrete error class", () => {
     expect(errorCodes.sort()).toEqual([
       "AsyncBuildError",
+      "InvalidDefaultError",
+      "InvalidDefinitionError",
+      "ReservedParameterError",
       "SceneClosedError",
       "UnknownFlagError",
       "UnknownRowError",
@@ -84,6 +90,9 @@ describe("the code namespace", () => {
 
   it.each([
     ["AsyncBuildError", new AsyncBuildError().code],
+    ["InvalidDefaultError", new InvalidDefaultError("action", "params.a.default").code],
+    ["InvalidDefinitionError", new InvalidDefinitionError("prop", "draw").code],
+    ["ReservedParameterError", new ReservedParameterError("action", "params.at").code],
     ["SceneClosedError", new SceneClosedError().code],
     ["UnknownFlagError", new UnknownFlagError("check.strict").code],
     ["UnknownRowError", new UnknownRowError(4).code],

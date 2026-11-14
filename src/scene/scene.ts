@@ -5,6 +5,7 @@ import { DEFAULT_SEED } from "../timeline/random.js";
 import { DEFAULT_FPS, type Micros } from "../timeline/time.js";
 import { computeDuration, type Timeline } from "../timeline/timeline.js";
 import { SceneBuilder } from "./builder.js";
+import { BUILTIN_VOCABULARY, type Vocabulary } from "./builtins.js";
 import type { Stage } from "./handles.js";
 import { deepFreeze, isRecord, microsOf } from "./values.js";
 
@@ -252,9 +253,18 @@ export function scene(first: unknown, second?: unknown): Scene {
     typeof first === "function" && second === undefined
       ? [undefined, first]
       : [first, second];
+  return buildScene(options, build, BUILTIN_VOCABULARY);
+}
+
+/** `scene`, resolving names against `vocabulary`: the seam the tests give their own names. */
+export function buildScene(
+  options: unknown,
+  build: unknown,
+  vocabulary: Vocabulary,
+): Scene {
   const findings = new FindingCollector();
   const settings = resolveOptions(options, findings);
-  const builder = new SceneBuilder(settings, findings);
+  const builder = new SceneBuilder(settings, findings, vocabulary);
   let returned: unknown;
   if (isBuild(build)) {
     try {

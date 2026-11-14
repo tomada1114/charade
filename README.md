@@ -126,6 +126,39 @@ function drawBall(ctx: ShapeContext): void {
 }
 ```
 
+- `defineAction`, `defineExpression`, `defineProp`, `defineBackdrop` and `defineEffect`
+  make a vocabulary item from a name, a description, parameters written as plain data
+  `as const`, and a `build` or `draw` method. Nothing is registered: pass the definition
+  to `a.do`, `a.express`, `row.prop`, `row.backdrop` or `row.effect`, which also take a
+  built-in by name (`builtinActions` and its siblings list them). A parameter without a
+  `default` is required, and its type is derived from the specification. A malformed
+  definition throws `InvalidDefinitionError`, `ReservedParameterError` (a parameter
+  named `at`, `duration`, `mood`, `blend` or `mode`) or `InvalidDefaultError`; a bad
+  value in a scene is a finding.
+
+```ts
+import { type ActionDefinition, defineAction, scene } from "charade";
+
+const waveParams = {
+  speed: { type: "number", default: 1, min: 0.5, max: 2, unit: "x", doc: "How fast." },
+} as const;
+
+const waveAction: ActionDefinition<typeof waveParams> = defineAction({
+  name: "wave",
+  description: "Raises the near hand and waves it.",
+  params: waveParams,
+  build(clip, { speed }) {
+    clip.pose({ shoulderR: 2.6, elbowR: 0.4 }, { duration: 0.4 / speed });
+    clip.pose({ elbowR: 1.2 }, { duration: 0.3 / speed });
+    clip.pose({ elbowR: 0.4 }, { duration: 0.3 / speed });
+  },
+});
+
+export default scene((stage) => {
+  stage.actor().do(waveAction, { speed: 1.5 });
+});
+```
+
 See the generated TypeDoc documentation from `pnpm docs:build` for the full API
 reference.
 
