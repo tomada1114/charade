@@ -311,6 +311,46 @@ These set the conventions the later items follow.
   same alone and over an open-ended `stand`. The sweep in
   `tests/vocabulary-samples.test.ts` runs every action both ways.
 
+## The three actions that move a prop
+
+- `pickUp`, `push` and `carry` take the prop as `prop` and `from` as `walk` does: every
+  foot and hand target is counted from `from`, so each plays where a walk ended.
+- An action cannot ask a prop where it is, so the scene says: `where` is the prop's
+  ground point from the actor's feet, and `grip` the spot on the prop the hands take,
+  from its ground point. `where` is the placement and `grip` a fact of the prop's shape,
+  which is why they are two points; the defaults fit a default `box` (`pickUp`, `carry`)
+  and a default `rock` (`push`). `carry`'s `deck` and `handle` are from the feet, since
+  they are two spots on one cart.
+- A prop is on a hand only while it is in the hands: `pickUp` holds it on `handR` from
+  the mark `grip`, `carry` from its start. What travels along the ground is a `move`,
+  never a hold: a hand's height wobbles with the IK beneath it, and the `cart`'s `roll`
+  and the `lever`'s `swing` were made for one `move` at constant speed. The hands follow
+  the moving prop instead, in reaches cut 0.06 s short (`glide` in `actions/push.ts`): a
+  reach is eased, and one long one would leave a prop that moves at constant speed. They
+  keep to it within 0.015.
+- `push` with `distance` 0 records nothing on the prop, which is what "gets nowhere" is:
+  the track the scene wrote is the whole track. The strain is `tries` heaves, the back
+  foot skidding after each. With a distance the prop is a `move` from the mark `heave`
+  to the mark `stop` and the actor walks behind it with `stride`.
+- `by` picks the tool: `push` `hands` or `lever`, `carry` `arms` or `cart`. A second
+  prop cannot be a parameter that is left out, since a `prop` parameter has no default,
+  and an action cannot set a prop's parameters, so the tool is the scene's: it makes the
+  lever or the cart after the action, with `swingAt` and `swingFor`, or `roll`, `rollAt`
+  and `rollFor` and a `move`, from the marks the span returned. The action only puts the
+  hands where the tool's handle is and goes (`grip` and `press`; `handle`), and for a
+  cart sets the load down on `deck` and moves it as the cart is moved. Each description
+  spells the calls out. A prop made after the action draws after the one it moves.
+- Marks: `pickUp` `grip` and `up`; `push` `contact`, `heave` and `stop`; `carry`
+  `loaded`, `off` and `stop`. `heave` to `stop`, and `off` to `stop`, are the times a
+  moving part is given.
+- Each lists `dejected`: `pickUp` heaves in two goes and ends stooped with the prop held
+  low, `push` is slower and ends stooped, `carry` trudges bowed. `carry` walks in the
+  pose `pickUp` ends in, under either mood, so the prop does not jump between them.
+- `stride` takes a fifth argument, when it starts and how long it may last, and returns
+  when the hips leave and arrive, for an action that does something before walking;
+  `strideTime` is its natural length. A foot under a deep crouch comes up on its toe
+  once the ankle is on its limit (`squat` in `actions/pickUp.ts`).
+
 ## The four effects
 
 - An effect draws around its origin and its description says what that origin is, which
