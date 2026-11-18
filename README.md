@@ -238,19 +238,23 @@ export default scene((stage) => {
 ```
 
 - The built-in actions are `stand`, `walk`, `run`, `cheer`, `point`, `think`, `sitDown`,
-  `throw` and `slump`, with the expressions `neutral`, `happy`, `dejected`, `angry`,
-  `surprised` and `focused`, and the props `ball`, `box`, `hoop`, `rock`, `lever`,
-  `cart`, `ladder`, `desk`, `laptop` and `lightbulb`. A built-in is named by a string,
-  and its parameters are typed by that name. `mood` puts an expression on the face for
-  the length of an action, and an action lists the moods that also change its body.
-  `throw` takes the prop it throws: the ball rides the near hand until the mark
-  `release`, then flies a parabola. `stand` breathes and blinks to the end of the scene
-  without lengthening it, so it is the last call on an actor that has nothing more to
-  do: an open-ended `stand` shows through wherever a later call has ended, so started
-  first it would stand a seated figure back up. `walk` and `run` take the actor
-  `distance` along the ground from `from` and leave it there. A prop has `place`, `hold`
-  (it rides a hand or a foot) and `move` (a straight or arced path), which is how your
-  own action moves one. A placed prop draws behind the actor;
+  `throw`, `slump`, `pickUp`, `push` and `carry`, with the expressions `neutral`,
+  `happy`, `dejected`, `angry`, `surprised` and `focused`, and the props `ball`, `box`,
+  `hoop`, `rock`, `lever`, `cart`, `ladder`, `desk`, `laptop` and `lightbulb`. A
+  built-in is named by a string, and its parameters are typed by that name. `mood` puts
+  an expression on the face for the length of an action, and an action lists the moods
+  that also change its body. `throw` takes the prop it throws: the ball rides the near
+  hand until the mark `release`, then flies a parabola. `pickUp`, `push` and `carry`
+  take the prop they move the same way: `pickUp` leaves it in the hands, `push` slides
+  it `distance` along the ground (0 strains and gets nowhere; `by: "lever"` bears down
+  on a lever), and `carry` walks off with it in the arms or, `by: "cart"`, on a cart the
+  scene moves over the times the returned marks give. `stand` breathes and blinks to the
+  end of the scene without lengthening it, so it is the last call on an actor that has
+  nothing more to do: an open-ended `stand` shows through wherever a later call has
+  ended, so started first it would stand a seated figure back up. `walk` and `run` take
+  the actor `distance` along the ground from `from` and leave it there. A prop has
+  `place`, `hold` (it rides a hand or a foot) and `move` (a straight or arced path),
+  which is how your own action moves one. A placed prop draws behind the actor;
   `place(point, { layer: "front" })` puts it in front, as for a desk the figure sits
   behind.
 - The built-in backdrops are `plain`, `court`, `office`, `hill` and `night`:

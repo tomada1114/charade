@@ -8,16 +8,16 @@ import {
 
 /** The rig's thigh and shin, which are the same length, and its foot. */
 const LEG = 0.24;
-const FOOT = 0.08;
+export const FOOT = 0.08;
 
 /** The pelvis's rest height, which `pelvisY` is counted from. */
-const STANDING = 2 * LEG;
+export const STANDING: number = 2 * LEG;
 
 /** How far a hip may be from a planted ankle: short of the whole leg, so the knee stays bent. */
 const LEG_REACH = 0.477;
 
 /** The ankle's limits, with a margin an arrival's rounding cannot cross. */
-const ANKLE = [-0.55, 0.45] as const;
+export const ANKLE = [-0.55, 0.45] as const;
 
 /**
  * One way of going on two feet. Lengths are in units of the figure's height and times
@@ -72,7 +72,7 @@ const RAISED = 0.4;
 /** How far a heel has peeled half way through peeling: the leg unfolds late. */
 const HALF_PEELED = 0.35;
 
-function smoothstep(p: number): number {
+export function smoothstep(p: number): number {
   return p * p * (3 - 2 * p);
 }
 
@@ -85,7 +85,7 @@ function clamp(value: number, min: number, max: number): number {
  * at `footX`, `footY`, the hips at `hipX`, `hipY` and the knee bent forward: the
  * shin's lean, undone.
  */
-function ankleFor(
+export function ankleFor(
   hipX: number,
   hipY: number,
   footX: number,
@@ -97,12 +97,37 @@ function ankleFor(
   return clamp(-Math.PI / 2 - shin + pitch, ...ANKLE);
 }
 
+/** How long `stride` takes over `distance` when no duration is asked, in seconds. */
+export function strideTime(gait: Gait, distance: number): number {
+  const count = Math.max(3, Math.round(distance / gait.step) + 1);
+  const swing = 2 * gait.beat - gait.stance * gait.beat;
+  return 0.08 + swing + (count - 1) * gait.beat + gait.settle;
+}
+
+/** When a stride's hips travel, in the clip's seconds. */
+export interface Travel {
+  /** When the hips, but for their eased start, leave `from`. */
+  readonly leaves: number;
+  /** When the hips, but for their eased stop, are `distance` further on. */
+  readonly arrives: number;
+  /** When the figure stands still again: the stride's end. */
+  readonly end: number;
+}
+
 /**
  * Records `gait` on `clip` from standing at `from` to standing `distance` further on.
  * The hips travel at a steady speed between an eased start and stop, every planted
- * foot is held on its spot by a reach, and a swinging foot is carried over.
+ * foot is held on its spot by a reach, and a swinging foot is carried over. It takes
+ * the whole clip unless `within` says when it starts and how long it may last, for an
+ * action that does something before or after walking.
  */
-export function stride(clip: Clip, gait: Gait, from: number, distance: number): void {
+export function stride(
+  clip: Clip,
+  gait: Gait,
+  from: number,
+  distance: number,
+  within?: { readonly at: number; readonly duration: number },
+): Travel {
   // Footfalls: each `step` past the last, the final one closing beside the other foot.
   const count = Math.max(3, Math.round(distance / gait.step) + 1);
   const step = distance / (count - 1);
@@ -112,8 +137,10 @@ export function stride(clip: Clip, gait: Gait, from: number, distance: number): 
   const swing = 2 * beat - down;
   const ahead = gait.ahead * speed * down;
   const landing = (k: number): number => 0.08 + swing + (k - 1) * beat;
-  const natural = landing(count) + gait.settle;
-  const k = (clip.duration ?? natural) / natural;
+  const natural = strideTime(gait, distance);
+  const began = within?.at ?? 0;
+  const k =
+    (within === undefined ? (clip.duration ?? natural) : within.duration) / natural;
   const to = from + distance;
   const plant = (n: number): number => from + Math.min(n, count - 1) * step;
 
@@ -129,7 +156,7 @@ export function stride(clip: Clip, gait: Gait, from: number, distance: number): 
     until: number,
   ): void => {
     clip.pose(channels, {
-      at: start * k,
+      at: began + start * k,
       blend: (at - start) * k,
       duration: (Math.max(until, at) - start) * k,
     });
@@ -144,13 +171,13 @@ export function stride(clip: Clip, gait: Gait, from: number, distance: number): 
   // fourteenth of steady and arrives 2.33 gaps behind. Clamping the targets eases
   // both ends.
   const gap = beat / 4;
-  clip.pose({ pelvisX: from }, { at: 0, blend: 0 });
+  clip.pose({ pelvisX: from }, { at: began, blend: 0 });
   for (let j = 0; j * gap < natural; j += 1) {
     const target = hipX((j + LAG) * gap);
     if (target > from && hipX((j - 1 + LAG) * gap) < to) {
       clip.pose(
         { pelvisX: target },
-        { at: j * gap * k, blend: 4 * gap * k, duration: 4 * gap * k },
+        { at: began + j * gap * k, blend: 4 * gap * k, duration: 4 * gap * k },
       );
     }
   }
@@ -225,7 +252,7 @@ export function stride(clip: Clip, gait: Gait, from: number, distance: number): 
     clip.reach(
       foot,
       { x: from, y: 0 },
-      { at: 0, blend: 0, duration: (landing(own) - swing * (1 - RAISED)) * k },
+      { at: began, blend: 0, duration: (landing(own) - swing * (1 - RAISED)) * k },
     );
     for (let n = own; n <= count; n += 2) {
       const lifts = landing(n) - swing;
@@ -244,7 +271,7 @@ export function stride(clip: Clip, gait: Gait, from: number, distance: number): 
       const peels = Math.max(0, lifts - heelFor);
       if (pitch > 0 && lifts > peels) {
         clip.reach(foot, peeled, {
-          at: peels * k,
+          at: began + peels * k,
           blend: (lifts - peels) * k,
           duration: (lifts + swing * RAISED - peels) * k,
         });
@@ -255,13 +282,13 @@ export function stride(clip: Clip, gait: Gait, from: number, distance: number): 
       clip.reach(
         foot,
         { x: along(0.2) + gait.carry, y: gait.lift },
-        { at: lifts * k, blend: swing * RAISED * k, duration: swing * k },
+        { at: began + lifts * k, blend: swing * RAISED * k, duration: swing * k },
       );
       clip.reach(
         foot,
         { x: along(0.75), y: gait.lift * 0.7 },
         {
-          at: (lifts + swing * 0.25) * k,
+          at: began + (lifts + swing * 0.25) * k,
           blend: swing * 0.45 * k,
           duration: swing * 0.75 * k,
         },
@@ -270,7 +297,7 @@ export function stride(clip: Clip, gait: Gait, from: number, distance: number): 
         foot,
         { x: plant(n), y: 0 },
         {
-          at: (lifts + swing * gait.drop) * k,
+          at: began + (lifts + swing * gait.drop) * k,
           blend: swing * (1 - gait.drop) * k,
           duration: (leaves - lifts - swing * gait.drop) * k,
         },
@@ -321,6 +348,12 @@ export function stride(clip: Clip, gait: Gait, from: number, distance: number): 
       );
     });
   }
+  const leaves = landing(1) - (step - ahead) / speed;
+  return {
+    leaves: began + leaves * k,
+    arrives: began + (leaves + distance / speed) * k,
+    end: began + natural * k,
+  };
 }
 
 const walkParams = {

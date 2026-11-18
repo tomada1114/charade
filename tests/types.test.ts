@@ -875,8 +875,11 @@ describe("using definitions", () => {
 
   it("names the built-ins in the maps, and none where a kind has no item yet", () => {
     expectTypeOf<keyof BuiltinActions>().toEqualTypeOf<
+      | "carry"
       | "cheer"
+      | "pickUp"
       | "point"
+      | "push"
       | "run"
       | "sitDown"
       | "slump"
@@ -995,6 +998,50 @@ describe("using definitions", () => {
       ).toEqualTypeOf<Prop>();
       expectTypeOf(row.prop("lightbulb", { lit: false, at: 1 })).toEqualTypeOf<Prop>();
       expectTypeOf(row.prop("laptop", { faces: "right" })).toEqualTypeOf<Prop>();
+    };
+    expect(record).toBeTypeOf("function");
+  });
+
+  // #27 R6
+  it("types the three actions that move a prop: their prop, parameters and marks", () => {
+    const record = (actor: Actor, row: Row): void => {
+      const box = row.prop("box");
+      expectTypeOf(actor.do("carry", { prop: box })).toEqualTypeOf<
+        Span<"loaded" | "off" | "stop">
+      >();
+      expectTypeOf(
+        actor.do("carry", {
+          prop: box,
+          by: "cart",
+          distance: 2,
+          from: -1,
+          grip: { x: 0, y: 0 },
+          deck: { x: 0.7, y: 0.24 },
+          handle: { x: 0.3, y: 0.5 },
+          mood: "dejected",
+          duration: 4,
+        }).marks.off,
+      ).toEqualTypeOf<number>();
+      expectTypeOf(actor.do("pickUp", { prop: box })).toEqualTypeOf<
+        Span<"grip" | "up">
+      >();
+      actor.do("pickUp", { prop: box, where: { x: 0.3, y: 0.5 }, from: 1, at: 2 });
+      expectTypeOf(
+        actor.do("push", { prop: box, distance: 0.15, by: "lever", tries: 1 }),
+      ).toEqualTypeOf<Span<"contact" | "heave" | "stop">>();
+      actor.do("push", { prop: box, press: { x: 0, y: -0.3 }, from: -1 });
+      // @ts-expect-error cart is neither a parameter of carry nor an option
+      actor.do("carry", { prop: box, cart: box });
+      // @ts-expect-error prop is required
+      actor.do("carry", { distance: 1 });
+      // @ts-expect-error prop is required
+      actor.do("carry");
+      // @ts-expect-error a prop handle is expected, not a number
+      actor.do("pickUp", { prop: 3 });
+      // @ts-expect-error by is arms or cart
+      actor.do("carry", { prop: box, by: "lever" });
+      // @ts-expect-error push has no parameter named force
+      actor.do("push", { prop: box, force: 2 });
     };
     expect(record).toBeTypeOf("function");
   });

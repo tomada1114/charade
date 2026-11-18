@@ -2,8 +2,11 @@
 // directory. Do not edit: add, rename or remove a module, then run
 // `pnpm vocabulary:index`.
 
+import { carryAction } from "./actions/carry.js";
 import { cheerAction } from "./actions/cheer.js";
+import { pickUpAction } from "./actions/pickUp.js";
 import { pointAction } from "./actions/point.js";
+import { pushAction } from "./actions/push.js";
 import { runAction } from "./actions/run.js";
 import { sitDownAction } from "./actions/sitDown.js";
 import { slumpAction } from "./actions/slump.js";
@@ -41,16 +44,22 @@ import { sweatEffect } from "./effects/sweat.js";
  * The built-in actions by name: what `a.do("name")` accepts.
  *
  * @remarks
- * They are `cheer`, `point`, `run`, `sitDown`, `slump`, `stand`, `think`, `throw`,
- * `walk`.
+ * They are `carry`, `cheer`, `pickUp`, `point`, `push`, `run`, `sitDown`, `slump`,
+ * `stand`, `think`, `throw`, `walk`.
  *
  * @public
  */
 export interface BuiltinActions {
   /** @hidden */
+  readonly carry: typeof carryAction;
+  /** @hidden */
   readonly cheer: typeof cheerAction;
   /** @hidden */
+  readonly pickUp: typeof pickUpAction;
+  /** @hidden */
   readonly point: typeof pointAction;
+  /** @hidden */
+  readonly push: typeof pushAction;
   /** @hidden */
   readonly run: typeof runAction;
   /** @hidden */
@@ -73,8 +82,11 @@ export interface BuiltinActions {
  * @public
  */
 export const builtinActions: BuiltinActions = Object.freeze({
+  carry: carryAction,
   cheer: cheerAction,
+  pickUp: pickUpAction,
   point: pointAction,
+  push: pushAction,
   run: runAction,
   sitDown: sitDownAction,
   slump: slumpAction,

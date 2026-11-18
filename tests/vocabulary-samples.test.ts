@@ -5,6 +5,7 @@ import { checkScene, lastFrameOf } from "../src/check/check.js";
 import { type LogEntry, RecordingContext } from "../src/check/recorder.js";
 import { spreadFrames } from "../src/check/sheet.js";
 import { drawFrame } from "../src/draw/frame.js";
+import { propPlacement } from "../src/draw/prop.js";
 import {
   type ActionDefinition,
   type Actor,
@@ -122,10 +123,13 @@ function segmentsOf(built: Scene, kind: string, row = 0): readonly unknown[] {
 }
 
 describe("the built-in vocabulary", () => {
-  it("is the nine actions, six expressions, ten props, five backdrops and four effects", () => {
+  it("is the twelve actions, six expressions, ten props, five backdrops and four effects", () => {
     expect(ITEMS.map(([kind, name]) => `${kind} ${name}`)).toEqual([
+      "action carry",
       "action cheer",
+      "action pickUp",
       "action point",
+      "action push",
       "action run",
       "action sitDown",
       "action slump",
@@ -171,12 +175,15 @@ describe("the built-in vocabulary", () => {
     },
   );
 
-  it("states throw's release, cheer's up and point's aimed, and no mark for the other actions", () => {
+  it("states the marks of throw, cheer, point and the three that move a prop, and none for the other actions", () => {
     expect(
       Object.fromEntries(ACTIONS.map(([name, { marks }]) => [name, marks])),
     ).toEqual({
+      carry: ["loaded", "off", "stop"],
       cheer: ["up"],
+      pickUp: ["grip", "up"],
       point: ["aimed"],
+      push: ["contact", "heave", "stop"],
       run: [],
       sitDown: [],
       slump: [],
@@ -1095,6 +1102,24 @@ describe("a scene written with names", () => {
   });
 });
 
+/** The parameter each action that moves a prop takes it as, and a prop to give it. */
+const MOVED: Readonly<Record<string, readonly [string, string]>> = {
+  throw: ["ball", "ball"],
+  pickUp: ["prop", "box"],
+  push: ["prop", "rock"],
+  carry: ["prop", "box"],
+};
+
+/** `options` with the prop the action `name` needs, made in `row`. */
+function withProp(name: string, row: Row, options: object): object {
+  const moved = MOVED[name];
+  if (moved === undefined) {
+    return options;
+  }
+  const make = row as unknown as { prop(name: string): unknown };
+  return { [moved[0]]: make.prop(moved[1]), ...options };
+}
+
 describe("a built-in action", () => {
   /** One action alone on a rest figure, with whatever it needs beside it. */
   function alone(name: keyof typeof builtinActions, options: object): Scene {
@@ -1102,10 +1127,7 @@ describe("a built-in action", () => {
     const endless = name === "stand" && !Object.hasOwn(options, "duration");
     return scene(endless ? { duration: 3 } : {}, (stage) => {
       const actor = stage.actor();
-      loosely(actor)(
-        name,
-        name === "throw" ? { ball: stage.prop("ball"), ...options } : options,
-      );
+      loosely(actor)(name, withProp(name, stage.row(0), options));
       if (!endless) {
         actor.wait(0.3);
       }
@@ -1119,9 +1141,7 @@ describe("a built-in action", () => {
       actor.do("stand");
       const span = loosely(actor)(
         name,
-        name === "throw"
-          ? { ball: stage.row(0).prop("ball"), ...options, at: 0.7 }
-          : { ...options, at: 0.7 },
+        withProp(name, stage.row(0), { ...options, at: 0.7 }),
       );
       stage
         .row(1)
@@ -1190,6 +1210,58 @@ describe("a built-in action", () => {
     ["think", { ponder: 10 }],
     ["think", { duration: 0.4 }],
     ["think", { duration: 8 }],
+    // #27
+    ["pickUp", {}],
+    ["pickUp", { where: { x: 0.2, y: 0 }, grip: { x: 0, y: 0 } }],
+    ["pickUp", { where: { x: 0.45, y: 0.5 }, grip: { x: -0.1, y: 0.02 } }],
+    ["pickUp", { from: 2 }],
+    ["pickUp", { duration: 0.4 }],
+    ["pickUp", { duration: 6 }],
+    ["push", {}],
+    ["push", { tries: 1 }],
+    ["push", { tries: 6 }],
+    ["push", { distance: 0.15 }],
+    // The furthest push at its own pace is some seven hundred frames; this is as many steps.
+    ["push", { distance: 8, from: -4, tries: 1, duration: 8 }],
+    [
+      "push",
+      { distance: 1, from: -1.5, where: { x: 0.5, y: 0 }, grip: { x: -0.18, y: 0.2 } },
+    ],
+    ["push", { by: "lever", where: { x: 1.66, y: 0 }, grip: { x: -1.41, y: 0.49 } }],
+    [
+      "push",
+      {
+        by: "lever",
+        distance: 0.15,
+        from: 2,
+        where: { x: 1.2, y: 0 },
+        grip: { x: -0.9, y: 0.6 },
+        press: { x: -0.1, y: -0.5 },
+      },
+    ],
+    ["push", { duration: 0.5 }],
+    ["push", { duration: 9 }],
+    ["push", { distance: 0.6, duration: 0.6 }],
+    ["push", { distance: 0.6, duration: 12 }],
+    ["carry", {}],
+    ["carry", { distance: 0.3 }],
+    ["carry", { distance: 8, from: -4 }],
+    ["carry", { grip: { x: 0, y: 0 }, from: -1.5, distance: 3 }],
+    ["carry", { by: "cart" }],
+    ["carry", { by: "cart", distance: 8, from: -4 }],
+    [
+      "carry",
+      {
+        by: "cart",
+        distance: 0.3,
+        deck: { x: 0.5, y: 0.4 },
+        handle: { x: 0.2, y: 0.6 },
+      },
+    ],
+    ["carry", { duration: 0.5 }],
+    ["carry", { duration: 9 }],
+    ["carry", { by: "cart", duration: 0.8 }],
+    ["carry", { by: "cart", duration: 12 }],
   ] as const)(
     "keeps every joint within its limits: %s %j",
     // The longest walk is some six hundred frames of several hundred segments, fourteen times.
@@ -1200,6 +1272,7 @@ describe("a built-in action", () => {
         expect(faults(alone(name, asked))).toEqual([]);
         // Over a stand a pose that has ended gives way to the stand beneath it, which
         // the six solo actions are written for; the first three plant their feet at 0.
+        // The cart's hands follow its handle rather than the body, as any reach does.
         if (!["stand", "sitDown", "throw"].includes(name)) {
           expect(faults(overStand(name, asked))).toEqual([]);
         }
@@ -1224,10 +1297,7 @@ describe("a built-in action", () => {
         const built = scene((stage) => {
           const actor = stage.actor();
           const options = { duration: 2, ...(mood === undefined ? {} : { mood }) };
-          const span = loosely(actor)(
-            name,
-            name === "throw" ? { ball: stage.prop("ball"), ...options } : options,
-          );
+          const span = loosely(actor)(name, withProp(name, stage.row(0), options));
           expect(span.end).toBe(2);
           // Nothing the action records on the actor runs past what it was given.
           expect(actor.wait(0).start).toBe(2);
@@ -1608,5 +1678,371 @@ describe("the six solo actions", () => {
     expect(skeleton.toeR.y).toBeCloseTo(0, 6);
     expect(skeleton.ankleR.x).toBeCloseTo(skeleton.pelvis.x, 6);
     expect(pose.pelvisY).toBeCloseTo(0, 6);
+  });
+});
+
+describe("the three actions that move a prop", () => {
+  interface Sampled {
+    /** Where the prop's ground point is. */
+    readonly prop: { readonly x: number; readonly y: number };
+    readonly skeleton: Skeleton;
+  }
+
+  /** Row 0's first prop and its actor at every frame of `built`. */
+  function frames(built: Scene): Sampled[] {
+    const tracks = built.timeline.rows[0]?.tracks ?? [];
+    const actor = tracks.find(({ kind }) => kind === "actor");
+    const prop = tracks.find(({ kind }) => kind === "prop");
+    const last = lastFrameOf(built.timeline);
+    if (actor === undefined || prop === undefined || last === undefined) {
+      throw new Error("no actor, no prop, or no length");
+    }
+    return Array.from({ length: last + 1 }, (_, frame) => {
+      const placed = propPlacement(built.timeline, 0, prop, frame);
+      if (placed === undefined) {
+        throw new Error("the prop is not shown");
+      }
+      return {
+        prop: placed.point,
+        skeleton: forwardKinematics(poseAtFrame(built.timeline, 0, actor, frame)),
+      };
+    });
+  }
+
+  const frameAt = (seconds: number): number => Math.round(seconds * 30);
+
+  // Example: normal
+  it("leaves the box where it stands until pickUp's grip, then keeps it on handR", () => {
+    let span: Span<"grip" | "up"> | undefined;
+    const built = scene((stage) => {
+      const box = stage.prop("box");
+      box.place({ x: 0.36, y: 0 });
+      const actor = stage.actor();
+      actor.wait(0.5);
+      span = actor.do("pickUp", { prop: box });
+      actor.wait(0.5);
+    });
+    expect(built.findings).toEqual([]);
+    expect(errors(checkScene(built).findings)).toEqual([]);
+    if (span === undefined) {
+      throw new Error("no span");
+    }
+    expect(span.marks.grip).toBeGreaterThan(span.start);
+    expect(span.marks.up).toBeGreaterThan(span.marks.grip);
+    expect(span.marks.up).toBeLessThan(span.end);
+    const sampled = frames(built);
+    const gripped = frameAt(span.marks.grip);
+    sampled.forEach(({ prop, skeleton }, frame) => {
+      if (frame <= gripped) {
+        expect(prop).toEqual({ x: 0.36, y: 0 });
+      } else {
+        // R1: the grip is 0.18 behind the box's ground point and 0.08 above it.
+        expect(prop.x).toBeCloseTo(skeleton.handR.x + 0.18, 10);
+        expect(prop.y).toBeCloseTo(skeleton.handR.y - 0.08, 10);
+      }
+    });
+    // The hands are on the grip when they take hold, so the box does not jump.
+    expect(sampled[gripped + 1]?.prop.x).toBeCloseTo(0.36, 1);
+    expect(sampled[gripped + 1]?.prop.y).toBeCloseTo(0, 1);
+    expect(sampled.at(-1)?.prop.y).toBeGreaterThan(0.4);
+    // R2
+    expect(serializeTimeline(built.timeline)).toContain('"lossy":false');
+    expect(segmentsOf(built, "prop").at(-1)).toMatchObject({
+      start: Math.round(span.marks.grip * 1e6),
+      end: null,
+      data: { kind: "hold", effector: "handR", offset: { x: 0.18, y: -0.08 } },
+    });
+  });
+
+  // Example: boundary
+  it("leaves the rock's track alone in a push that gets nowhere, while the body strains", () => {
+    const pushed = (options: object): Scene =>
+      scene((stage) => {
+        const rock = stage.prop("rock");
+        rock.place({ x: 0.6, y: 0 });
+        const actor = stage.actor();
+        actor.do("push", { prop: rock, ...options });
+        actor.wait(0.3);
+      });
+    const built = pushed({});
+    expect(built.findings).toEqual([]);
+    expect(segmentsOf(built, "prop")).toHaveLength(2);
+    expect(segmentsOf(built, "prop").at(-1)).toMatchObject({
+      start: 0,
+      end: null,
+      data: { kind: "place", x: 0.6, y: 0 },
+    });
+    const sampled = frames(built);
+    for (const { prop } of sampled) {
+      expect(prop).toEqual({ x: 0.6, y: 0 });
+    }
+    const hips = sampled.map(({ skeleton }) => skeleton.pelvis);
+    expect(Math.min(...hips.map(({ y }) => y))).toBeLessThan(0.4);
+    expect(Math.max(...hips.map(({ x }) => x))).toBeGreaterThan(0);
+    expect(hips.at(-1)?.x).toBeCloseTo(0, 10);
+    expect(hips.at(-1)?.y).toBeCloseTo(0.48, 10);
+    // More tries strain for longer; the rock still does not move.
+    expect(lastFrameOf(pushed({ tries: 4 }).timeline)).toBeGreaterThan(sampled.length);
+    expect(segmentsOf(pushed({ tries: 4 }), "prop")).toHaveLength(2);
+  });
+
+  it("keeps the hands on the rock's face while a push moves it, at a constant speed between heave and stop", () => {
+    let span: Span<"contact" | "heave" | "stop"> | undefined;
+    const built = scene((stage) => {
+      const rock = stage.prop("rock");
+      rock.place({ x: -0.4, y: 0 });
+      const actor = stage.actor();
+      actor.do("walk", { from: -2, distance: 1 });
+      span = actor.do("push", { prop: rock, from: -1, distance: 1.2 });
+      actor.wait(0.3);
+    });
+    expect(built.findings).toEqual([]);
+    expect(errors(checkScene(built).findings)).toEqual([]);
+    if (span === undefined) {
+      throw new Error("no span");
+    }
+    const { contact, heave, stop } = span.marks;
+    expect(contact).toBeGreaterThan(span.start);
+    expect(heave).toBeGreaterThan(contact);
+    expect(stop).toBeGreaterThan(heave);
+    expect(stop).toBeLessThan(span.end);
+    // R2
+    expect(serializeTimeline(built.timeline)).toContain('"lossy":false');
+    expect(segmentsOf(built, "prop").at(-1)).toMatchObject({
+      start: Math.round(heave * 1e6),
+      end: Math.round(stop * 1e6),
+      data: { kind: "move", y: 0, arc: 0 },
+    });
+    const sampled = frames(built);
+    expect(sampled.at(-1)?.prop.x).toBeCloseTo(0.8, 10);
+    expect(sampled.at(-1)?.skeleton.pelvis.x).toBeCloseTo(0.2, 10);
+    for (let frame = frameAt(contact) + 1; frame < frameAt(stop); frame += 1) {
+      const at = sampled[frame];
+      // The default grip: 0.22 behind the rock's ground point, 0.42 up. The hands
+      // follow in short eased reaches and the body starts to straighten as it
+      // arrives, so they keep to it within a hundredth and a half.
+      const face = (at?.prop.x ?? 0) - 0.22;
+      expect(Math.abs((at?.skeleton.handR.x ?? 0) - face)).toBeLessThan(0.015);
+      expect(Math.abs((at?.skeleton.handR.y ?? 0) - 0.42)).toBeLessThan(0.01);
+      expect(at?.skeleton.handL).toEqual(at?.skeleton.handR);
+      expect(at?.prop.y).toBe(0);
+    }
+    const first = frameAt(heave) + 1;
+    const speed = 1.2 / (stop - heave) / 30;
+    for (let frame = first + 1; frame < frameAt(stop); frame += 1) {
+      expect(
+        (sampled[frame]?.prop.x ?? 0) - (sampled[frame - 1]?.prop.x ?? 0),
+      ).toBeCloseTo(speed, 10);
+    }
+  });
+
+  it("bears down on a lever's handle end while the rock shifts, from heave to stop", () => {
+    let span: Span<"contact" | "heave" | "stop"> | undefined;
+    const built = scene({ rows: 3 }, (wide) => {
+      const stage = wide.row(0);
+      const rock = stage.prop("rock");
+      rock.place({ x: 1.66, y: 0 });
+      const actor = stage.actor();
+      span = actor.do("push", {
+        prop: rock,
+        by: "lever",
+        distance: 0.15,
+        where: { x: 1.66, y: 0 },
+        grip: { x: -1.41, y: 0.49 },
+      });
+      // The scene swings the lever over the same times: its handle end is the grip.
+      stage
+        .prop("lever", {
+          swing: -0.3,
+          swingAt: span.marks.heave,
+          swingFor: span.marks.stop - span.marks.heave,
+        })
+        .place({ x: 1.08, y: 0 });
+      actor.wait(0.3);
+    });
+    expect(built.findings).toEqual([]);
+    expect(checkScene(built).findings).toEqual([]);
+    if (span === undefined) {
+      throw new Error("no span");
+    }
+    const sampled = frames(built);
+    const { heave, stop } = span.marks;
+    expect(sampled[Math.floor(heave * 30)]?.prop).toEqual({ x: 1.66, y: 0 });
+    expect(sampled.at(-1)?.prop.x).toBeCloseTo(1.81, 10);
+    expect(sampled.at(-1)?.prop.y).toBe(0);
+    expect(sampled[Math.floor(heave * 30)]?.skeleton.handR.x).toBeCloseTo(0.25, 2);
+    expect(sampled[Math.floor(heave * 30)]?.skeleton.handR.y).toBeCloseTo(0.49, 2);
+    // The default press: where a default lever's handle end is after a swing of -0.3.
+    expect(sampled.at(-1)?.skeleton.handR.x).toBeCloseTo(0.25 - 0.07, 2);
+    expect(sampled.at(-1)?.skeleton.handR.y).toBeCloseTo(0.49 - 0.26, 2);
+    // The feet do not leave where the actor stood.
+    expect(sampled.at(-1)?.skeleton.pelvis.x).toBeLessThan(0.05);
+    expect(serializeTimeline(built.timeline)).toContain('"lossy":false');
+    expect(stop).toBeGreaterThan(heave);
+  });
+
+  it("carries a prop in the arms on handR the whole way, from where a walk ended", () => {
+    let span: Span<"loaded" | "off" | "stop"> | undefined;
+    const built = scene((stage) => {
+      const box = stage.prop("box");
+      box.place({ x: -0.64, y: 0 });
+      const actor = stage.actor();
+      actor.do("walk", { from: -1.9, distance: 0.9 });
+      const picked = actor.do("pickUp", { prop: box, from: -1 });
+      span = actor.do("carry", { prop: box, from: -1, distance: 1.5 });
+      expect(span.start).toBe(picked.end);
+      actor.wait(0.3);
+    });
+    expect(built.findings).toEqual([]);
+    expect(errors(checkScene(built).findings)).toEqual([]);
+    if (span === undefined) {
+      throw new Error("no span");
+    }
+    expect(span.marks.loaded).toBe(span.start);
+    expect(span.marks.off).toBeGreaterThan(span.start);
+    expect(span.marks.stop).toBeGreaterThan(span.marks.off);
+    const sampled = frames(built);
+    // R1
+    for (let frame = frameAt(span.start) + 1; frame < sampled.length; frame += 1) {
+      const at = sampled[frame];
+      expect(at?.prop.x).toBeCloseTo((at?.skeleton.handR.x ?? 0) + 0.18, 10);
+      expect(at?.prop.y).toBeCloseTo((at?.skeleton.handR.y ?? 0) - 0.08, 10);
+    }
+    // The box does not jump as the carry takes it over from the pickUp.
+    const [before, after] = [
+      sampled[frameAt(span.start) - 1],
+      sampled[frameAt(span.start)],
+    ];
+    expect(after?.prop.x).toBeCloseTo(before?.prop.x ?? 0, 2);
+    expect(after?.prop.y).toBeCloseTo(before?.prop.y ?? 0, 2);
+    expect(sampled.at(-1)?.skeleton.pelvis.x).toBeCloseTo(0.5, 10);
+    expect(sampled.at(-1)?.skeleton.ankleR.x).toBeCloseTo(0.5, 6);
+    expect(serializeTimeline(built.timeline)).toContain('"lossy":false');
+  });
+
+  it.each([
+    ["no mood", {}],
+    ["the mood dejected", { mood: "dejected" as const }],
+  ])("hands the box from a pickUp in %s to a carry without a jump", (_label, mood) => {
+    let start = 0;
+    const built = scene((stage) => {
+      const box = stage.prop("box");
+      box.place({ x: 0.36, y: 0 });
+      const actor = stage.actor();
+      actor.do("pickUp", { prop: box, ...mood });
+      start = actor.do("carry", { prop: box, distance: 0.6 }).start;
+      actor.wait(0.3);
+    });
+    const sampled = frames(built);
+    const [before, after] = [sampled[frameAt(start) - 1], sampled[frameAt(start)]];
+    expect(after?.prop.x).toBeCloseTo(before?.prop.x ?? 0, 2);
+    expect(after?.skeleton.pelvis.x).toBeCloseTo(before?.skeleton.pelvis.x ?? 0, 2);
+  });
+
+  it("loads a prop on a cart and walks off behind it, the load and the hands keeping to the cart", () => {
+    let span: Span<"loaded" | "off" | "stop"> | undefined;
+    const built = scene({ rows: 2 }, (stage) => {
+      const row = stage.row(0);
+      const rock = row.prop("rock", { size: 0.4 });
+      const actor = row.actor();
+      span = actor.do("carry", { prop: rock, by: "cart", distance: 2, from: -2 });
+      const travel = { at: span.marks.off, duration: span.marks.stop - span.marks.off };
+      const cart = row.prop("cart", {
+        roll: 2,
+        rollAt: travel.at,
+        rollFor: travel.duration,
+      });
+      cart.place({ x: -1.13, y: 0 });
+      cart.move({ x: 0.87, y: 0 }, travel);
+      actor.wait(0.3);
+    });
+    expect(built.findings).toEqual([]);
+    expect(checkScene(built).findings).toEqual([]);
+    if (span === undefined) {
+      throw new Error("no span");
+    }
+    const { loaded, off, stop } = span.marks;
+    expect(loaded).toBeGreaterThan(span.start);
+    expect(off).toBeGreaterThan(loaded);
+    expect(stop).toBeGreaterThan(off);
+    const cartTrack = built.timeline.rows[0]?.tracks.filter(
+      ({ kind }) => kind === "prop",
+    )[1];
+    if (cartTrack === undefined) {
+      throw new Error("no cart");
+    }
+    const sampled = frames(built);
+    sampled.forEach(({ prop, skeleton }, frame) => {
+      const cart = propPlacement(built.timeline, 0, cartTrack, frame)?.point.x ?? 0;
+      if (frame > 0 && frame <= frameAt(loaded) - 7) {
+        // R1: until it is let go it is on the hand, by the default grip.
+        expect(prop.x).toBeCloseTo(skeleton.handR.x + 0.18, 10);
+        expect(prop.y).toBeCloseTo(skeleton.handR.y - 0.08, 10);
+      }
+      if (frame > frameAt(loaded)) {
+        // On the deck, 0.15 behind the cart's middle, wherever the cart is.
+        expect(prop.x).toBeCloseTo(cart - 0.15, 10);
+        expect(prop.y).toBeCloseTo(0.24, 10);
+      }
+      if (frame > frameAt(off)) {
+        // The handle is 0.59 behind the cart's middle and 0.5 up.
+        expect(skeleton.handR.x).toBeCloseTo(cart - 0.59, 2);
+        expect(skeleton.handR.y).toBeCloseTo(0.5, 2);
+      }
+    });
+    expect(sampled.at(-1)?.skeleton.pelvis.x).toBeCloseTo(0, 10);
+    // R2
+    expect(serializeTimeline(built.timeline)).toContain('"lossy":false');
+    const [, hold, down, ride, ...rest] = segmentsOf(built, "prop");
+    expect(rest).toEqual([]);
+    expect(hold).toMatchObject({ start: 0, data: { kind: "hold", effector: "handR" } });
+    expect(down).toMatchObject({
+      end: Math.round(loaded * 1e6),
+      data: { kind: "move", x: -1.28, y: 0.24 },
+    });
+    expect(ride).toMatchObject({
+      start: Math.round(off * 1e6),
+      end: Math.round(stop * 1e6),
+      data: { kind: "move", x: 0.72, y: 0.24, arc: 0 },
+    });
+  });
+
+  // R4, and the error example
+  it.each([
+    ["carry", {}, "ERR_SCENE_MISSING_PARAMETER"],
+    ["carry", { distance: 1 }, "ERR_SCENE_MISSING_PARAMETER"],
+    ["push", {}, "ERR_SCENE_MISSING_PARAMETER"],
+    ["pickUp", {}, "ERR_SCENE_MISSING_PARAMETER"],
+    ["pickUp", { prop: 3 }, "ERR_SCENE_INVALID_VALUE"],
+    ["push", { prop: "rock" }, "ERR_SCENE_INVALID_VALUE"],
+    ["carry", { prop: { id: "row0/prop/box/0" } }, "ERR_SCENE_INVALID_VALUE"],
+  ])("does not do %s given %j, and says why", (name, options, code) => {
+    const built = scene({ duration: 1 }, (stage) => {
+      stage.prop("box");
+      loosely(stage.actor())(name, options);
+    });
+    // An action that is not done sets no mark, which is reported for each one it states.
+    const findings = built.findings.filter(
+      (finding) => finding.code !== "ERR_SCENE_MISSING_MARK",
+    );
+    expect(findings).toHaveLength(1);
+    expect(findings[0]).toMatchObject({ code, severity: "error" });
+    expect(segmentsOf(built, "actor")).toEqual([
+      { start: 0, end: 0, data: { kind: "wait" } },
+    ]);
+  });
+
+  it("reports a number that is out of range or of the wrong kind beside the prop", () => {
+    const built = scene((stage) => {
+      const box = stage.prop("box");
+      const actor = stage.actor();
+      loosely(actor)("carry", { prop: box, distance: 99, by: "wheels" });
+      loosely(actor)("pickUp", { prop: box, where: 3 });
+    });
+    expect(built.findings.map(({ code }) => code)).toEqual([
+      "ERR_SCENE_OUT_OF_RANGE",
+      "ERR_SCENE_INVALID_VALUE",
+      "ERR_SCENE_INVALID_VALUE",
+    ]);
   });
 });
