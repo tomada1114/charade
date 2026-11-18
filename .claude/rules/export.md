@@ -107,6 +107,53 @@ stay free of Node-only modules.
 - The encoder is libx264 and nothing else. Without it `render` stops with a code and
   install guidance; falling back to another H.264 encoder would add argument sets and
   output that nothing here tests.
+- The encoder is `src/export/video.ts`; `render` in `src/cli.ts` only orders its steps.
+  The order is: odd size (`ERR_RENDER_ODD_SIZE`, width named first), the font lookup and
+  `checkScene`, then ffmpeg. The checks come before any spawn because an error finding
+  must stop `render` without ffmpeg having run, and the size check is first because it
+  costs nothing.
+- ffmpeg is found and checked with one spawn of `ffmpeg -hide_banner -encoders`, looking
+  for a video encoder line named `libx264`: it finds the program on `PATH` the way the
+  encode will, and needs no second, version-specific probe. `ENOENT` is
+  `ERR_ENV_FFMPEG_MISSING`, any other start failure or a non-zero exit
+  `ERR_ENV_FFMPEG_UNUSABLE`, a listing without libx264 `ERR_ENV_NO_LIBX264`; all exit 2
+  and nothing is written.
+- The install line (the `fix` of all three) is per `process.platform`, naming a package
+  that ships libx264: `darwin` `brew install ffmpeg`; `win32`
+  `winget install --id Gyan.FFmpeg` and a new terminal for `PATH`; `linux`
+  `sudo apt install ffmpeg` (Debian, Ubuntu), `sudo dnf install ffmpeg` from RPM Fusion
+  (Fedora's own `ffmpeg-free` has no libx264), `sudo pacman -S ffmpeg` (Arch); elsewhere
+  <https://ffmpeg.org/download.html>.
+- The partial file is `.<output name>.<12 hex>.partial` in the output's folder, created
+  with an exclusive open before ffmpeg starts: hidden, so the loop's folder listing
+  stays clean, and the open proves the folder writable, so a missing folder is
+  `ERR_RENDER_WRITE_FAILED` rather than an ffmpeg failure. A failed rename is the same
+  code.
+- The argument list, with why for each group: `-hide_banner -loglevel error -nostats`
+  (stderr carries only errors, the last line of which a failure quotes);
+  `-progress pipe:1` (ffmpeg's own count at `progress=end`, which with the frames sent
+  is the count compared with `d × fps + 1`);
+  `-f rawvideo -pix_fmt rgba -video_size WxH -framerate fps -i pipe:0 -an`;
+  `-vf scale=out_color_matrix=bt709:out_range=tv,format=yuv420p` and
+  `-colorspace bt709 -color_primaries bt709 -color_trc bt709 -color_range tv` (swscale
+  converts with BT.601 by default while players read untagged HD video as BT.709, which
+  shifts the paper colour); `-c:v libx264 -preset medium -crf 18 -pix_fmt yuv420p` (CRF
+  18 keeps thin lines on flat paper free of ringing; file size is not what this competes
+  on); `-movflags +faststart` (plays before it is fully read, as a preview does);
+  `-f mp4 -y <partial>` (the explicit container, since the name ends in `.partial`).
+- After the frames: ffmpeg not taking every frame (a stdin error, an exit before the
+  last frame) is `ERR_RENDER_ENCODER_CLOSED`; every frame taken and a non-zero exit
+  `ERR_RENDER_ENCODER_FAILED`; exit 0 with fewer frames sent or reported than the scene
+  has, or no `progress=end`, `ERR_RENDER_FRAME_COUNT`. All exit 2 and remove the partial
+  file. A frame is written only at `width × height × 4` bytes.
+- SIGINT, SIGTERM and SIGHUP during the encode kill ffmpeg, remove the partial file
+  synchronously, then re-raise the signal with the handler gone, so the process ends as
+  it would have; `ERR_RENDER_INTERRUPTED` is what the run reports when the signal is not
+  re-raised, as under the injected fake.
+- `render` prints `wrote <path>`, then the report as `check` prints it, warnings
+  included; `--json` is `{ version, ok, paths, findings, summary }`. Error findings
+  print the report alone and exit 1, with `paths` empty. Progress is
+  `render: <sent>/<total> frames` on stderr about every tenth of the frames.
 
 ## Commands
 

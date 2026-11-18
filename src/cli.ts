@@ -42,6 +42,17 @@ import {
 } from "./export/images.js";
 import { loadScene, SceneFailedError, SceneLoadError } from "./export/loader.js";
 import { createRasteriser, type Rasteriser } from "./export/raster.js";
+import {
+  assertEvenSize,
+  findEncoder,
+  type Interrupts,
+  processInterrupts,
+  type Spawn,
+  spawnProcess,
+  type VideoEnvironment,
+  videoBeside,
+  writeVideo,
+} from "./export/video.js";
 import { watchGlobals } from "./export/watch.js";
 import type { Scene } from "./scene/scene.js";
 
@@ -958,6 +969,44 @@ async function runSheet(
   return imagesOutcome(scene, [out], states, text);
 }
 
+/** What a scene command needs from this machine: the image writer and the encoder. */
+export interface CommandEnvironment extends ImageEnvironment, VideoEnvironment {}
+
+/**
+ * `render`: the checks first, so an error finding stops it before ffmpeg is spawned;
+ * then the encoder, then every frame. Warnings are printed with the path written.
+ */
+async function runRender(
+  scene: Scene,
+  invocation: Extract<Invocation, { command: "render" }>,
+  environment: CommandEnvironment,
+): Promise<CommandOutcome> {
+  assertEvenSize(scene.width, scene.height);
+  const text = await textSetup(scene, invocation.scene, environment, true);
+  const { findings, truncated } = checkScene(scene, text.check);
+  const report = checkReport(findings, { strict: false, truncated });
+  const { version, ok, summary } = report;
+  if (!ok) {
+    return {
+      kind: "done",
+      exitCode: 1,
+      document: { version, ok, paths: [], findings, summary },
+      text: formatReport(report),
+    };
+  }
+  // A scene without a length carries an error finding, so it never gets here.
+  const lastFrame = lastFrameOf(scene.timeline) ?? 0;
+  await findEncoder(environment.spawn, environment.platform);
+  const out = invocation.out ?? videoBeside(invocation.scene);
+  await writeVideo(scene, text.font ?? "sans-serif", out, lastFrame + 1, environment);
+  return {
+    kind: "done",
+    exitCode: 0,
+    document: { version, ok, paths: [out], findings, summary },
+    text: `wrote ${out}\n${formatReport(report)}`,
+  };
+}
+
 /** The failure to report for what a command body threw, or `undefined` to rethrow. */
 function reportableFrom(error: unknown, scene: string): Reportable | undefined {
   if (!(error instanceof CharadeError)) {
@@ -980,14 +1029,11 @@ function reportableFrom(error: unknown, scene: string): Reportable | undefined {
   };
 }
 
-/**
- * Run a scene command on an already-built scene. `render` is a stub that its own
- * issue replaces.
- */
+/** Run a scene command on an already-built scene. */
 export async function runSceneCommand(
   scene: Scene,
   invocation: SceneInvocation,
-  environment: ImageEnvironment,
+  environment: CommandEnvironment,
 ): Promise<CommandOutcome> {
   try {
     switch (invocation.command) {
@@ -1002,7 +1048,7 @@ export async function runSceneCommand(
       case "sheet":
         return await runSheet(scene, invocation, environment);
       case "render":
-        return notImplemented(invocation.command);
+        return await runRender(scene, invocation, environment);
     }
   } catch (error) {
     const reportable = reportableFrom(error, invocation.scene);
@@ -1054,6 +1100,10 @@ export interface CliOptions {
   readonly write?: FileWriter;
   /** The operating system, `process.platform` by default: it picks the default font. */
   readonly platform?: string;
+  /** Starts ffmpeg; `node:child_process` without a shell by default. */
+  readonly spawn?: Spawn;
+  /** Reports SIGINT, SIGTERM and SIGHUP by default, so a partial video is removed. */
+  readonly interrupts?: Interrupts;
 }
 
 const realLoad: SceneLoader = (file, notice) => loadScene(file, { notice });
@@ -1139,6 +1189,9 @@ export async function runCli(
         raster: options.raster ?? createRasteriser(),
         write: options.write ?? writeOutput,
         platform: options.platform ?? process.platform,
+        spawn: options.spawn ?? spawnProcess,
+        interrupts: options.interrupts ?? processInterrupts,
+        notice,
       });
     } finally {
       installReadWatch(previous);
