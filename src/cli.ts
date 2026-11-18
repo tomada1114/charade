@@ -6,9 +6,18 @@ import process from "node:process";
 import { fileURLToPath } from "node:url";
 import { parseArgs, type ParseArgsOptionsConfig } from "node:util";
 
-import { COULD_NOT_RUN, type ExitCode } from "./check/findings.js";
+import { checkScene, formatReport, lastFrameOf } from "./check/check.js";
+import { describeState, formatState } from "./check/describe.js";
+import {
+  checkReport,
+  COULD_NOT_RUN,
+  type ExitCode,
+  exitCodeFor,
+} from "./check/findings.js";
+import { installReadWatch } from "./check/reads.js";
 import { CharadeError, UnknownFlagError } from "./errors.js";
 import { loadScene, SceneFailedError, SceneLoadError } from "./export/loader.js";
+import { watchGlobals } from "./export/watch.js";
 import type { Scene } from "./scene/scene.js";
 
 const NAME = "charade";
@@ -145,6 +154,24 @@ export class InvalidAtError extends UsageError {
   constructor(path: string) {
     super(`Flag ${path} is not a time or a frame.`);
     this.path = path;
+  }
+}
+
+/** An `--at` value names a frame after the scene's last one. */
+class AtPastEndError extends UsageError {
+  readonly code = "ERR_CLI_AT_PAST_END" as const;
+  readonly fix: string;
+
+  /** The dotted path of the flag, such as `check.at`. */
+  readonly path: string;
+  /** The scene's last frame. */
+  readonly lastFrame: number;
+
+  constructor(path: string, lastFrame: number, fps: number) {
+    super(`Flag ${path} is past the end of the scene.`);
+    this.path = path;
+    this.lastFrame = lastFrame;
+    this.fix = `Give a time up to ${String(lastFrame / fps)} s, or a frame up to ${String(lastFrame)}f.`;
   }
 }
 
@@ -539,13 +566,68 @@ function notImplemented(command: CommandName): CommandOutcome {
 }
 
 /**
- * Run a scene command on an already-built scene. Each body is a stub that its own
- * issue replaces: `render` #17, `check` #18, `frame` and `sheet` #28.
+ * The frame an `--at` value names: a frame as given, seconds as the frame on screen
+ * at that time, which is the last one at or before it. `undefined` when the number is
+ * too large to compare with the timeline's microseconds.
+ */
+export function frameAt(at: At, fps: number): number | undefined {
+  let frame = at.value;
+  if (at.unit === "seconds") {
+    const scaled = Math.round(at.value * 1_000_000) * fps;
+    if (!Number.isSafeInteger(scaled)) {
+      return undefined;
+    }
+    frame = Math.floor(scaled / 1_000_000);
+  }
+  return Number.isSafeInteger(frame * 1_000_000) ? frame : undefined;
+}
+
+function runCheck(
+  scene: Scene,
+  invocation: Extract<Invocation, { command: "check" }>,
+): CommandOutcome {
+  const { strict, at } = invocation;
+  const { findings, truncated } = checkScene(scene);
+  const report = checkReport(findings, { strict, truncated });
+  const exitCode = exitCodeFor(findings, { strict });
+  if (at === undefined) {
+    return {
+      kind: "done",
+      exitCode,
+      document: { ...report },
+      text: formatReport(report),
+    };
+  }
+  const { fps } = scene.timeline;
+  const frame = frameAt(at, fps);
+  if (frame === undefined) {
+    return { kind: "failed", error: new InvalidAtError("check.at") };
+  }
+  // A scene without a length has no last frame to be past; its finding says so.
+  const lastFrame = lastFrameOf(scene.timeline);
+  if (lastFrame !== undefined && frame > lastFrame) {
+    return { kind: "failed", error: new AtPastEndError("check.at", lastFrame, fps) };
+  }
+  const state = describeState(scene, frame);
+  return {
+    kind: "done",
+    exitCode,
+    document: { ...report, state },
+    text: `${formatReport(report)}\n${formatState(state)}`,
+  };
+}
+
+/**
+ * Run a scene command on an already-built scene. `render`, `frame` and `sheet` are
+ * stubs that their own issues replace.
  */
 export function runSceneCommand(
-  _scene: Scene,
+  scene: Scene,
   invocation: SceneInvocation,
 ): CommandOutcome {
+  if (invocation.command === "check") {
+    return runCheck(scene, invocation);
+  }
   return notImplemented(invocation.command);
 }
 
@@ -654,15 +736,21 @@ export async function runCli(
   if (invocation.command === "catalog") {
     outcome = runCatalog(invocation);
   } else {
-    let scene: Scene;
+    // Installed for the load too: the scene's build function runs inside the import.
+    const previous = installReadWatch(watchGlobals);
     try {
-      scene = await (options.load ?? realLoad)(invocation.scene, notice);
-    } catch (error) {
-      return failed(
-        error instanceof SceneLoadError ? error : new SceneFailedError(error),
-      );
+      let scene: Scene;
+      try {
+        scene = await (options.load ?? realLoad)(invocation.scene, notice);
+      } catch (error) {
+        return failed(
+          error instanceof SceneLoadError ? error : new SceneFailedError(error),
+        );
+      }
+      outcome = runSceneCommand(scene, invocation);
+    } finally {
+      installReadWatch(previous);
     }
-    outcome = runSceneCommand(scene, invocation);
   }
   if (outcome.kind === "failed") {
     return failed(outcome.error);

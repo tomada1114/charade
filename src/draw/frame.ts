@@ -82,11 +82,12 @@ function isDrawCallback(value: unknown): value is DrawCallback {
 }
 
 /** The facing an actor's track carries; right unless it says `left`. */
-function facingOf(track: TimelineTrack): Facing {
+export function facingOf(track: TimelineTrack): Facing {
   return "facing" in track && track.facing === "left" ? "left" : "right";
 }
 
-function idOf(row: number, track: TimelineTrack): string {
+/** The id of a track's item, as findings name it. */
+export function idOf(row: number, track: TimelineTrack): string {
   return `row${String(row)}/${track.kind}/${track.name}/${String(track.occurrence)}`;
 }
 
@@ -201,7 +202,7 @@ function drawGround(ctx: DrawingContext, layout: RowLayout): void {
 }
 
 /** Calls a free drawing's function for each of its segments shown at `frame`. */
-function drawTrack(
+export function drawTrack(
   ctx: DrawingContext,
   timeline: Timeline,
   row: number,

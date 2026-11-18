@@ -11,7 +11,7 @@ import {
   runCli,
   runIfMain,
 } from "../src/cli.js";
-import { scene } from "../src/index.js";
+import { type Scene, scene } from "../src/index.js";
 
 const built = scene({}, () => undefined);
 
@@ -221,7 +221,7 @@ describe("--json (R2)", () => {
         return Promise.resolve(built);
       },
     });
-    expect(parseOne(result.stdout).ok).toBe(false);
+    expect(parseOne(result.stdout).error).toBeUndefined();
     expect(result.stderr).toBe("notice: a local version differs\n");
   });
 
@@ -235,7 +235,6 @@ describe("--json (R2)", () => {
 describe("commands", () => {
   it.each([
     { command: "render", argv: ["render", "s.ts", "-o", "out.mp4"] },
-    { command: "check", argv: ["check", "s.ts", "--strict", "--at", "1.5s"] },
     { command: "frame", argv: ["frame", "s.ts", "--at", "45f", "--out", "f.png"] },
     { command: "sheet", argv: ["sheet", "s.ts", "--ghost", "ada"] },
   ])(
@@ -261,7 +260,7 @@ describe("commands", () => {
 
   it("reports a stub as text without --json", async () => {
     const { options } = fakeLoader();
-    const result = await runCli(["check", "s.ts"], options);
+    const result = await runCli(["render", "s.ts"], options);
     expect(result.stdout).toBe("");
     expect(result.stderr).toMatch(/^error ERR_CLI_NOT_IMPLEMENTED: .+\n {2}fix: .+\n$/);
   });
@@ -272,6 +271,200 @@ describe("commands", () => {
       load: () => Promise.reject(new Error("x")),
     });
     expect(result.stderr).toContain("ERR_LOAD_FAILED");
+  });
+});
+
+/** Loads `scene` whatever the path, on a Node that owes no notice. */
+function loading(scene: Scene): CliOptions {
+  return { nodeVersion: "24.22.1", load: () => Promise.resolve(scene) };
+}
+
+interface Report {
+  version: number;
+  ok: boolean;
+  findings: { code: string; severity: string; joint?: string; frames?: number[] }[];
+  summary: { errors: number; warnings: number; truncated: boolean };
+  state?: { frame: number; time: number; rows: unknown[] };
+}
+
+describe("check", () => {
+  const clean = scene({ duration: 2 }, (stage) => {
+    stage.actor().pose({ kneeR: 1.6, hipR: 1.4 }, { duration: 1 });
+  });
+  const leaving = scene({ duration: 2 }, (stage) => {
+    stage.actor().pose({ pelvisX: 3 }, { at: 1, duration: 1 });
+  });
+  const broken = scene({ duration: 2 }, (stage) => {
+    stage
+      .actor()
+      .pose({ kneeR: -0.4 }, { at: 1.2, duration: 0.3, mode: "add", blend: 0 });
+  });
+
+  it("prints the count and exits 0 for a clean scene", async () => {
+    const result = await runCli(["check", "s.ts"], loading(clean));
+    expect(result).toEqual({
+      exitCode: 0,
+      stdout: "0 errors, 0 warnings\n",
+      stderr: "",
+    });
+  });
+
+  // R2
+  it.each([
+    { label: "exits 0 on a warning", flags: [], exitCode: 0, ok: true },
+    {
+      label: "exits 1 on a warning under --strict",
+      flags: ["--strict"],
+      exitCode: 1,
+      ok: false,
+    },
+  ])("$label", async ({ flags, exitCode, ok }) => {
+    const text = await runCli(["check", "s.ts", ...flags], loading(leaving));
+    expect(text.exitCode).toBe(exitCode);
+    expect(text.stdout).toMatch(/^warning ERR_CHECK_OFF_FRAME: /);
+    expect(text.stdout).toContain("\n0 errors, 1 warning\n");
+    const json = await runCli(["check", "s.ts", "--json", ...flags], loading(leaving));
+    expect(json.exitCode).toBe(exitCode);
+    expect((JSON.parse(json.stdout) as Report).ok).toBe(ok);
+  });
+
+  it("exits 1 on an error finding, printed as text on stdout", async () => {
+    const result = await runCli(["check", "s.ts"], loading(broken));
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toMatch(
+      /^error ERR_CHECK_JOINT_LIMIT: .+\n {2}at: .+\n {2}fix: .+\n/,
+    );
+    expect(result.stdout).toContain("1 error, 0 warnings\n");
+    expect(result.stderr).toBe("");
+  });
+
+  // R4
+  it.each([
+    { label: "a clean scene", built: clean, flags: [], ok: true, exitCode: 0 },
+    { label: "an error finding", built: broken, flags: [], ok: false, exitCode: 1 },
+    { label: "a warning", built: leaving, flags: [], ok: true, exitCode: 0 },
+    {
+      label: "a warning under --strict",
+      built: leaving,
+      flags: ["--strict"],
+      ok: false,
+      exitCode: 1,
+    },
+  ])(
+    "prints { version, ok, findings, summary } with ok $ok for $label",
+    async ({ built: given, flags, ok, exitCode }) => {
+      const result = await runCli(
+        ["check", "s.ts", "--json", ...flags],
+        loading(given),
+      );
+      expect(result.exitCode).toBe(exitCode);
+      parseOne(result.stdout);
+      const report = JSON.parse(result.stdout) as Report;
+      expect(Object.keys(report)).toEqual(["version", "ok", "findings", "summary"]);
+      expect(report.version).toBe(1);
+      expect(report.ok).toBe(ok);
+      expect(report.summary).toEqual({
+        errors: report.findings.filter((finding) => finding.severity === "error")
+          .length,
+        warnings: report.findings.filter((finding) => finding.severity === "warning")
+          .length,
+        truncated: false,
+      });
+    },
+  );
+
+  it("carries the finding's place in the JSON document", async () => {
+    const result = await runCli(["check", "s.ts", "--json"], loading(broken));
+    const report = JSON.parse(result.stdout) as Report;
+    expect(report.findings).toHaveLength(1);
+    expect(report.findings[0]).toMatchObject({
+      code: "ERR_CHECK_JOINT_LIMIT",
+      joint: "kneeR",
+      frames: [36, 44],
+    });
+  });
+
+  // R5
+  it.each([["1.5"], ["1.5s"], ["45f"]])(
+    "describes the state at --at %s after the findings",
+    async (at) => {
+      const result = await runCli(["check", "s.ts", "--at", at], loading(clean));
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout).toMatch(
+        /^0 errors, 0 warnings\n\nstate at 1\.5 s \(frame 45\)\nrow 0\n {2}actor row0\/actor\/actor\/0: facing right, /,
+      );
+      expect(result.stdout).toContain("pose: hipR 1.4, kneeR 1.6\n");
+    },
+  );
+
+  it("adds the state to the JSON document under --at", async () => {
+    const result = await runCli(
+      ["check", "s.ts", "--at", "0.99", "--json"],
+      loading(clean),
+    );
+    const report = JSON.parse(result.stdout) as Report;
+    // 0.99 s falls in frame 29, which is on screen from 0.9667 s.
+    expect(report.state).toMatchObject({ frame: 29 });
+    expect(report.state?.rows).toHaveLength(1);
+  });
+
+  it.each([
+    { label: "a time past the end", at: "2.5", code: "ERR_CLI_AT_PAST_END" },
+    { label: "a frame past the end", at: "61f", code: "ERR_CLI_AT_PAST_END" },
+    {
+      label: "a time too large to count",
+      at: "9007199254740991",
+      code: "ERR_CLI_INVALID_AT",
+    },
+    {
+      label: "a frame too large to count",
+      at: "9007199254740991f",
+      code: "ERR_CLI_INVALID_AT",
+    },
+  ])("exits 2 with $code for $label", async ({ at, code }) => {
+    const result = await runCli(
+      ["check", "s.ts", "--json", "--at", at],
+      loading(clean),
+    );
+    expect(result.exitCode).toBe(2);
+    expect(parseOne(result.stdout).error?.code).toBe(code);
+  });
+
+  it("accepts the scene's last frame", async () => {
+    const result = await runCli(["check", "s.ts", "--at", "60f"], loading(clean));
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain("state at 2 s (frame 60)");
+  });
+
+  it("describes any frame of a scene that has no length", async () => {
+    const endless = scene((stage) => {
+      stage.actor().drive(() => ({ spine: 0.1 }));
+    });
+    const result = await runCli(["check", "s.ts", "--at", "500f"], loading(endless));
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toContain("ERR_SCENE_NO_DURATION");
+    expect(result.stdout).toContain("(frame 500)");
+  });
+
+  it("watches the scene's build function for clock and random reads while it loads", async () => {
+    const result = await runCli(["check", "s.ts", "--json"], {
+      nodeVersion: "24.22.1",
+      load: () =>
+        Promise.resolve(
+          scene({ duration: 1 }, (stage) => {
+            stage.actor().pose({ spine: Math.random() * 0.1 }, { duration: 0.5 });
+          }),
+        ),
+    });
+    expect(result.exitCode).toBe(1);
+    expect(
+      (JSON.parse(result.stdout) as Report).findings.map(({ code }) => code),
+    ).toEqual(["ERR_CHECK_UNSEEDED_RANDOM"]);
+    // The watch ends with the command.
+    const after = scene({ duration: 1 }, (stage) => {
+      stage.actor().pose({ spine: Math.random() * 0.1 }, { duration: 0.5 });
+    });
+    expect(after.findings).toEqual([]);
   });
 });
 
@@ -340,7 +533,8 @@ describe("Node notice (R5)", () => {
       nodeVersion: "24.4.0",
     });
     expect(files).toEqual(["s.ts"]);
-    expect(parseOne(result.stdout).error?.code).toBe("ERR_CLI_NOT_IMPLEMENTED");
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toContain("ERR_SCENE_NO_DURATION");
     expect(result.stderr).toMatch(/^notice: .*24\.12.*\n$/);
   });
 

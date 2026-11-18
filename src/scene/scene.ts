@@ -1,5 +1,6 @@
 import { type Finding, FindingCollector } from "../check/findings.js";
 import { nearestNames } from "../check/nearest.js";
+import { readFinding, watchReads } from "../check/reads.js";
 import { AsyncBuildError } from "../errors.js";
 import { DEFAULT_SEED } from "../timeline/random.js";
 import { DEFAULT_FPS, type Micros } from "../timeline/time.js";
@@ -268,7 +269,11 @@ export function buildScene(
   let returned: unknown;
   if (isBuild(build)) {
     try {
-      returned = build(builder.stage);
+      const watched = watchReads(() => build(builder.stage));
+      returned = watched.value;
+      for (const read of watched.reads) {
+        findings.add(readFinding(read, { subject: "The scene's build function" }));
+      }
     } finally {
       builder.close();
     }

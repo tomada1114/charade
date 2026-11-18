@@ -481,9 +481,12 @@ describe("the built CLI in a child process", () => {
   } {
     const result = run("check", sceneFile, "--json");
     const document = JSON.parse(result.stdout) as {
-      error: { code: string; fix: string };
+      error?: { code: string };
+      findings?: { code: string }[];
     };
-    return { code: document.error.code, stderr: result.stderr, status: result.status };
+    // A scene that loaded is checked, so its code is its first finding's.
+    const code = document.error?.code ?? document.findings?.[0]?.code ?? "";
+    return { code, stderr: result.stderr, status: result.status };
   }
 
   const SCENE =
@@ -532,7 +535,7 @@ describe("the built CLI in a child process", () => {
     );
 
     const result = check("scene.ts");
-    expect(result.code).toBe("ERR_CLI_NOT_IMPLEMENTED");
+    expect(result.code).toBe("ERR_SCENE_NO_DURATION");
     expect(result.stderr).toContain(`resolved ${ownIndex}`);
     expect(result.stderr).not.toContain("LOCAL_COPY_IMPORTED");
     const notices = result.stderr.split("\n").filter((line) => line.includes("9.9.9"));
@@ -540,10 +543,27 @@ describe("the built CLI in a child process", () => {
     expect(notices[0]).toContain(ownVersion());
   });
 
+  it("watches the build function of a scene loaded through the hook", () => {
+    write(
+      work,
+      "scene.ts",
+      [
+        'import { scene } from "charade";',
+        "export default scene({ duration: 1 }, (stage) => {",
+        "  stage.actor().pose({ spine: Math.random() * 0.1 }, { duration: 0.5 });",
+        "});",
+        "",
+      ].join("\n"),
+    );
+    const result = check("scene.ts");
+    expect(result.code).toBe("ERR_CHECK_UNSEEDED_RANDOM");
+    expect(result.status).toBe(1);
+  });
+
   it("prints no version notice in a folder without charade", () => {
     write(work, "scene.ts", SCENE);
     const result = check("scene.ts");
-    expect(result.code).toBe("ERR_CLI_NOT_IMPLEMENTED");
+    expect(result.code).toBe("ERR_SCENE_NO_DURATION");
     expect(result.stderr).not.toContain("installed");
   });
 
