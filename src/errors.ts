@@ -293,3 +293,40 @@ export class InvalidDefinitionError extends CharadeError {
     this.path = path;
   }
 }
+
+/**
+ * A string given to {@link svgPath} is not valid SVG path data.
+ *
+ * @remarks
+ * `offset` is the zero-based character offset in the `d` string where parsing failed:
+ * the first character that is not part of a valid command, or the string's length when
+ * a command ends before all its numbers are given. The string itself is not carried.
+ * It is thrown before any path call is issued, so a malformed shape draws nothing.
+ * Thrown while a frame is drawn, it reaches a check as the cause of an
+ * `ERR_SCENE_DRAWING_FAILED` finding.
+ *
+ * @example
+ * ```ts
+ * const error = new InvalidPathDataError(8);
+ * console.log(error.code, error.offset);
+ * // => "ERR_SCENE_INVALID_PATH_DATA" 8
+ * ```
+ *
+ * @public
+ */
+export class InvalidPathDataError extends CharadeError {
+  /** Stable discriminator, unchanged across non-breaking releases. */
+  readonly code = "ERR_SCENE_INVALID_PATH_DATA" as const;
+
+  /** The zero-based character offset in the `d` string where parsing failed. */
+  readonly offset: number;
+
+  /**
+   * @param offset - The zero-based character offset where parsing failed.
+   * @param options - Standard `Error` options, such as the `cause`.
+   */
+  constructor(offset: number, options?: ErrorOptions) {
+    super(`The SVG path data is malformed at offset ${String(offset)}.`, options);
+    this.offset = offset;
+  }
+}

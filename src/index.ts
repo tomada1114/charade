@@ -37,11 +37,14 @@ export type {
   ShapeContext,
   TextMeasurement,
 } from "./draw/context.js";
+export { svgPath } from "./draw/path-data.js";
+export type { SvgPathOptions } from "./draw/path-data.js";
 export {
   AsyncBuildError,
   CharadeError,
   InvalidDefaultError,
   InvalidDefinitionError,
+  InvalidPathDataError,
   ReservedParameterError,
   SceneClosedError,
   UnknownFlagError,

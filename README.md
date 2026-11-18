@@ -126,6 +126,32 @@ function drawBall(ctx: ShapeContext): void {
 }
 ```
 
+- `svgPath(ctx, d, options)` adds the shape in an SVG path's `d` string to the current
+  path with ordinary path calls, so a shape drawn in an SVG editor can be a prop. SVG's
+  `y` points down and the row's points up, so the shape is flipped; `scale` is row units
+  per SVG unit and `origin` is the SVG point placed on the prop's ground point. Path
+  data that does not parse throws `InvalidPathDataError`
+  (`ERR_SCENE_INVALID_PATH_DATA`), whose `offset` says where.
+
+```ts
+import { defineProp, svgPath } from "charade";
+
+// A leaf 100 units tall in the editor, its stem at (50, 100).
+const LEAF = "M50 100 C0 60 20 10 50 0 C80 10 100 60 50 100 Z";
+
+export const leafProp = defineProp({
+  name: "leaf",
+  description: "A leaf standing on its stem.",
+  params: {},
+  draw(ctx) {
+    ctx.beginPath();
+    svgPath(ctx, LEAF, { scale: 0.004, origin: { x: 50, y: 100 } });
+    ctx.fillStyle = "#6a994e";
+    ctx.fill();
+  },
+});
+```
+
 - `defineAction`, `defineExpression`, `defineProp`, `defineBackdrop` and `defineEffect`
   make a vocabulary item from a name, a description, parameters written as plain data
   `as const`, and a `build` or `draw` method. Nothing is registered: pass the definition

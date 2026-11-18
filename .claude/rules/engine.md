@@ -438,3 +438,25 @@ it would need an image decoder, which the drawing interface excludes.
 There is no `Path2D`: it is a global constructor the drawing interface cannot reach, and
 a path object would be a host object the recording context cannot log. Paths are drawn
 with the context's own path calls every frame.
+
+- The helper is `svgPath(ctx, d, options?)`, a root export with its option type
+  `SvgPathOptions`: named like `ctx.rect` and `ctx.arc`, it adds to the current path and
+  issues no `beginPath`, `fill` or `stroke`, so it composes with the context's own
+  calls.
+- An SVG point `(x, y)` maps to `((x − origin.x) × scale, (origin.y − y) × |scale|)`,
+  `scale` defaulting to 1 and `origin` to `(0, 0)`: the flip makes a shape stand the way
+  it looked in the editor, and `origin` is the one SVG point an author has to read off
+  the editor (the shape's foot) to stand it on a prop's ground point, the context's
+  origin. A negative `scale` mirrors it left to right and keeps it standing, so a prop
+  can face the other way.
+- `A` is converted from endpoint to centre form (SVG 2 appendix B.2.4, radii too small
+  scaled up, a zero radius a `lineTo`, an arc ending at its start left out) and drawn as
+  one `ellipse`: the interface has it, and it is the exact curve, where Béziers would
+  approximate. The flip negates its rotation and angles and turns the sweep into
+  `counterclockwise`; under a mirror the rotation is kept, the angles move by a half
+  turn and the direction reverses.
+- The whole string is parsed before any call, so a malformed one draws nothing. It
+  throws `InvalidPathDataError` (`ERR_SCENE_INVALID_PATH_DATA`, carrying the character
+  `offset`, never the string): it surfaces when a frame is drawn, inside a drawing
+  function, like `ERR_SCENE_NON_FINITE_DRAWING`, not when `define…` runs, which never
+  calls `draw`. The frame drawer wraps it in `ERR_SCENE_DRAWING_FAILED`.
