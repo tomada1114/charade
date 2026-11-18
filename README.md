@@ -237,13 +237,13 @@ export default scene((stage) => {
 ```
 
 - The first built-ins are the actions `sitDown`, `throw` and `slump`, the expressions
-  `neutral`, `dejected` and `focused`, and the props `ball` and `box`. A built-in is
-  named by a string, and its parameters are typed by that name. `mood` puts an
-  expression on the face for the length of an action, and an action lists the moods that
-  also change its body. `throw` takes the prop it throws: the ball rides the near hand
-  until the mark `release`, then flies a parabola. A prop has `place`, `hold` (it rides
-  a hand or a foot) and `move` (a straight or arced path), which is how your own action
-  moves one.
+  `neutral`, `happy`, `dejected`, `angry`, `surprised` and `focused`, and the props
+  `ball` and `box`. A built-in is named by a string, and its parameters are typed by
+  that name. `mood` puts an expression on the face for the length of an action, and an
+  action lists the moods that also change its body. `throw` takes the prop it throws:
+  the ball rides the near hand until the mark `release`, then flies a parabola. A prop
+  has `place`, `hold` (it rides a hand or a foot) and `move` (a straight or arced path),
+  which is how your own action moves one.
 
 ```ts
 import { scene } from "charade";

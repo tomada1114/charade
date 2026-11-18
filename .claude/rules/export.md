@@ -274,12 +274,14 @@ stay free of Node-only modules.
 - A sample image is the item's `sample(stage)` passed to `scene` (`sampleScene`) and
   drawn at the sample scene's own size. An action or an effect is a contact sheet of
   twelve frames spread over the sample, laid out and labelled as `sheet` does: motion
-  does not read from one frame. An expression, a prop or a backdrop is the sample's last
-  frame alone, full size: a face is too small to read in a sheet cell, and the last
-  frame is where a blend into an expression has arrived, the first being the resting
-  face. An item without a sample is listed and gets no image; `images` in the document
-  holds `{ kind, name, path }` for each one written, and the text ends with a
-  `wrote <path>` line for each. A sample that throws is `ERR_DEFINE_SAMPLE_FAILED`
+  does not read from one frame. An expression is the sample's last frame alone, full
+  size: a face is too small to read in a sheet cell, and the last frame is where a blend
+  into an expression has arrived, the first being the resting face. A prop or a backdrop
+  is the sample's first frame alone: it draws the same at every frame it is shown, and a
+  sample that gives it a duration has ended it by the last frame. An item without a
+  sample is listed and gets no image; `images` in the document holds
+  `{ kind, name, path }` for each one written, and the text ends with a `wrote <path>`
+  line for each. A sample that throws is `ERR_DEFINE_SAMPLE_FAILED`
   (`SampleFailedError`, internal to `src/check/catalog.ts`, carrying `kind`, `item` and
   the `cause`), exit 2. `catalog` does not check the samples; `check --defs` does.
 - `check` and `catalog` also accept a module of definitions, so a user's own vocabulary

@@ -170,10 +170,15 @@ never repeats it. This rule holds only what is true inside this repository.
   pass.
 - A sample is recorded by `tests/vocabulary-samples.test.ts`: the drawing calls of seven
   frames spread over an action's sample, and of one frame of an expression's or a
-  prop's, one call a line. The same file runs every action alone at the ends of its
-  parameters, under every mood and at a short and a long `duration`, and fails on any
-  finding but leaving the frame; a joint limit met by a built-in is a defect of the
-  built-in.
+  prop's, one call a line. That one frame is the one `catalog --images` draws
+  (`sampleFrames` in `src/check/catalog.ts`). An expression's is the sample's last: it
+  blends in from the resting face, so frame 0 is the same resting face for every
+  expression and pins nothing. A prop's is frame 0: it draws the same at every frame it
+  is shown, and a sample that gives the prop a `duration` ending with the sample has no
+  prop in its last frame, so that image and record would be empty. The same file runs
+  every action alone at the ends of its parameters, under every mood and at a short and
+  a long `duration`, and fails on any finding but leaving the frame; a joint limit met
+  by a built-in is a defect of the built-in.
 
 ## The first three actions
 

@@ -2226,7 +2226,379 @@ restore
 restore"
 `;
 
-exports[`the samples > draws the expression dejected as recorded > frame 0 1`] = `
+exports[`the samples > draws the expression angry as recorded > frame 30 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 10800000
+clip
+setTransform 4320000 0 0 -4320000 5400000 9504000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -12500 0
+lineTo 12500 0
+stroke
+restore
+save
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineCap "round"
+lineJoin "round"
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 6200
+lineTo 0 7600
+lineTo 0 8200
+stroke
+beginPath
+arc 0 9100 900 0 62832
+fillStyle "#ffffff"
+fill
+stroke
+fillStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -198 9172
+bezierCurveTo -198 9280 -72 9280 -72 9172
+bezierCurveTo -72 9064 -198 9064 -198 9172
+closePath
+fill
+stroke
+beginPath
+moveTo -54 9379
+lineTo -306 9505
+stroke
+beginPath
+moveTo 306 9172
+bezierCurveTo 306 9280 432 9280 432 9172
+bezierCurveTo 432 9064 306 9064 306 9172
+closePath
+fill
+stroke
+beginPath
+moveTo 198 9379
+lineTo 450 9505
+stroke
+beginPath
+moveTo -238 8740
+quadraticCurveTo 72 8956 383 8740
+quadraticCurveTo 72 8884 -238 8740
+closePath
+fill
+stroke
+lineWidth 250
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+restore
+restore"
+`;
+
+exports[`the samples > draws the expression dejected as recorded > frame 30 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 10800000
+clip
+setTransform 4320000 0 0 -4320000 5400000 9504000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -12500 0
+lineTo 12500 0
+stroke
+restore
+save
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineCap "round"
+lineJoin "round"
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 6200
+lineTo 0 7600
+lineTo 0 8200
+stroke
+beginPath
+arc 0 9100 900 0 62832
+fillStyle "#ffffff"
+fill
+stroke
+fillStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -243 9114
+bezierCurveTo -243 9186 -117 9186 -117 9114
+bezierCurveTo -117 9042 -243 9042 -243 9114
+closePath
+fill
+stroke
+beginPath
+moveTo -54 9544
+lineTo -306 9430
+stroke
+beginPath
+moveTo 261 9114
+bezierCurveTo 261 9186 387 9186 387 9114
+bezierCurveTo 387 9042 261 9042 261 9114
+closePath
+fill
+stroke
+beginPath
+moveTo 198 9544
+lineTo 450 9430
+stroke
+beginPath
+moveTo -144 8740
+quadraticCurveTo 72 8929 288 8740
+quadraticCurveTo 72 8929 -144 8740
+closePath
+fill
+stroke
+lineWidth 250
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+restore
+restore"
+`;
+
+exports[`the samples > draws the expression focused as recorded > frame 30 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 10800000
+clip
+setTransform 4320000 0 0 -4320000 5400000 9504000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -12500 0
+lineTo 12500 0
+stroke
+restore
+save
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineCap "round"
+lineJoin "round"
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 6200
+lineTo 0 7600
+lineTo 0 8200
+stroke
+beginPath
+arc 0 9100 900 0 62832
+fillStyle "#ffffff"
+fill
+stroke
+fillStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -171 9172
+bezierCurveTo -171 9251 -45 9251 -45 9172
+bezierCurveTo -45 9093 -171 9093 -171 9172
+closePath
+fill
+stroke
+beginPath
+moveTo -54 9418
+lineTo -306 9430
+stroke
+beginPath
+moveTo 333 9172
+bezierCurveTo 333 9251 459 9251 459 9172
+bezierCurveTo 459 9093 333 9093 333 9172
+closePath
+fill
+stroke
+beginPath
+moveTo 198 9418
+lineTo 450 9430
+stroke
+beginPath
+moveTo -90 8740
+quadraticCurveTo 72 8740 234 8740
+quadraticCurveTo 72 8740 -90 8740
+closePath
+fill
+stroke
+lineWidth 250
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+restore
+restore"
+`;
+
+exports[`the samples > draws the expression happy as recorded > frame 30 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 10800000
+clip
+setTransform 4320000 0 0 -4320000 5400000 9504000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -12500 0
+lineTo 12500 0
+stroke
+restore
+save
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineCap "round"
+lineJoin "round"
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 6200
+lineTo 0 7600
+lineTo 0 8200
+stroke
+beginPath
+arc 0 9100 900 0 62832
+fillStyle "#ffffff"
+fill
+stroke
+fillStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -243 9172
+bezierCurveTo -243 9294 -117 9294 -117 9172
+bezierCurveTo -117 9050 -243 9050 -243 9172
+closePath
+fill
+stroke
+beginPath
+moveTo -54 9559
+lineTo -306 9559
+stroke
+beginPath
+moveTo 261 9172
+bezierCurveTo 261 9294 387 9294 387 9172
+bezierCurveTo 387 9050 261 9050 261 9172
+closePath
+fill
+stroke
+beginPath
+moveTo 198 9559
+lineTo 450 9559
+stroke
+beginPath
+moveTo -279 8740
+quadraticCurveTo 72 8470 423 8740
+quadraticCurveTo 72 8290 -279 8740
+closePath
+fill
+stroke
+lineWidth 250
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+restore
+restore"
+`;
+
+exports[`the samples > draws the expression neutral as recorded > frame 30 1`] = `
 "reset
 fillStyle "#ffffff"
 fillRect 0 0 10800000 10800000
@@ -2319,7 +2691,7 @@ restore
 restore"
 `;
 
-exports[`the samples > draws the expression focused as recorded > frame 0 1`] = `
+exports[`the samples > draws the expression surprised as recorded > frame 30 1`] = `
 "reset
 fillStyle "#ffffff"
 fillRect 0 0 10800000 10800000
@@ -2369,123 +2741,30 @@ fillStyle "#111111"
 lineWidth 100
 beginPath
 moveTo -243 9172
-bezierCurveTo -243 9316 -117 9316 -117 9172
-bezierCurveTo -117 9028 -243 9028 -243 9172
+bezierCurveTo -243 9388 -117 9388 -117 9172
+bezierCurveTo -117 8956 -243 8956 -243 9172
 closePath
 fill
 stroke
 beginPath
-moveTo -54 9505
-lineTo -306 9505
+moveTo -54 9595
+lineTo -306 9595
 stroke
 beginPath
 moveTo 261 9172
-bezierCurveTo 261 9316 387 9316 387 9172
-bezierCurveTo 387 9028 261 9028 261 9172
+bezierCurveTo 261 9388 387 9388 387 9172
+bezierCurveTo 387 8956 261 8956 261 9172
 closePath
 fill
 stroke
 beginPath
-moveTo 198 9505
-lineTo 450 9505
+moveTo 198 9595
+lineTo 450 9595
 stroke
 beginPath
-moveTo -198 8740
-quadraticCurveTo 72 8740 342 8740
-quadraticCurveTo 72 8740 -198 8740
-closePath
-fill
-stroke
-lineWidth 250
-beginPath
-moveTo 0 4800
-lineTo 0 2400
-lineTo 0 0
-lineTo 800 0
-stroke
-beginPath
-moveTo 0 7600
-lineTo 0 5900
-lineTo 0 4300
-stroke
-restore
-restore"
-`;
-
-exports[`the samples > draws the expression neutral as recorded > frame 0 1`] = `
-"reset
-fillStyle "#ffffff"
-fillRect 0 0 10800000 10800000
-save
-setTransform 10000 0 0 10000 0 0
-beginPath
-rect 0 0 10800000 10800000
-clip
-setTransform 4320000 0 0 -4320000 5400000 9504000
-save
-strokeStyle "#111111"
-lineWidth 100
-beginPath
-moveTo -12500 0
-lineTo 12500 0
-stroke
-restore
-save
-strokeStyle "#111111"
-fillStyle "#111111"
-lineWidth 250
-lineCap "round"
-lineJoin "round"
-beginPath
-moveTo 0 7600
-lineTo 0 5900
-lineTo 0 4300
-stroke
-beginPath
-moveTo 0 4800
-lineTo 0 2400
-lineTo 0 0
-lineTo 800 0
-stroke
-beginPath
-moveTo 0 4800
-lineTo 0 6200
-lineTo 0 7600
-lineTo 0 8200
-stroke
-beginPath
-arc 0 9100 900 0 62832
-fillStyle "#ffffff"
-fill
-stroke
-fillStyle "#111111"
-lineWidth 100
-beginPath
-moveTo -243 9172
-bezierCurveTo -243 9316 -117 9316 -117 9172
-bezierCurveTo -117 9028 -243 9028 -243 9172
-closePath
-fill
-stroke
-beginPath
-moveTo -54 9505
-lineTo -306 9505
-stroke
-beginPath
-moveTo 261 9172
-bezierCurveTo 261 9316 387 9316 387 9172
-bezierCurveTo 387 9028 261 9028 261 9172
-closePath
-fill
-stroke
-beginPath
-moveTo 198 9505
-lineTo 450 9505
-stroke
-beginPath
-moveTo -198 8740
-quadraticCurveTo 72 8740 342 8740
-quadraticCurveTo 72 8740 -198 8740
+moveTo -90 8740
+quadraticCurveTo 72 8929 234 8740
+quadraticCurveTo 72 8569 -90 8740
 closePath
 fill
 stroke
