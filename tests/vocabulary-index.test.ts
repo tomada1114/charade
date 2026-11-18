@@ -275,7 +275,7 @@ describe("main", () => {
   it("returns 2 for an argument it does not know, and writes nothing", () => {
     const root = rootWith({ "props/ball.ts": "export const ballProp = 1;\n" });
     const error = silence("error");
-    expect(main(["--chekc"], root)).toBe(2);
+    expect(main(["--unknown-flag"], root)).toBe(2);
     expect(error).toHaveBeenCalledWith(expect.stringContaining("ERR_VOCABULARY_USAGE"));
     expect(isIndexFresh(root)).toBe(false);
   });
