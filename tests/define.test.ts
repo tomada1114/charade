@@ -1240,7 +1240,7 @@ describe("row.prop, row.backdrop and row.effect", () => {
     it("reports a part that is not one, nearest head, and uses the head", () => {
       const built = scene({ duration: 1 }, (stage) => {
         loose(stage)["effect"]?.(sweatEffect, {
-          on: { actor: stage.actor(), part: "hed" },
+          on: { actor: stage.actor(), part: "hexd" },
         });
       });
       expect(only(built, "ERR_SCENE_INVALID_VALUE").nearest).toEqual(["head"]);
