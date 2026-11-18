@@ -18,7 +18,7 @@ export const happyExpression: ExpressionDefinition<typeof happyParams> =
   defineExpression({
     name: "happy",
     description:
-      "Glad: a wide smile with the mouth a little open, brows lifted, eyes bright and slightly squeezed by the cheeks.",
+      "Glad: a wide smile with the mouth a little open, brows lifted, eyes bright and slightly squeezed by the cheeks. As a mood it also changes the body of walk, cheer and think.",
     params: happyParams,
     build({ intensity }) {
       return {

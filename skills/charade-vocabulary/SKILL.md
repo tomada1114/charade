@@ -127,8 +127,11 @@ parameter allows. `define…` checks both when it runs; the types do not.
 
 ### An action's build
 
-- `clip` has the actor's `pose`, `reach`, `drive` and `wait`, with time 0 at the
-  action's start, and `clip.mark(name, t)` for each mark listed in `marks`.
+- `clip` has the actor's `pose`, `reach`, `drive`, `cycle` and `wait`, with time 0 at
+  the action's start, and `clip.mark(name, t)` for each mark listed in `marks`.
+- Motion that repeats for as long as the action lasts, such as breathing, is
+  `clip.cycle(keys, { period })`: keyed values, eased from one key to the next and round
+  again. Without a `duration` it runs to the end of the scene, as the action then does.
 - The figure is seen from the side. Write it facing right, from the rest pose, in the
   angles of the catalog's `rig` section, and move limbs forward, back and up: two arms
   doing the same thing draw as one.
@@ -144,6 +147,9 @@ parameter allows. `define…` checks both when it runs; the types do not.
   `move(to, { at, duration, arc })`, with `at` in the action's time.
 - Leave alone the joints of an action yours should compose with, and end in a pose the
   next action can start from.
+- A scene may run your action over an open-ended one such as `stand`. A pose that has
+  ended gives way to what runs beneath it, so let each pose last until the next one on
+  its joints has arrived: `duration` up to the next pose's start plus its `blend`.
 - Acting is timing: wind up before a big move (`anticipation`), overshoot after it
   (`followThrough`), let the head trail the body by a beat, hold the end. Both options
   go past the pose, so keep them off a joint resting on its limit.

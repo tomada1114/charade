@@ -422,6 +422,89 @@ describe("the composed pose", () => {
     expect(at(1000).spine).toBeCloseTo(0.1, 12);
   });
 
+  it("eases a cycle from each key of a channel to the next, and round again", () => {
+    const at = play((a) => {
+      a.cycle(
+        [
+          { at: 0, channels: { chest: 0, spine: 0.3 } },
+          { at: 1, channels: { chest: -0.2 } },
+        ],
+        { at: 1, period: 2, blend: 0 },
+      );
+    });
+    expect(at(99)).toEqual(REST);
+    expect(at(100).chest).toBe(0);
+    // A quarter of the way from a key to the next, eased: 3p² − 2p³ at p = 0.25.
+    expect(at(125).chest).toBeCloseTo(-0.2 * 0.15625, 12);
+    expect(at(150).chest).toBeCloseTo(-0.1, 12);
+    expect(at(200).chest).toBeCloseTo(-0.2, 12);
+    // The last key leads back to the first, one period on.
+    expect(at(250).chest).toBeCloseTo(-0.1, 12);
+    expect(at(300).chest).toBeCloseTo(0, 12);
+    expect(at(950).chest).toBeCloseTo(at(150).chest, 12);
+    // A channel with one key keeps its value.
+    expect(at(125).spine).toBe(0.3);
+    expect(at(950).spine).toBe(0.3);
+  });
+
+  it("does not pop where a cycle comes round", () => {
+    const at = play((a) => {
+      a.cycle(
+        [
+          { at: 0.3, channels: { neck: 0.4 } },
+          { at: 0.5, channels: { neck: -0.1 } },
+          { at: 1.6, channels: { neck: 0.2 } },
+        ],
+        { period: 2, blend: 0 },
+      );
+    });
+    // Before the first key of a pass the value is on its way there from the last key.
+    expect(at(0).neck).toBeCloseTo(at(200).neck, 12);
+    for (const frame of [199, 200, 399, 400, 599]) {
+      expect(Math.abs(at(frame + 1).neck - at(frame).neck)).toBeLessThan(0.01);
+    }
+    expect(at(30).neck).toBeCloseTo(0.4, 12);
+    expect(at(230).neck).toBeCloseTo(0.4, 12);
+  });
+
+  it("blends a cycle in, adds it in add mode, and holds a bounded one where it ended", () => {
+    const at = play((a) => {
+      a.pose({ spine: 0.2 }, { blend: 0 });
+      a.cycle([{ at: 0, channels: { spine: 0.1 } }], {
+        at: 1,
+        period: 1,
+        blend: 0.2,
+        mode: "add",
+        duration: 1,
+      });
+      a.cycle(
+        [
+          { at: 0, channels: { neck: 0 } },
+          { at: 1, channels: { neck: 0.4 } },
+        ],
+        { at: 3, period: 2, blend: 0, duration: 0.5 },
+      );
+    });
+    expect(at(110).spine).toBeCloseTo(0.25, 12);
+    expect(at(150).spine).toBeCloseTo(0.3, 12);
+    // An add segment is never held: it fades out over its blend.
+    expect(at(210).spine).toBeCloseTo(0.25, 12);
+    expect(at(230).spine).toBeCloseTo(0.2, 12);
+    expect(at(350).neck).toBeCloseTo(0.2, 12);
+    expect(at(900).neck).toBeCloseTo(0.2, 12);
+  });
+
+  it("runs an open-ended cycle to the end of the scene, under a later pose", () => {
+    const at = play((a) => {
+      a.cycle([{ at: 0, channels: { spine: 0.1, chest: 0.2 } }], { period: 1 });
+      a.pose({ spine: 0.5 }, { at: 2, blend: 0.1, duration: 1 });
+    });
+    expect(at(250)).toMatchObject({ spine: 0.5, chest: 0.2 });
+    // The pose gives way to the cycle still running beneath it.
+    expect(at(320).spine).toBeCloseTo(0.1, 12);
+    expect(at(1000)).toMatchObject({ spine: 0.1, chest: 0.2 });
+  });
+
   it("moves nothing when a drive's function gives no finite number", () => {
     const at = play((a) => {
       a.drive(() => ({ spine: Number.NaN, chest: Infinity }), { duration: 1 });
@@ -725,6 +808,31 @@ describe("a timeline that was not just built", () => {
     }
   });
 
+  it("composes a cycle the same after a round trip through JSON", () => {
+    const built = scene({ fps: 100, duration: 4 }, (stage) => {
+      stage.actor().cycle(
+        [
+          { at: 0.5, channels: { chest: -0.1, eyeOpen: 0 } },
+          { at: 0, channels: { chest: 0 } },
+        ],
+        { period: 1.5, mode: "add" },
+      );
+    });
+    expect(built.findings).toEqual([]);
+    const text = serializeTimeline(built.timeline);
+    expect(text).toContain('"lossy":false');
+    const parsed = parseTimeline(text);
+    if (!parsed.ok) {
+      throw new Error(parsed.reason);
+    }
+    expect(parsed.document.timeline).toEqual(built.timeline);
+    for (const frame of [0, 20, 50, 149, 150, 399]) {
+      expect(poseOf(parsed.document.timeline, frame)).toEqual(
+        poseOf(built.timeline, frame),
+      );
+    }
+  });
+
   it("moves nothing where a function was omitted", () => {
     const built = scene({ fps: 100, duration: 2 }, (stage) => {
       const a = stage.actor();
@@ -750,6 +858,19 @@ describe("a timeline that was not just built", () => {
       { kind: "drive", channels: ["spine", 3, "wing"], motion: "sway" },
       { kind: "drive", channels: ["spine"], motion: () => 0.2 },
       { kind: "drive", channels: ["spine"], motion: () => ({ spine: "0.2" }) },
+      { kind: "cycle", period: 1_000_000 },
+      { kind: "cycle", period: 0, keys: [{ at: 0, channels: { spine: 1 } }] },
+      { kind: "cycle", period: "1", keys: [{ at: 0, channels: { spine: 1 } }] },
+      {
+        kind: "cycle",
+        period: 1_000_000,
+        keys: [
+          null,
+          { at: "0", channels: { spine: 1 } },
+          { at: 0 },
+          { at: 0, channels: { wing: 1, spine: "1" } },
+        ],
+      },
       { kind: "reach", effector: "tail", target: { x: 0, y: 0 } },
       { kind: "reach", effector: "handR", target: null },
       { kind: "reach", effector: "handR", target: { x: "0", y: 0 } },

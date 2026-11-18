@@ -38,9 +38,9 @@ recorded sample is written against; changing any of it changes all of them at on
 - Baked motion is sampled every 4 000 µs (250 per second), from the motion's start until
   a sample reaches its end: a whole number of microseconds, independent of fps, and
   several samples per frame at 30 or 60 fps without bloating the JSON form.
-- No authoring call bakes motion yet: an actor has `pose`, `reach`, `drive` and `wait`,
-  and a follow needs a prop to follow. A spring or follow call records a baked segment
-  through `bakeMotion` when it is added.
+- No authoring call bakes motion yet: an actor has `pose`, `reach`, `drive`, `cycle` and
+  `wait`, and a follow needs a prop to follow. A spring or follow call records a baked
+  segment through `bakeMotion` when it is added.
 - A scene of duration `d` has `d × fps + 1` frames: the frame at `t = d` is drawn, so
   the final pose is always in the video and on the contact sheet.
 - Duration is the end of the last bounded segment in any row, rounded up to a frame; the
@@ -66,22 +66,22 @@ recorded sample is written against; changing any of it changes all of them at on
   On a scene with more rows those are an error that says to use `stage.row(i)`. There is
   no whole-canvas coordinate space.
 - A row creates its backdrop, props, actor, labels and free drawing; an actor has `do`,
-  `express`, `pose`, `reach`, `drive`, `say` and `wait`. Handles are variables. Each
-  also has an id used in findings, built from the row, the kind, the name and the
+  `express`, `pose`, `reach`, `drive`, `cycle`, `say` and `wait`. Handles are variables.
+  Each also has an id used in findings, built from the row, the kind, the name and the
   occurrence index — the same key the random source uses.
 - The public names are `scene`, `SceneOptions` and `Scene` (the frozen result: `kind`,
   `version: 1`, `width`, `height`, `font`, `timeline`, `findings`, `truncated`; the
   frame rate, seed and rows are read from `timeline`), the handles `Stage` (a `Row` plus
   `row(i)` and `sync()`), `Row` and `Actor`, and their option types `ActorOptions`,
-  `PoseOptions`, `ReachOptions`, `DriveOptions` and `DrawOptions`. The vocabulary calls
-  add `Actor.do` and `Actor.express`, `Row.prop`, `Row.backdrop` and `Row.effect`, the
-  handles `Clip` (what an action's `build` records on) and `Prop`, and the option types
-  `ActionOptions`, `ExpressOptions`, `ItemOptions`, `EffectOptions` (with `EffectAnchor`
-  and `AnchorPart`), `PlaceOptions`, `HoldOptions` and `MoveOptions`;
-  `.claude/rules/vocabulary.md` holds how they behave. Handles are interfaces an author
-  is handed and never implements, so a later issue adds a method as a minor change.
-  `row.actor` and `row.draw` take an options bag rather than a positional name, so
-  placement and layering can be added the same way.
+  `PoseOptions`, `ReachOptions`, `DriveOptions`, `CycleOptions` (with `CycleKey`) and
+  `DrawOptions`. The vocabulary calls add `Actor.do` and `Actor.express`, `Row.prop`,
+  `Row.backdrop` and `Row.effect`, the handles `Clip` (what an action's `build` records
+  on) and `Prop`, and the option types `ActionOptions`, `ExpressOptions`, `ItemOptions`,
+  `EffectOptions` (with `EffectAnchor` and `AnchorPart`), `PlaceOptions`, `HoldOptions`
+  and `MoveOptions`; `.claude/rules/vocabulary.md` holds how they behave. Handles are
+  interfaces an author is handed and never implements, so a later issue adds a method as
+  a minor change. `row.actor` and `row.draw` take an options bag rather than a
+  positional name, so placement and layering can be added the same way.
 - An id is `row<i>` for a row and `row<i>/<kind>/<name>/<occurrence>` for an item; an
   actor's default name is `actor`, a drawing's is `draw` and a label's is `label`. An
   actor's speech bubbles are one item of kind `bubble`, named after the actor.
@@ -158,9 +158,9 @@ recorded sample is written against; changing any of it changes all of them at on
 - `pose` and `reach` last `anticipation + blend + followThrough` when no `duration` is
   given: a pose with no options takes its 0.2 s arrival and the next call follows it. A
   shorter `duration` shortens the three phases in proportion, so a segment has always
-  arrived when it ends. `drive` without a `duration` is open-ended, and `row.draw`
-  without `at` starts at 0 and without a `duration` is open-ended; a drawing has no
-  cursor.
+  arrived when it ends. `drive` and `cycle` without a `duration` are open-ended, and
+  `row.draw` without `at` starts at 0 and without a `duration` is open-ended; a drawing
+  has no cursor.
 - When two tracks drive one joint, the one recorded later wins for the joints it names,
   blended in and out; `mode: "add"` adds instead. So depth 2 and depth 3 override only
   the joints they name over a depth 1 action. A full-body action that cuts another is a
@@ -203,6 +203,24 @@ recorded sample is written against; changing any of it changes all of them at on
   key outside that set is ignored and a recorded key that is missing or not finite moves
   nothing. A function that throws at `t = 0` or returns no object is a finding and names
   no channel; an argument that is not a function is a finding and is recorded as a wait.
+- `cycle(keys, { period, at, duration, blend, mode })` repeats keyed values for as long
+  as it lasts: each key is `{ at, channels }` with `at` in seconds from 0 up to, not
+  including, the `period`, and a channel is eased by smoothstep from each of the keys
+  that name it to the next, the last leading back to the first one period on, so the
+  loop point is continuous by construction; a channel with one key keeps that value. It
+  is `drive`'s counterpart in data: `stand` has to breathe and blink for as long as the
+  scene lasts, an open-ended `drive` would put a function on the timeline, and a `pose`
+  has an end. So it exists for built-in vocabulary first, and a scene that wants a sway
+  that serialises can use it too. It blends in and out, composes and is held at its last
+  value like a `drive`. Keys are stored sorted by `at`. A `period` that is not a time
+  above 0 is `ERR_SCENE_OUT_OF_RANGE` and keys that are not a list
+  `ERR_SCENE_INVALID_VALUE`, either recorded as a wait; a key without an `at` inside the
+  period is `ERR_SCENE_OUT_OF_RANGE` and is dropped.
+- A segment that ends gives way at once to an earlier-recorded one still running on its
+  channels, so a sequence of poses played over an open-ended `cycle` or `drive` is
+  pulled towards that base while each next pose blends in. An action that should play
+  the same over a `stand` keeps each pose running until the next one on its channels has
+  arrived; the six solo actions do (`.claude/rules/vocabulary.md`).
 - A function at depth 3 or 4 receives `t`, seconds since its segment began, and a second
   argument with the scene time, the segment's duration and progress, and the keyed
   random source. That argument is `Moment` (`time`, `duration`, `progress`, `random`);
@@ -360,17 +378,19 @@ change to the shape raises the version.
   change without a version of its own. The value types of the JSON form stay internal.
 - A segment's `data` is an object with a `kind`: `pose` (channels, mode, and the three
   phases in microseconds), `reach` (effector, target, phases), `drive` (the function,
-  the channel names read at `t = 0`, mode, blend), `wait`, `draw` (the callback),
-  `place` (a prop's ground point `x`, `y` and its `layer`), `hold` (the effector, the
-  holding actor's track `name` and `occurrence`, the `offset`), `move` (where it
-  arrives, `x`, `y`, and its `arc`), `label` (text, `x`, `y`, `size`, `align`, and
-  `width` or `null`), `say` (text, the speaking actor's track `name` and `occurrence`,
-  `size`, `width`), or `prop`, `backdrop` and `effect` (name, definition or `null`,
-  resolved params; an effect also `on`, which is `null`, a point `x`, `y`, or the
-  actor's track `name` and `occurrence` with the `part` and the `offset`). An action
-  records its clip's calls on the actor's track as ordinary segments, and an expression
-  records a `pose`. These live in `src/timeline/segments.ts`. Nothing is released yet,
-  so this shape is still JSON version 1.
+  the channel names read at `t = 0`, mode, blend), `cycle` (the `period` and the `keys`,
+  each an `at` and its channels, in microseconds and in time order, mode, blend),
+  `wait`, `draw` (the callback), `place` (a prop's ground point `x`, `y` and its
+  `layer`), `hold` (the effector, the holding actor's track `name` and `occurrence`, the
+  `offset`), `move` (where it arrives, `x`, `y`, and its `arc`), `label` (text, `x`,
+  `y`, `size`, `align`, and `width` or `null`), `say` (text, the speaking actor's track
+  `name` and `occurrence`, `size`, `width`), or `prop`, `backdrop` and `effect` (name,
+  definition or `null`, resolved params; an effect also `on`, which is `null`, a point
+  `x`, `y`, or the actor's track `name` and `occurrence` with the `part` and the
+  `offset`). An action records its clip's calls on the actor's track as ordinary
+  segments, and an expression records a `pose`. These live in
+  `src/timeline/segments.ts`. Nothing is released yet, so this shape is still JSON
+  version 1.
 
 ## The drawing interface
 

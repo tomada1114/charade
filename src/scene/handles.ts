@@ -158,6 +158,40 @@ export interface DriveOptions {
 }
 
 /**
+ * One key of `actor.cycle`: the values channels have at a moment of every pass.
+ *
+ * @public
+ */
+export interface CycleKey {
+  /** When in a pass the key falls, in seconds: 0 or more and less than the period. */
+  readonly at: number;
+  /** The values at that moment. A channel is eased between the keys that name it. */
+  readonly channels: PoseChannels;
+}
+
+/**
+ * Options of `actor.cycle`.
+ *
+ * @public
+ */
+export interface CycleOptions {
+  /** How long one pass through the keys takes, in seconds; the last key leads back to the first. */
+  readonly period: number;
+  /** Absolute scene time to start at, in seconds. Defaults to the actor's cursor. */
+  readonly at?: number;
+  /**
+   * How long the cycle repeats, in seconds. Without it the call is open-ended: it
+   * runs to the end of the scene, does not extend it, and leaves the actor without a
+   * cursor, so later calls on that actor need `at`.
+   */
+  readonly duration?: number;
+  /** Seconds the motion takes to blend in, and out when it ends. Defaults to 0.2. */
+  readonly blend?: number;
+  /** `replace` (the default) takes over the named channels; `add` adds to them. */
+  readonly mode?: BlendMode;
+}
+
+/**
  * Options of `row.draw`.
  *
  * @public
@@ -275,6 +309,17 @@ export interface Actor {
    * @returns When the call plays.
    */
   drive(motion: MotionFunction, options?: DriveOptions): Span;
+
+  /**
+   * Repeat keyed values for as long as the call lasts: breathing, a sway, a blink.
+   * It is data, where `drive` is a function, so a scene that uses it still
+   * serialises in full.
+   *
+   * @param keys - The values at moments of one pass, in any order.
+   * @param options - The period, timing and blending.
+   * @returns When the call plays.
+   */
+  cycle(keys: readonly CycleKey[], options: CycleOptions): Span;
 
   /**
    * Hold still: move the cursor on by `seconds`.
@@ -592,6 +637,15 @@ export interface Clip<Marks extends string = string> {
    * @returns When the call plays, in the action's time.
    */
   drive(motion: MotionFunction, options?: DriveOptions): Span;
+
+  /**
+   * As `actor.cycle`, in the action's time.
+   *
+   * @param keys - The values at moments of one pass, in any order.
+   * @param options - The period, timing and blending.
+   * @returns When the call plays, in the action's time.
+   */
+  cycle(keys: readonly CycleKey[], options: CycleOptions): Span;
 
   /**
    * As `actor.wait`.

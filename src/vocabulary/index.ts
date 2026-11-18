@@ -2,9 +2,15 @@
 // directory. Do not edit: add, rename or remove a module, then run
 // `pnpm vocabulary:index`.
 
+import { cheerAction } from "./actions/cheer.js";
+import { pointAction } from "./actions/point.js";
+import { runAction } from "./actions/run.js";
 import { sitDownAction } from "./actions/sitDown.js";
 import { slumpAction } from "./actions/slump.js";
+import { standAction } from "./actions/stand.js";
+import { thinkAction } from "./actions/think.js";
 import { throwAction } from "./actions/throw.js";
+import { walkAction } from "./actions/walk.js";
 import { angryExpression } from "./expressions/angry.js";
 import { dejectedExpression } from "./expressions/dejected.js";
 import { focusedExpression } from "./expressions/focused.js";
@@ -35,17 +41,30 @@ import { sweatEffect } from "./effects/sweat.js";
  * The built-in actions by name: what `a.do("name")` accepts.
  *
  * @remarks
- * They are `sitDown`, `slump`, `throw`.
+ * They are `cheer`, `point`, `run`, `sitDown`, `slump`, `stand`, `think`, `throw`,
+ * `walk`.
  *
  * @public
  */
 export interface BuiltinActions {
   /** @hidden */
+  readonly cheer: typeof cheerAction;
+  /** @hidden */
+  readonly point: typeof pointAction;
+  /** @hidden */
+  readonly run: typeof runAction;
+  /** @hidden */
   readonly sitDown: typeof sitDownAction;
   /** @hidden */
   readonly slump: typeof slumpAction;
   /** @hidden */
+  readonly stand: typeof standAction;
+  /** @hidden */
+  readonly think: typeof thinkAction;
+  /** @hidden */
   readonly throw: typeof throwAction;
+  /** @hidden */
+  readonly walk: typeof walkAction;
 }
 
 /**
@@ -54,9 +73,15 @@ export interface BuiltinActions {
  * @public
  */
 export const builtinActions: BuiltinActions = Object.freeze({
+  cheer: cheerAction,
+  point: pointAction,
+  run: runAction,
   sitDown: sitDownAction,
   slump: slumpAction,
+  stand: standAction,
+  think: thinkAction,
   throw: throwAction,
+  walk: walkAction,
 });
 
 /**

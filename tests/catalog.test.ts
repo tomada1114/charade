@@ -658,9 +658,15 @@ describe("catalog --images (R4)", () => {
     const result = await runCli(["catalog", "--images", out, "--json"], drawing);
     expect(result.exitCode).toBe(0);
     const names = [
+      "action.cheer.png",
+      "action.point.png",
+      "action.run.png",
       "action.sitDown.png",
       "action.slump.png",
+      "action.stand.png",
+      "action.think.png",
       "action.throw.png",
+      "action.walk.png",
       "backdrop.court.png",
       "backdrop.hill.png",
       "backdrop.night.png",
@@ -694,7 +700,7 @@ describe("catalog --images (R4)", () => {
       names.map((name) => path.join(out, name)),
     );
     expect(document.images?.at(-1)?.path).toBe(path.join(out, "effect.sweat.png"));
-    expect(document.items).toHaveLength(28);
+    expect(document.items).toHaveLength(34);
     // An action is a contact sheet; an expression is one frame at the sample's size.
     expect(sizeOf(readFileSync(path.join(out, "action.throw.png")))[0]).toBe(1568);
     expect(sizeOf(readFileSync(path.join(out, "expression.dejected.png")))).toEqual([

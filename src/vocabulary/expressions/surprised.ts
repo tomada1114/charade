@@ -18,7 +18,7 @@ export const surprisedExpression: ExpressionDefinition<typeof surprisedParams> =
   defineExpression({
     name: "surprised",
     description:
-      "Startled: eyes wide, brows shot up, the mouth dropped open into a small round O.",
+      "Startled: eyes wide, brows shot up, the mouth dropped open into a small round O. As a mood it also changes the body of run and point.",
     params: surprisedParams,
     build({ intensity }) {
       return {
