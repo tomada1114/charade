@@ -78,16 +78,16 @@ selected floor. The override is only for that compatibility check. Never relax
 Run the narrowest check that can fail, then the gate. Reaching for `pnpm check` on every
 edit is slow enough that it stops being run at all.
 
-| What you changed                         | The narrowest check that can fail                                                 |
-| ---------------------------------------- | --------------------------------------------------------------------------------- |
-| A module under `src/`                    | `pnpm exec vitest run tests/<module>.test.ts`                                     |
-| Anything reachable from `src/index.ts`   | `pnpm check` — only `package:smoke` sees the published `.d.ts` as a consumer does |
-| A test                                   | `pnpm exec vitest run tests/<name>.test.ts`                                       |
-| A script under `scripts/`                | `pnpm exec vitest run tests/<script>.test.ts`                                     |
-| TSDoc comments                           | `pnpm docs:build`                                                                 |
-| A skill, rule, or agent under `.claude/` | `pnpm exec vitest run tests/skills-frontmatter.test.ts`, then `pnpm fix`          |
-| `package.json`, `pnpm-workspace.yaml`    | `pnpm install`, then `pnpm check`                                                 |
-| Markdown                                 | `pnpm fix`                                                                        |
+| What you changed                       | The narrowest check that can fail                                                 |
+| -------------------------------------- | --------------------------------------------------------------------------------- |
+| A module under `src/`                  | `pnpm exec vitest run tests/<module>.test.ts`                                     |
+| Anything reachable from `src/index.ts` | `pnpm check` — only `package:smoke` sees the published `.d.ts` as a consumer does |
+| A test                                 | `pnpm exec vitest run tests/<name>.test.ts`                                       |
+| A script under `scripts/`              | `pnpm exec vitest run tests/<script>.test.ts`                                     |
+| TSDoc comments                         | `pnpm docs:build`                                                                 |
+| Anything under `.claude/` or `skills/` | `pnpm exec vitest run tests/skills-frontmatter.test.ts`, then `pnpm fix`          |
+| `package.json`, `pnpm-workspace.yaml`  | `pnpm install`, then `pnpm check`                                                 |
+| Markdown                               | `pnpm fix`                                                                        |
 
 ## Architecture
 

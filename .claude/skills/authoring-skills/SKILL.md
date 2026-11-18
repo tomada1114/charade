@@ -59,10 +59,11 @@ is opened, AGENTS.md tells agents to read it before designing a change.
 ## Checks
 
 Enforced by: `tests/skills-frontmatter.test.ts` (frontmatter keys, `name` match, length
-cap, English). Prettier and `typos` cover `.claude/skills/` and `.claude/rules/`; run
-`pnpm fix` before committing. Any backticked repository path in a skill, rule or
-AGENTS.md must exist in the repository; in the template itself, bootstrap also checks it
-against every generated project.
+cap, English, a name unique across both trees), for `.claude/skills/` and the shipped
+`skills/` alike. Prettier and `typos` cover both and `.claude/rules/`; run `pnpm fix`
+before committing. Any backticked repository path in a skill, rule or AGENTS.md must
+exist in the repository; in the template itself, bootstrap also checks it against every
+generated project.
 
 ```bash
 pnpm exec vitest run tests/skills-frontmatter.test.ts

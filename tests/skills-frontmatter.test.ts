@@ -14,7 +14,9 @@ import { describe, expect, it } from "vitest";
 // of them a folded block scalar), so it is parsed here rather than by adding a
 // YAML dependency for a file format the repository itself controls.
 const repoRoot = fileURLToPath(new URL("..", import.meta.url));
-const skillsDirectory = path.join(repoRoot, ".claude", "skills");
+
+/** The repository's own skills and the shipped ones, held to the same shape. */
+const SKILL_TREES = [".claude/skills", "skills"] as const;
 
 /**
  * The frontmatter keys a skill in this repository may declare. Claude Code
@@ -34,8 +36,9 @@ const NON_ENGLISH_SCRIPT = /[\u3000-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uff00-\uffe
 /** Long enough for two sentences; short enough to survive host truncation. */
 const DESCRIPTION_LIMIT = 600;
 
-function listSkillNames(): string[] {
-  return readdirSync(skillsDirectory, { withFileTypes: true })
+/** The directory names directly under a skill tree. */
+function listSkillNames(tree: string): string[] {
+  return readdirSync(path.join(repoRoot, tree), { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
     .map((entry) => entry.name)
     .sort();
@@ -102,15 +105,14 @@ function parseFrontmatter(source: string): Record<string, string> {
   return fields;
 }
 
-function readSkill(name: string): Record<string, string> {
-  return parseFrontmatter(
-    readFileSync(path.join(skillsDirectory, name, "SKILL.md"), "utf8"),
-  );
+/** The frontmatter of the skill at `skill`, a path such as `skills/a-skill`. */
+function readSkill(skill: string): Record<string, string> {
+  return parseFrontmatter(readFileSync(path.join(repoRoot, skill, "SKILL.md"), "utf8"));
 }
 
 /** Every path under a skill directory, relative to that directory. */
-function listSkillFiles(name: string): string[] {
-  const root = path.join(skillsDirectory, name);
+function listSkillFiles(skill: string): string[] {
+  const root = path.join(repoRoot, skill);
   const found: string[] = [];
   const walk = (directory: string): void => {
     for (const entry of readdirSync(directory, { withFileTypes: true })) {
@@ -123,39 +125,48 @@ function listSkillFiles(name: string): string[] {
   return found;
 }
 
-const skillNames = listSkillNames();
+/** Every skill of both trees, as its path from the repository root. */
+const skills = SKILL_TREES.flatMap((tree) =>
+  listSkillNames(tree).map((name) => `${tree}/${name}`),
+);
 
-describe("the skill tree", () => {
-  it("holds at least one skill", () => {
-    expect(skillNames.length).toBeGreaterThan(0);
+describe("the skill trees", () => {
+  it.each(SKILL_TREES)("holds at least one skill under %s", (tree) => {
+    expect(listSkillNames(tree).length).toBeGreaterThan(0);
   });
 
-  it.each(skillNames)("gives %s a SKILL.md at its root", (name) => {
-    expect(statSync(path.join(skillsDirectory, name, "SKILL.md")).isFile()).toBe(true);
+  it.each(skills)("gives %s a SKILL.md at its root", (skill) => {
+    expect(statSync(path.join(repoRoot, skill, "SKILL.md")).isFile()).toBe(true);
   });
 
-  it.each(skillNames)("names %s's frontmatter after its directory", (name) => {
-    expect(readSkill(name)["name"]).toBe(name);
+  it.each(skills)("names %s's frontmatter after its directory", (skill) => {
+    expect(readSkill(skill)["name"]).toBe(path.basename(skill));
   });
 
-  it.each(skillNames)("declares only name and description in %s", (name) => {
-    expect(Object.keys(readSkill(name)).sort()).toEqual([...ALLOWED_KEYS].sort());
+  it("gives every skill a name no other tree uses", () => {
+    // Both trees can be installed into one agent, where a repeated name hides a skill.
+    const names = skills.map((skill) => path.basename(skill));
+    expect(names).toEqual([...new Set(names)]);
   });
 
-  it.each(skillNames)("gives %s a non-empty, length-capped description", (name) => {
-    const description = readSkill(name)["description"] ?? "";
+  it.each(skills)("declares only name and description in %s", (skill) => {
+    expect(Object.keys(readSkill(skill)).sort()).toEqual([...ALLOWED_KEYS].sort());
+  });
+
+  it.each(skills)("gives %s a non-empty, length-capped description", (skill) => {
+    const description = readSkill(skill)["description"] ?? "";
     expect(description).not.toBe("");
     expect(description.length).toBeLessThanOrEqual(DESCRIPTION_LIMIT);
   });
 
-  it.each(skillNames)("keeps %s's description in English", (name) => {
-    expect(readSkill(name)["description"]).not.toMatch(NON_ENGLISH_SCRIPT);
+  it.each(skills)("keeps %s's description in English", (skill) => {
+    expect(readSkill(skill)["description"]).not.toMatch(NON_ENGLISH_SCRIPT);
   });
 
-  it.each(skillNames)("keeps SKILL.md unique within %s", (name) => {
+  it.each(skills)("keeps SKILL.md unique within %s", (skill) => {
     // A SKILL.md below the skill root registers as a second, nameless skill.
     expect(
-      listSkillFiles(name).filter((file) => path.basename(file) === "SKILL.md"),
+      listSkillFiles(skill).filter((file) => path.basename(file) === "SKILL.md"),
     ).toEqual(["SKILL.md"]);
   });
 });
@@ -198,13 +209,13 @@ describe("parseFrontmatter", () => {
     ).toThrow(/unquoted ": "/u);
   });
 
-  it.each(skillNames)(
+  it.each(skills)(
     "parses %s's real frontmatter without an unquoted colon-space in a plain scalar",
-    (name) => {
+    (skill) => {
       // Every skill today writes its description as a folded block scalar,
       // so this should never fire — it exists to catch a future skill that
       // reverts to a plain scalar and reintroduces the invalid shape above.
-      expect(() => readSkill(name)).not.toThrow();
+      expect(() => readSkill(skill)).not.toThrow();
     },
   );
 
