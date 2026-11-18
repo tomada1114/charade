@@ -36,15 +36,17 @@ const HEAD_RADIUS = SEGMENT_LENGTHS.head / 2;
  * The face is drawn a little forward of the head's centre, so it reads as facing.
  * Every feature stays inside the outline over the channels' whole ranges.
  */
-const FACE_SHIFT = 0.1 * HEAD_RADIUS;
-const EYE_SPACING = 0.3 * HEAD_RADIUS;
-const EYE_HEIGHT = 0.15 * HEAD_RADIUS;
-const EYE_HALF_WIDTH = 0.16 * HEAD_RADIUS;
-const PUPIL_RADIUS = 0.08 * HEAD_RADIUS;
-const BROW_HEIGHT = 0.4 * HEAD_RADIUS;
-const BROW_TRAVEL = 0.08 * HEAD_RADIUS;
-const BROW_HALF_LENGTH = 0.15 * HEAD_RADIUS;
-const BROW_TILT = 0.06 * HEAD_RADIUS;
+const FACE_SHIFT = 0.08 * HEAD_RADIUS;
+const EYE_SPACING = 0.28 * HEAD_RADIUS;
+const EYE_HEIGHT = 0.08 * HEAD_RADIUS;
+const EYE_HALF_WIDTH = 0.07 * HEAD_RADIUS;
+const EYE_HALF_HEIGHT = 0.12 * HEAD_RADIUS;
+const GAZE_X = 0.1 * HEAD_RADIUS;
+const GAZE_Y = 0.08 * HEAD_RADIUS;
+const BROW_HEIGHT = 0.45 * HEAD_RADIUS;
+const BROW_TRAVEL = 0.1 * HEAD_RADIUS;
+const BROW_HALF_LENGTH = 0.14 * HEAD_RADIUS;
+const BROW_TILT = 0.07 * HEAD_RADIUS;
 const MOUTH_HEIGHT = -0.4 * HEAD_RADIUS;
 const MOUTH_HALF_WIDTH = 0.3 * HEAD_RADIUS;
 const MOUTH_CURVE = 0.3 * HEAD_RADIUS;
@@ -127,31 +129,29 @@ function drawHead(ctx: DrawingContext, pose: Pose, centre: Point, sign: number):
 
   ctx.fillStyle = INK;
   ctx.lineWidth = FACE_LINE;
-  // An arrival's overshoot can take eyeOpen below 0, and a negative arc radius throws.
-  const open = Math.max(0, pose.eyeOpen);
-  const eyeHalfHeight = EYE_HALF_WIDTH * open;
-  const pupil = PUPIL_RADIUS * Math.min(open, 1);
+  // An arrival's overshoot can take eyeOpen below 0, which would turn the eye over.
+  const eyeHalfHeight = EYE_HALF_HEIGHT * Math.max(0, pose.eyeOpen);
+  // Two cubic curves whose control points sit 4/3 of the half height out make an oval.
+  const bulge = (4 / 3) * eyeHalfHeight;
   for (const side of [-1, 1]) {
     const u = FACE_SHIFT + side * EYE_SPACING;
-    // The eye: a lens between two corners, flat when closed.
-    const left = at({ u: u - EYE_HALF_WIDTH, v: EYE_HEIGHT });
-    const right = at({ u: u + EYE_HALF_WIDTH, v: EYE_HEIGHT });
-    const upper = at({ u, v: EYE_HEIGHT + 2 * eyeHalfHeight });
-    const lower = at({ u, v: EYE_HEIGHT - 2 * eyeHalfHeight });
+    // The eye: a solid oval that the gaze moves whole, a flat line when closed. An
+    // outline with a pupil inside closes up into a blot at a small row's size.
+    const eyeU = u + pose.gazeX * GAZE_X;
+    const eyeV = EYE_HEIGHT + pose.gazeY * GAZE_Y;
+    const back = at({ u: eyeU - EYE_HALF_WIDTH, v: eyeV });
+    const front = at({ u: eyeU + EYE_HALF_WIDTH, v: eyeV });
+    const backUp = at({ u: eyeU - EYE_HALF_WIDTH, v: eyeV + bulge });
+    const frontUp = at({ u: eyeU + EYE_HALF_WIDTH, v: eyeV + bulge });
+    const backDown = at({ u: eyeU - EYE_HALF_WIDTH, v: eyeV - bulge });
+    const frontDown = at({ u: eyeU + EYE_HALF_WIDTH, v: eyeV - bulge });
     ctx.beginPath();
-    ctx.moveTo(left.x, left.y);
-    ctx.quadraticCurveTo(upper.x, upper.y, right.x, right.y);
-    ctx.quadraticCurveTo(lower.x, lower.y, left.x, left.y);
+    ctx.moveTo(back.x, back.y);
+    ctx.bezierCurveTo(backUp.x, backUp.y, frontUp.x, frontUp.y, front.x, front.y);
+    ctx.bezierCurveTo(frontDown.x, frontDown.y, backDown.x, backDown.y, back.x, back.y);
     ctx.closePath();
-    ctx.stroke();
-
-    const centreOfPupil = at({
-      u: u + pose.gazeX * (EYE_HALF_WIDTH - PUPIL_RADIUS),
-      v: EYE_HEIGHT + pose.gazeY * eyeHalfHeight * 0.5,
-    });
-    ctx.beginPath();
-    ctx.arc(centreOfPupil.x, centreOfPupil.y, pupil, 0, Math.PI * 2);
     ctx.fill();
+    ctx.stroke();
 
     // A positive tilt raises the inner end, the one toward the face's centre.
     const browV = BROW_HEIGHT + pose.browHeight * BROW_TRAVEL;

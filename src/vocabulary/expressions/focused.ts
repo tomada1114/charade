@@ -22,12 +22,12 @@ export const focusedExpression: ExpressionDefinition<typeof focusedParams> =
     params: focusedParams,
     build({ intensity }) {
       return {
-        eyeOpen: 1 - 0.4 * intensity,
+        eyeOpen: 1 - 0.45 * intensity,
         gazeX: 0.8 * intensity,
         gazeY: 0,
-        // Lowered more than tilted: a hard tilt with a frown reads as anger instead.
-        browHeight: -0.8 * intensity,
-        browTilt: -0.3 * intensity,
+        // Lowered and almost level: brows tilted into a V read as anger instead.
+        browHeight: -0.9 * intensity,
+        browTilt: -0.1 * intensity,
         mouthCurve: 0,
         mouthOpen: 0,
         mouthWidth: 1 - 0.4 * intensity,

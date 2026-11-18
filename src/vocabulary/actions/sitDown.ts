@@ -31,8 +31,11 @@ function flat(hipX: number, hipY: number, foot: number): number {
   return -Math.PI / 2 - shin;
 }
 
-const FOOT_L = -0.04;
-const FOOT_R = 0.04;
+/**
+ * How far a hip may be from its ankle: a little short of the whole leg, so a planted
+ * foot keeps its knee bent.
+ */
+const LEG_REACH = 0.46;
 
 export const sitDownAction: ActionDefinition<typeof sitDownParams, never> =
   defineAction({
@@ -53,6 +56,11 @@ export const sitDownAction: ActionDefinition<typeof sitDownParams, never> =
       const leanX = -0.07;
       const leanY = -0.05;
       const hips = seat + 0.015;
+      // From a tall seat a foot out in front is past the leg's reach and hangs in the
+      // air, so the feet come in under the knees until they reach the ground.
+      const furthest = Math.sqrt(LEG_REACH ** 2 - hips ** 2) - BACK;
+      const footL = Math.min(-0.04, furthest);
+      const footR = Math.min(0.04, furthest);
 
       clip.pose(
         {
@@ -65,8 +73,8 @@ export const sitDownAction: ActionDefinition<typeof sitDownParams, never> =
           shoulderR: 0.4,
           elbowL: 0.3,
           elbowR: 0.3,
-          ankleL: flat(leanX, STANDING + leanY, FOOT_L),
-          ankleR: flat(leanX, STANDING + leanY, FOOT_R),
+          ankleL: flat(leanX, STANDING + leanY, footL),
+          ankleR: flat(leanX, STANDING + leanY, footR),
         },
         { at: 0, blend: down, duration: down },
       );
@@ -87,7 +95,7 @@ export const sitDownAction: ActionDefinition<typeof sitDownParams, never> =
       // The shins stay tipped forward until the hips are nearly down, so the ankles
       // follow them late.
       clip.pose(
-        { ankleL: flat(-BACK, hips, FOOT_L), ankleR: flat(-BACK, hips, FOOT_R) },
+        { ankleL: flat(-BACK, hips, footL), ankleR: flat(-BACK, hips, footR) },
         {
           at: down + 0.45 * lower * k,
           blend: 0.55 * lower * k,
@@ -126,8 +134,8 @@ export const sitDownAction: ActionDefinition<typeof sitDownParams, never> =
       // Recorded last: a reach is solved over what was recorded before it, so the feet
       // stay planted while the poses above carry the hips back and down.
       const planted = { at: 0, blend: 0.1 * k, duration: natural * k };
-      clip.reach("footL", { x: FOOT_L, y: 0 }, planted);
-      clip.reach("footR", { x: FOOT_R, y: 0 }, planted);
+      clip.reach("footL", { x: footL, y: 0 }, planted);
+      clip.reach("footR", { x: footR, y: 0 }, planted);
     },
     sample(stage: Stage): void {
       stage.prop(boxProp).place({ x: -BACK, y: 0 });

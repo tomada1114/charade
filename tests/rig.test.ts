@@ -20,6 +20,7 @@ import {
   type Pose,
   rejectEffectors,
   REST_POSE,
+  SEGMENT_LENGTHS,
 } from "../src/rig/rig.js";
 
 /** Forward kinematics is trigonometry; positions are compared to 1e-12 units. */
@@ -230,6 +231,53 @@ describe("joint limits", () => {
     for (const name of FACE_NAMES) {
       expect(isWithin(FACE_RANGES[name], REST_POSE[name])).toBe(true);
     }
+  });
+});
+
+describe("the final numbers of .claude/rules/engine.md", () => {
+  it.each<[AngleName, number, number]>([
+    ["spine", -0.3, 0.9],
+    ["chest", -0.3, 0.7],
+    ["neck", -0.7, 0.9],
+    ["shoulderL", -1.0, 3.1],
+    ["shoulderR", -1.0, 3.1],
+    ["elbowL", 0, 2.6],
+    ["elbowR", 0, 2.6],
+    ["hipL", -0.5, 2.1],
+    ["hipR", -0.5, 2.1],
+    ["kneeL", 0, 2.6],
+    ["kneeR", 0, 2.6],
+    ["ankleL", -0.6, 0.5],
+    ["ankleR", -0.6, 0.5],
+  ])("limits %s to %s..%s rad", (name, min, max) => {
+    expect(ANGLE_LIMITS[name]).toEqual({ min, max });
+  });
+
+  it.each<[keyof typeof FACE_RANGES, number, number]>([
+    ["eyeOpen", 0, 1.5],
+    ["gazeX", -1, 1],
+    ["gazeY", -1, 1],
+    ["browHeight", -1, 1],
+    ["browTilt", -1, 1],
+    ["mouthCurve", -1, 1],
+    ["mouthOpen", 0, 1],
+    ["mouthWidth", 0.5, 1.5],
+  ])("ranges %s over %s..%s", (name, min, max) => {
+    expect(FACE_RANGES[name]).toEqual({ min, max });
+  });
+
+  it("has the nine segment lengths, in figure heights", () => {
+    expect(SEGMENT_LENGTHS).toEqual({
+      thigh: 0.24,
+      shin: 0.24,
+      spine: 0.14,
+      chest: 0.14,
+      neck: 0.06,
+      head: 0.18,
+      upperArm: 0.17,
+      forearm: 0.16,
+      foot: 0.08,
+    });
   });
 });
 

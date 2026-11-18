@@ -148,7 +148,7 @@ export const throwAction: ActionDefinition<typeof throwParams, "release"> =
       );
 
       // Let go as the hand comes over the top, while it still travels forward.
-      const release = thrown + whip * k * 0.45;
+      const release = thrown + whip * k * 0.65;
       clip.mark("release", release);
       const arc = weak ? loft * 0.6 : loft;
       const landing = weak ? { x: to.x * 0.55, y: to.y } : to;

@@ -193,7 +193,7 @@ describe("ghosts", () => {
     expect(calls(ctx.log, "globalAlpha").map(({ args }) => args[0])).toEqual([
       1500, 3625, 5750, 7875, 10_000,
     ]);
-    // One head circle a ghost, besides the pupils' arcs.
+    // One head circle a ghost.
     const heads = calls(ctx.log, "arc").filter(({ args }) => args[2] === 900);
     expect(heads).toHaveLength(5);
     expect(calls(ctx.log, "fillText")).toEqual([
