@@ -6,6 +6,7 @@ import {
   type FrameSource,
   idOf,
   type Painter,
+  rowBackdrop,
   rowContent,
   useTextFont,
 } from "../draw/frame.js";
@@ -224,7 +225,8 @@ export function ghostLayout(
  * faintest and the last in full ink, over the row's backdrop at the last frame. The
  * row's other items are left out: they have no single time to be drawn at.
  *
- * @throws `FrameItemError` when the actor's pose cannot be composed at a frame.
+ * @throws `FrameItemError` when the actor's pose cannot be composed at a frame, or a
+ * backdrop's `draw` throws at the last one.
  */
 export function drawGhosts(
   ctx: DrawingContext,
@@ -255,7 +257,7 @@ export function drawGhosts(
   });
   const last = frames.at(-1) ?? 0;
   drawRow(ctx, rowBand, {
-    backdrop: rowContent(timeline, rowBand, last).backdrop,
+    backdrop: rowBackdrop(timeline, rowBand, last),
     propsBehind: [],
     actor: ghosts,
     propsInFront: [],

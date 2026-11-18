@@ -7,6 +7,8 @@ import { watchGlobals } from "../src/export/watch.js";
 import {
   type Actor,
   checkReport,
+  defineBackdrop,
+  defineEffect,
   defineProp,
   exitCodeFor,
   type Finding,
@@ -316,6 +318,99 @@ describe("clock and random reads", () => {
     });
   });
 
+  it("reports a backdrop and an effect that read unseeded randomness, naming each", () => {
+    const built = scene({ duration: 1 }, (stage) => {
+      stage.backdrop(
+        defineBackdrop({
+          name: "noise",
+          description: "Reads Math.random.",
+          draw(ctx) {
+            ctx.rect(Math.random() * 0, 0, 1, 1);
+          },
+        }),
+        { at: 0.5 },
+      );
+      stage.effect(
+        defineEffect({
+          name: "flicker",
+          description: "Reads the clock.",
+          draw(ctx) {
+            ctx.rect(Date.now() * 0, 0, 1, 1);
+          },
+        }),
+        { duration: 0.2 },
+      );
+    });
+    const { findings } = checkScene(built);
+    expect(findings).toHaveLength(2);
+    expect(findings).toContainEqual(
+      expect.objectContaining({
+        code: "ERR_CHECK_UNSEEDED_RANDOM",
+        target: "row0/backdrop/noise/0",
+        frames: [15, 30],
+      }),
+    );
+    expect(findings).toContainEqual(
+      expect.objectContaining({
+        code: "ERR_CHECK_CLOCK_READ",
+        target: "row0/effect/flicker/0",
+        frames: [0, 5],
+      }),
+    );
+  });
+
+  it("reports a prop whose drawing reads unseeded randomness or the clock, naming it", () => {
+    const built = scene({ duration: 1 }, (stage) => {
+      stage.prop(
+        defineProp({
+          name: "dice",
+          description: "Reads Math.random.",
+          draw(ctx) {
+            ctx.rect(Math.random() * 0, 0, 1, 1);
+          },
+        }),
+        { at: 0.5 },
+      );
+      stage.prop(
+        defineProp({
+          name: "watch",
+          description: "Reads the clock.",
+          draw(ctx) {
+            ctx.rect(Date.now() * 0, 0, 1, 1);
+          },
+        }),
+        { duration: 0.2 },
+      );
+    });
+    const { findings } = checkScene(built);
+    expect(findings).toHaveLength(2);
+    expect(findings).toContainEqual(
+      expect.objectContaining({
+        code: "ERR_CHECK_UNSEEDED_RANDOM",
+        target: "row0/prop/dice/0",
+        frames: [15, 30],
+      }),
+    );
+    expect(findings).toContainEqual(
+      expect.objectContaining({
+        code: "ERR_CHECK_CLOCK_READ",
+        target: "row0/prop/watch/0",
+        frames: [0, 5],
+      }),
+    );
+  });
+
+  it("reports a held prop's holder's read once, on the holder", () => {
+    const built = scene({ duration: 1 }, (stage) => {
+      stage.actor().drive(() => ({ spine: Math.random() * 0 }));
+      stage.prop("ball").hold("handR");
+    });
+    const { findings } = checkScene(built);
+    expect(findings.map((finding) => [finding.code, finding.target])).toEqual([
+      ["ERR_CHECK_UNSEEDED_RANDOM", "row0/actor/actor/0"],
+    ]);
+  });
+
   it("records a read made by the scene's build function itself", () => {
     const built = act((a) => {
       a.pose({ spine: Math.random() * 0.1 }, { duration: 1 });
@@ -430,6 +525,41 @@ describe("functions that fail at a frame", () => {
       // A drive is held with t frozen at its duration, so it goes on throwing.
       frames: [16, 90],
     });
+  });
+
+  it("turns a backdrop or effect whose drawing throws into an error finding", () => {
+    const fail = (): never => {
+      throw new Error("no");
+    };
+    const built = scene({ duration: 1 }, (stage) => {
+      stage.backdrop(
+        defineBackdrop({ name: "torn", description: "Throws.", draw: fail }),
+      );
+      stage.effect(defineEffect({ name: "spark", description: "Throws.", draw: fail }));
+    });
+    const { findings } = checkScene(built);
+    expect(findings.map((finding) => [finding.code, finding.target])).toEqual([
+      ["ERR_SCENE_DRAWING_FAILED", "row0/backdrop/torn/0"],
+      ["ERR_SCENE_DRAWING_FAILED", "row0/effect/spark/0"],
+    ]);
+  });
+
+  it("turns a prop whose drawing throws into an error finding", () => {
+    const built = scene({ duration: 1 }, (stage) => {
+      stage.prop(
+        defineProp({
+          name: "cracked",
+          description: "Throws.",
+          draw() {
+            throw new Error("no");
+          },
+        }),
+      );
+    });
+    const { findings } = checkScene(built);
+    expect(findings.map((finding) => [finding.code, finding.target])).toEqual([
+      ["ERR_SCENE_DRAWING_FAILED", "row0/prop/cracked/0"],
+    ]);
   });
 
   it("turns a drawing call given NaN into an error finding", () => {

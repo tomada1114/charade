@@ -12,6 +12,8 @@ import {
 } from "../src/draw/frame.js";
 import { rowLayout } from "../src/draw/layout.js";
 import {
+  defineBackdrop,
+  defineEffect,
   defineProp,
   type Moment,
   type Scene,
@@ -506,6 +508,18 @@ describe("props", () => {
     expect(moved).toBeLessThan(headIndex(log));
   });
 
+  it("draws a prop placed from 1 s at the origin before then and on its point after", () => {
+    const built = scene({ duration: 2 }, (stage) => {
+      stage.prop(marker).place({ x: 0.5, y: 0 }, { at: 1 });
+    });
+    const translations = (frame: number): readonly LogEntry[] =>
+      record(built, frame).filter((entry) => entry.call === "translate");
+    // Row units are scaled by 1e4 in the log; the origin has nothing to translate by.
+    expect(translations(0)).toEqual([{ call: "translate", args: [0, 0] }]);
+    expect(translations(29)).toEqual([{ call: "translate", args: [0, 0] }]);
+    expect(translations(30)).toEqual([{ call: "translate", args: [5000, 0] }]);
+  });
+
   it("draws a prop in the near hand, and one on its way, in front of the actor", () => {
     const built = scene({ duration: 2 }, (stage) => {
       const prop = stage.prop(marker);
@@ -633,5 +647,167 @@ describe("props", () => {
       stage.prop(marker).hold("handR");
     });
     expect(() => record(held, 20)).toThrow(FrameItemError);
+  });
+});
+
+describe("backdrops and effects", () => {
+  const sky = defineBackdrop({
+    name: "sky",
+    description: "A backdrop of one marker call.",
+    params: { size: { type: "number", default: 0.25, doc: "The marker's size." } },
+    draw(ctx, { size }, moment) {
+      ctx.rect(6, 6, size, moment.duration === Infinity ? 1 : moment.progress);
+    },
+  });
+  const sweat = defineEffect({
+    name: "sweat",
+    description: "An effect of one marker call.",
+    draw(ctx) {
+      ctx.rect(8, 8, 1, 1);
+    },
+  });
+
+  function rectIndex(log: readonly LogEntry[], first: number): number {
+    return log.findIndex((entry) => entry.call === "rect" && entry.args[0] === first);
+  }
+
+  function groundIndex(log: readonly LogEntry[]): number {
+    return log.findIndex(
+      (entry) => entry.call === "moveTo" && entry.args[0] === -12500,
+    );
+  }
+
+  function headIndex(log: readonly LogEntry[]): number {
+    return log.findIndex((entry) => entry.call === "arc" && entry.args[2] === 900);
+  }
+
+  it("draws a backdrop before the ground line and an effect after the actor", () => {
+    const built = scene({ duration: 1 }, (stage) => {
+      // Recorded in reverse of the draw order, to show the order is the drawer's.
+      stage.draw((ctx) => {
+        ctx.rect(9, 9, 1, 1);
+      });
+      stage.effect(sweat);
+      stage.actor();
+      stage.backdrop(sky);
+    });
+    const log = record(built, 0);
+    const backdrop = rectIndex(log, 60000);
+    const effect = rectIndex(log, 80000);
+    expect(backdrop).toBeGreaterThan(-1);
+    expect(backdrop).toBeLessThan(groundIndex(log));
+    expect(groundIndex(log)).toBeLessThan(headIndex(log));
+    expect(effect).toBeGreaterThan(headIndex(log));
+    // A free drawing stays frontmost.
+    expect(rectIndex(log, 90000)).toBeGreaterThan(effect);
+  });
+
+  it("draws each at the row's origin with a free drawing's starting state", () => {
+    const built = scene({ duration: 1 }, (stage) => {
+      stage.backdrop(sky);
+    });
+    const log = record(built, 0);
+    const moved = log.findIndex((entry) => entry.call === "translate");
+    expect(log.slice(moved, moved + 5)).toEqual([
+      { call: "translate", args: [0, 0] },
+      { call: "strokeStyle", args: ["#111111"] },
+      { call: "fillStyle", args: ["#111111"] },
+      { call: "lineWidth", args: [250] },
+      { call: "rect", args: [60000, 60000, 2500, 10000] },
+    ]);
+  });
+
+  it("gives a backdrop its parameters and draws it only while its segment covers the frame", () => {
+    const built = scene({ duration: 2 }, (stage) => {
+      stage.backdrop(sky, { size: 0.5, at: 1, duration: 1 });
+      stage.effect(sweat, { duration: 0.5 });
+    });
+    expect(rectIndex(record(built, 29), 60000)).toBe(-1);
+    expect(record(built, 45)).toContainEqual({
+      call: "rect",
+      args: [60000, 60000, 5000, 5000],
+    });
+    expect(rectIndex(record(built, 14), 80000)).toBeGreaterThan(-1);
+    expect(rectIndex(record(built, 15), 80000)).toBe(-1);
+  });
+
+  it("resolves a segment without a definition by name from its own kind's built-ins", () => {
+    const built = scene({ duration: 1 }, (stage) => {
+      stage.backdrop(sky);
+    });
+    const [track] = built.timeline.rows[0]?.tracks ?? [];
+    const withTrack = (kind: string, data: unknown): FrameSource => ({
+      ...built,
+      timeline: {
+        ...built.timeline,
+        rows: [
+          {
+            tracks: [{ ...track, kind, segments: [{ start: 0, end: null, data }] }],
+          },
+        ],
+      } as Timeline,
+    });
+    const calls = (source: FrameSource): readonly string[] =>
+      record(source, 0).map((entry) => entry.call);
+    // `ball` is a built-in prop, not a backdrop or an effect, so it draws nothing here.
+    for (const kind of ["backdrop", "effect"]) {
+      const named = withTrack(kind, {
+        kind,
+        name: "ball",
+        definition: null,
+        params: {},
+      });
+      expect(calls(named)).not.toContain("translate");
+    }
+    // A segment of another kind on the track is not the track's own and draws nothing.
+    const foreign = withTrack("backdrop", {
+      kind: "effect",
+      name: "sky",
+      definition: sky,
+      params: {},
+    });
+    expect(calls(foreign)).not.toContain("translate");
+  });
+
+  it("draws nothing for a parsed timeline's placeholder", () => {
+    const built = scene({ duration: 1 }, (stage) => {
+      stage.backdrop(sky);
+      stage.effect(sweat);
+    });
+    const parsed = parseTimeline(serializeTimeline(built.timeline));
+    if (!parsed.ok) {
+      throw new Error(parsed.reason);
+    }
+    const log = record({ ...built, timeline: parsed.document.timeline }, 0);
+    expect(log.map((entry) => entry.call)).not.toContain("translate");
+    expect(groundIndex(log)).toBeGreaterThan(-1);
+  });
+
+  it("names the backdrop or effect whose drawing throws", () => {
+    const fail = (): never => {
+      throw new Error("no");
+    };
+    const built = {
+      backdrop: scene({ duration: 1 }, (stage) => {
+        stage.backdrop(
+          defineBackdrop({ name: "broken", description: "Throws.", draw: fail }),
+        );
+      }),
+      effect: scene({ duration: 1 }, (stage) => {
+        stage.effect(
+          defineEffect({ name: "broken", description: "Throws.", draw: fail }),
+        );
+      }),
+    };
+    for (const kind of ["backdrop", "effect"] as const) {
+      expect(() => record(built[kind], 3)).toThrow(FrameItemError);
+      expect(() => record(built[kind], 3)).toThrow(
+        expect.objectContaining({
+          code: "ERR_SCENE_DRAWING_FAILED",
+          target: `row0/${kind}/broken/0`,
+          frame: 3,
+        }),
+      );
+    }
   });
 });
