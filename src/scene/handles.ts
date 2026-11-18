@@ -411,6 +411,11 @@ export interface PlaceOptions {
    * `build`, time 0 is the action's start.
    */
   readonly at?: number;
+  /**
+   * Which side of the row's actor the prop draws on while it stands on this
+   * placement: `"front"` for a desk the figure sits behind. Defaults to `"behind"`.
+   */
+  readonly layer?: "behind" | "front";
 }
 
 /**
@@ -458,7 +463,8 @@ export interface MoveOptions {
  * @remarks
  * The prop stands with its ground point on the row's origin until it is placed,
  * held or moved; the call that started last says where it is. It draws behind the
- * row's actor, and in front of it while it moves or is in a near (`R`) hand or foot.
+ * row's actor, and in front of it while it moves, is in a near (`R`) hand or foot, or
+ * stands where `place` put it with `layer: "front"`.
  * You are handed a prop by `row.prop()`; you never implement this interface.
  *
  * @public
@@ -471,7 +477,7 @@ export interface Prop {
    * Put the prop's ground point on `point`, from `at` on, until it is placed again.
    *
    * @param point - Where the ground point goes, in row units.
-   * @param options - When.
+   * @param options - When, and whether it draws behind or in front of the actor.
    * @returns When the placement holds; it is open-ended.
    */
   place(point: Point, options?: PlaceOptions): Span;

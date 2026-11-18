@@ -71,6 +71,17 @@ describe("a prop that is placed", () => {
     expect(at(built, 90)).toEqual({ x: 0.5, y: 0.2, front: false });
   });
 
+  it("is in front of the actor while it stands where it was placed in front", () => {
+    const built = withBall((prop) => {
+      prop.place({ x: 0.5, y: 0 }, { layer: "front" });
+      prop.place({ x: 1, y: 0 }, { at: 1 });
+      prop.place({ x: 2, y: 0 }, { at: 2, layer: "behind" });
+    });
+    expect(at(built, 0)).toEqual({ x: 0.5, y: 0, front: true });
+    expect(at(built, 30)).toEqual({ x: 1, y: 0, front: false });
+    expect(at(built, 60)).toEqual({ x: 2, y: 0, front: false });
+  });
+
   it("is where the call that started last put it, whatever order they were recorded in", () => {
     const built = withBall((prop) => {
       prop.place({ x: 2, y: 0 }, { at: 2 });

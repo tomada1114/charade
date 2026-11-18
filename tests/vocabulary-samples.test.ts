@@ -116,7 +116,7 @@ function segmentsOf(built: Scene, kind: string, row = 0): readonly unknown[] {
 }
 
 describe("the built-in vocabulary", () => {
-  it("is the three actions, the six expressions and the two props", () => {
+  it("is the three actions, the six expressions and the ten props", () => {
     expect(ITEMS.map(([kind, name]) => `${kind} ${name}`)).toEqual([
       "action sitDown",
       "action slump",
@@ -129,6 +129,14 @@ describe("the built-in vocabulary", () => {
       "expression surprised",
       "prop ball",
       "prop box",
+      "prop cart",
+      "prop desk",
+      "prop hoop",
+      "prop ladder",
+      "prop laptop",
+      "prop lever",
+      "prop lightbulb",
+      "prop rock",
     ]);
   });
 
@@ -304,6 +312,134 @@ describe("a built-in expression", () => {
     expect(segmentsOf(angry, "actor").length).toBe(
       segmentsOf(plain, "actor").length + 1,
     );
+  });
+});
+
+describe("a built-in prop", () => {
+  /** `row.prop` as a scene file calls it once its types are erased. */
+  function propOf(stage: Stage, name: string, options?: object): void {
+    (stage as unknown as { prop(name: string, options?: object): unknown }).prop(
+      name,
+      options,
+    );
+  }
+
+  /** Frame `frame` of a 3 s scene holding one prop, named by its string. */
+  function drawn(name: string, options: object, frame: number): string {
+    const built = scene({ duration: 3 }, (stage) => {
+      propOf(stage, name, options);
+    });
+    expect(built.findings).toEqual([]);
+    return record(built, frame);
+  }
+
+  it("draws the rock with its ground point on the row's ground line", () => {
+    const built = scene({ duration: 1 }, (stage) => {
+      stage.prop("rock").place({ x: 0.5, y: 0 });
+    });
+    expect(built.findings).toEqual([]);
+    const log = record(built, 0).split("\n");
+    expect(log).toContain("translate 5000 0");
+    // The outline's first point: 45 of the grid's 100 left of the foot, on y = 0.
+    expect(log).toContain("moveTo -3150 0");
+  });
+
+  it("does not let an open-ended lightbulb extend the scene", () => {
+    const alone = scene((stage) => {
+      stage.prop("lightbulb");
+    });
+    expect(alone.findings.map((finding) => finding.code)).toEqual([
+      "ERR_SCENE_NO_DURATION",
+    ]);
+    const beside = scene((stage) => {
+      stage.prop("lightbulb");
+      stage.actor().wait(1);
+    });
+    expect(beside.findings).toEqual([]);
+    expect(lastFrameOf(beside.timeline)).toBe(30);
+  });
+
+  it("reports a prop named latop as unknown, nearest laptop", () => {
+    const built = scene({ duration: 1 }, (stage) => {
+      propOf(stage, "latop");
+    });
+    expect(built.findings).toHaveLength(1);
+    expect(built.findings[0]).toMatchObject({
+      code: "ERR_SCENE_UNKNOWN_PROP",
+      severity: "error",
+      nearest: ["laptop"],
+    });
+  });
+
+  it("swings the lever once, from tilt to tilt + swing, and holds it there", () => {
+    const worked = { tilt: 0.4, swing: -0.5, swingAt: 1, swingFor: 1 };
+    expect(drawn("lever", worked, 0)).toBe(drawn("lever", { tilt: 0.4 }, 0));
+    expect(drawn("lever", worked, 30)).toBe(drawn("lever", { tilt: 0.4 }, 30));
+    // Half way through an eased swing the beam is half way: 0.4 − 0.25.
+    expect(drawn("lever", worked, 45)).toBe(drawn("lever", { tilt: 0.15 }, 45));
+    expect(drawn("lever", worked, 60)).toBe(drawn("lever", { tilt: -0.1 }, 60));
+    expect(drawn("lever", worked, 90)).toBe(drawn("lever", { tilt: -0.1 }, 90));
+  });
+
+  it("turns the cart's wheels with its roll, at constant speed, and keeps them there", () => {
+    // 0.9 units on wheels of radius 0.09 is 10 rad.
+    const rolling = { roll: 0.9, rollAt: 1, rollFor: 1 };
+    expect(drawn("cart", rolling, 30)).toBe(drawn("cart", {}, 30));
+    expect(drawn("cart", rolling, 45)).toBe(drawn("cart", { turn: 5 }, 45));
+    expect(drawn("cart", rolling, 60)).toBe(drawn("cart", { turn: 10 }, 60));
+    expect(drawn("cart", rolling, 90)).toBe(drawn("cart", { turn: 10 }, 90));
+    expect(drawn("cart", { turn: 1 }, 0)).not.toBe(drawn("cart", {}, 0));
+  });
+
+  it.each([
+    ["lever", { swing: 0.3, swingFor: 0 }, { tilt: 0.7 }],
+    ["cart", { roll: 0.9, rollFor: 0 }, { turn: 10 }],
+  ])("moves the %s at once when its motion takes no time", (name, sudden, settled) => {
+    expect(drawn(name, sudden, 0)).toBe(drawn(name, settled, 0));
+  });
+
+  it.each([
+    ["hoop", "faces", "right"],
+    ["laptop", "faces", "right"],
+    ["lever", "handle", "right"],
+    ["cart", "handle", "right"],
+  ])("mirrors the %s when %s is %s", (name, key, value) => {
+    const mirrored = drawn(name, { [key]: value }, 0).split("\n");
+    expect(mirrored).toContain("scale -10000 10000");
+    expect(drawn(name, {}, 0).split("\n")).not.toContain("scale -10000 10000");
+  });
+
+  it("lights the lightbulb with rays in its colour, and draws none unlit", () => {
+    expect(drawn("lightbulb", { color: "#00ff00" }, 0)).toContain("#00ff00");
+    expect(drawn("lightbulb", { color: "#00ff00", lit: false }, 0)).not.toContain(
+      "#00ff00",
+    );
+  });
+
+  it("shuts the laptop flat at open 0, without a lit screen", () => {
+    const shut = drawn("laptop", { open: 0, screen: "#00ff00" }, 0);
+    expect(shut.split("\n")).toContain(`rotate ${String(Math.round(Math.PI * 1e4))}`);
+    expect(shut).not.toContain("#00ff00");
+    expect(drawn("laptop", { screen: "#00ff00" }, 0)).toContain("#00ff00");
+  });
+
+  it.each(
+    Object.entries(builtinProps).flatMap(([name, definition]: [string, Definition]) =>
+      Object.entries(definition.params).flatMap(([key, param]) =>
+        param.type === "number"
+          ? [param.min, param.max]
+              .filter((end) => end !== undefined)
+              .map((end) => [name, key, end] as const)
+          : [],
+      ),
+    ),
+  )("draws the %s with %s at its end %d", (name, key, end) => {
+    const built = scene((stage) => {
+      propOf(stage, name, { [key]: end });
+      stage.actor().wait(1);
+    });
+    expect(built.findings).toEqual([]);
+    expect(checkScene(built).findings).toEqual([]);
   });
 });
 

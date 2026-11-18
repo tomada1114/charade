@@ -86,6 +86,8 @@ export interface PlaceData {
   readonly kind: "place";
   readonly x: number;
   readonly y: number;
+  /** Which side of the row's actor the prop draws on while it stands here. */
+  readonly layer: "behind" | "front";
 }
 
 /** A prop carried by an actor's hand or foot, from the segment's start on. */

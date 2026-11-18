@@ -663,13 +663,21 @@ describe("catalog --images (R4)", () => {
       "expression.surprised.png",
       "prop.ball.png",
       "prop.box.png",
+      "prop.cart.png",
+      "prop.desk.png",
+      "prop.hoop.png",
+      "prop.ladder.png",
+      "prop.laptop.png",
+      "prop.lever.png",
+      "prop.lightbulb.png",
+      "prop.rock.png",
     ];
     expect(readdirSync(out).sort()).toEqual(names);
     const document = parsed(result);
     expect(document.images?.map((image) => image.path)).toEqual(
       names.map((name) => path.join(out, name)),
     );
-    expect(document.items).toHaveLength(11);
+    expect(document.items).toHaveLength(19);
     // An action is a contact sheet; an expression is one frame at the sample's size.
     expect(sizeOf(readFileSync(path.join(out, "action.throw.png")))[0]).toBe(1568);
     expect(sizeOf(readFileSync(path.join(out, "expression.dejected.png")))).toEqual([

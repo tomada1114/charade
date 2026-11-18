@@ -508,6 +508,15 @@ describe("props", () => {
     expect(moved).toBeLessThan(headIndex(log));
   });
 
+  it("draws a prop placed in front after the actor", () => {
+    const built = scene({ duration: 1 }, (stage) => {
+      stage.prop(marker).place({ x: 0.5, y: 0.25 }, { layer: "front" });
+      stage.actor();
+    });
+    const log = record(built, 0);
+    expect(indexOf(log, "rect", 70000)).toBeGreaterThan(headIndex(log));
+  });
+
   it("draws a prop placed from 1 s at the origin before then and on its point after", () => {
     const built = scene({ duration: 2 }, (stage) => {
       stage.prop(marker).place({ x: 0.5, y: 0 }, { at: 1 });

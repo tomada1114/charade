@@ -13,6 +13,14 @@ import { neutralExpression } from "./expressions/neutral.js";
 import { surprisedExpression } from "./expressions/surprised.js";
 import { ballProp } from "./props/ball.js";
 import { boxProp } from "./props/box.js";
+import { cartProp } from "./props/cart.js";
+import { deskProp } from "./props/desk.js";
+import { hoopProp } from "./props/hoop.js";
+import { ladderProp } from "./props/ladder.js";
+import { laptopProp } from "./props/laptop.js";
+import { leverProp } from "./props/lever.js";
+import { lightbulbProp } from "./props/lightbulb.js";
+import { rockProp } from "./props/rock.js";
 
 /**
  * The built-in actions by name: what `a.do("name")` accepts.
@@ -83,7 +91,8 @@ export const builtinExpressions: BuiltinExpressions = Object.freeze({
  * The built-in props by name: what `row.prop("name")` accepts.
  *
  * @remarks
- * They are `ball`, `box`.
+ * They are `ball`, `box`, `cart`, `desk`, `hoop`, `ladder`, `laptop`, `lever`,
+ * `lightbulb`, `rock`.
  *
  * @public
  */
@@ -92,6 +101,22 @@ export interface BuiltinProps {
   readonly ball: typeof ballProp;
   /** @hidden */
   readonly box: typeof boxProp;
+  /** @hidden */
+  readonly cart: typeof cartProp;
+  /** @hidden */
+  readonly desk: typeof deskProp;
+  /** @hidden */
+  readonly hoop: typeof hoopProp;
+  /** @hidden */
+  readonly ladder: typeof ladderProp;
+  /** @hidden */
+  readonly laptop: typeof laptopProp;
+  /** @hidden */
+  readonly lever: typeof leverProp;
+  /** @hidden */
+  readonly lightbulb: typeof lightbulbProp;
+  /** @hidden */
+  readonly rock: typeof rockProp;
 }
 
 /**
@@ -102,6 +127,14 @@ export interface BuiltinProps {
 export const builtinProps: BuiltinProps = Object.freeze({
   ball: ballProp,
   box: boxProp,
+  cart: cartProp,
+  desk: deskProp,
+  hoop: hoopProp,
+  ladder: ladderProp,
+  laptop: laptopProp,
+  lever: leverProp,
+  lightbulb: lightbulbProp,
+  rock: rockProp,
 });
 
 /**

@@ -813,9 +813,31 @@ describe("using definitions", () => {
     expectTypeOf<keyof BuiltinExpressions>().toEqualTypeOf<
       "angry" | "dejected" | "focused" | "happy" | "neutral" | "surprised"
     >();
-    expectTypeOf<keyof BuiltinProps>().toEqualTypeOf<"ball" | "box">();
+    expectTypeOf<keyof BuiltinProps>().toEqualTypeOf<
+      | "ball"
+      | "box"
+      | "cart"
+      | "desk"
+      | "hoop"
+      | "ladder"
+      | "laptop"
+      | "lever"
+      | "lightbulb"
+      | "rock"
+    >();
     expectTypeOf<keyof BuiltinBackdrops>().toEqualTypeOf<never>();
-    expectTypeOf<BuiltinName<BuiltinProps>>().toEqualTypeOf<"ball" | "box">();
+    expectTypeOf<BuiltinName<BuiltinProps>>().toEqualTypeOf<
+      | "ball"
+      | "box"
+      | "cart"
+      | "desk"
+      | "hoop"
+      | "ladder"
+      | "laptop"
+      | "lever"
+      | "lightbulb"
+      | "rock"
+    >();
     expectTypeOf<BuiltinName<{ readonly a: 1; readonly 2: 2 }>>().toEqualTypeOf<"a">();
     expectTypeOf<keyof BuiltinEffects>().toEqualTypeOf<never>();
     expectTypeOf(builtinActions).toEqualTypeOf<BuiltinActions>();
@@ -858,6 +880,17 @@ describe("using definitions", () => {
       expectTypeOf(actor.express("angry", { intensity: 0.5 })).toEqualTypeOf<Span>();
       expectTypeOf(actor.do("sitDown", { mood: "surprised" })).toEqualTypeOf<Span>();
       expectTypeOf(row.prop("box", { width: 0.5, at: 1 })).toEqualTypeOf<Prop>();
+      // R5
+      expectTypeOf(row.prop("ladder")).toEqualTypeOf<Prop>();
+      expectTypeOf(row.prop("ladder", { height: 1.2, lean: 0 })).toEqualTypeOf<Prop>();
+      expectTypeOf(
+        row.prop("lever", { tilt: 0.4, swing: -0.5, swingAt: 1, handle: "right" }),
+      ).toEqualTypeOf<Prop>();
+      expectTypeOf(
+        row.prop("cart", { roll: 1, rollAt: 1, rollFor: 2 }),
+      ).toEqualTypeOf<Prop>();
+      expectTypeOf(row.prop("lightbulb", { lit: false, at: 1 })).toEqualTypeOf<Prop>();
+      expectTypeOf(row.prop("laptop", { faces: "right" })).toEqualTypeOf<Prop>();
     };
     expect(record).toBeTypeOf("function");
   });
@@ -889,6 +922,14 @@ describe("using definitions", () => {
       actor.express("neutral", { intensity: 1 });
       // @ts-expect-error bal is not a built-in prop
       row.prop("bal");
+      // @ts-expect-error a placement is behind or in front, not on top
+      row.prop("desk").place({ x: 0, y: 0 }, { layer: "top" });
+      // @ts-expect-error latop is not a built-in prop
+      row.prop("latop");
+      // @ts-expect-error ladder has no parameter named rungs
+      row.prop("ladder", { rungs: 4 });
+      // @ts-expect-error a hoop faces left or right
+      row.prop("hoop", { faces: "up" });
       // @ts-expect-error no built-in backdrop exists yet
       row.backdrop("plain");
     };
@@ -945,13 +986,19 @@ describe("using definitions", () => {
       expectTypeOf(
         row.prop(ball, { radius: 0.1 }).place({ x: 1, y: 0 }, { at: 1 }),
       ).toEqualTypeOf<Span>();
+      expectTypeOf(
+        row.prop(ball, { radius: 0.1 }).place({ x: 1, y: 0 }, { layer: "front" }),
+      ).toEqualTypeOf<Span>();
     };
     expect(record).toBeTypeOf("function");
     expectTypeOf<keyof ExpressOptions>().toEqualTypeOf<
       "at" | "duration" | "blend" | "mode"
     >();
     expectTypeOf<keyof ItemOptions>().toEqualTypeOf<"at" | "duration">();
-    expectTypeOf<keyof PlaceOptions>().toEqualTypeOf<"at">();
+    expectTypeOf<keyof PlaceOptions>().toEqualTypeOf<"at" | "layer">();
+    expectTypeOf<PlaceOptions["layer"]>().toEqualTypeOf<
+      "behind" | "front" | undefined
+    >();
     expectTypeOf<keyof HoldOptions>().toEqualTypeOf<"at" | "offset">();
     expectTypeOf<keyof MoveOptions>().toEqualTypeOf<"at" | "duration" | "arc">();
     const moved = (prop: Prop): void => {
