@@ -40,6 +40,7 @@ import {
   type HoldOptions,
   InvalidDefaultError,
   InvalidDefinitionError,
+  InvalidPathDataError,
   type ItemKind,
   type ItemOptions,
   type MoveOptions,
@@ -83,6 +84,8 @@ import {
   type ShapeContext,
   type SourceLocation,
   type Span,
+  svgPath,
+  type SvgPathOptions,
   type Stage,
   type TextMeasurement,
   type Timeline,
@@ -979,5 +982,39 @@ describe("definition errors", () => {
     expectTypeOf<Exclude<keyof InvalidDefaultError, keyof Error>>().toEqualTypeOf<
       "code" | "kind" | "path"
     >();
+  });
+});
+
+describe("path data types", () => {
+  it("takes a shape context, the d string and optional options, and returns nothing", () => {
+    expectTypeOf(svgPath).toEqualTypeOf<
+      (ctx: ShapeContext, d: string, options?: SvgPathOptions) => void
+    >();
+    expectTypeOf<SvgPathOptions>().toEqualTypeOf<{
+      readonly scale?: number;
+      readonly origin?: Point;
+    }>();
+  });
+
+  it("accepts the full drawing context", () => {
+    const draw = (ctx: DrawingContext): void => {
+      svgPath(ctx, "M0 0 L1 1", { scale: 0.01, origin: { x: 50, y: 100 } });
+    };
+    expect(draw).toBeTypeOf("function");
+    const rejected = (ctx: ShapeContext): void => {
+      // @ts-expect-error scale is a number, not a string
+      svgPath(ctx, "M0 0", { scale: "0.01" });
+    };
+    expect(rejected).toBeTypeOf("function");
+  });
+
+  it("carries the offset and no rejected value", () => {
+    expectTypeOf<
+      InvalidPathDataError["code"]
+    >().toEqualTypeOf<"ERR_SCENE_INVALID_PATH_DATA">();
+    expectTypeOf<Exclude<keyof InvalidPathDataError, keyof Error>>().toEqualTypeOf<
+      "code" | "offset"
+    >();
+    expectTypeOf(InvalidPathDataError).toBeConstructibleWith(8);
   });
 });
