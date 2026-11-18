@@ -6,7 +6,12 @@ import process from "node:process";
 import { fileURLToPath } from "node:url";
 import { parseArgs, type ParseArgsOptionsConfig } from "node:util";
 
-import { checkScene, formatReport, lastFrameOf } from "./check/check.js";
+import {
+  type CheckOptions,
+  checkScene,
+  formatReport,
+  lastFrameOf,
+} from "./check/check.js";
 import { describeState, formatState, type StateDescription } from "./check/describe.js";
 import {
   checkReport,
@@ -22,10 +27,13 @@ import {
   SHEET_CELLS,
   spreadFrames,
 } from "./check/sheet.js";
+import { textFont } from "./draw/text.js";
 import { CharadeError, UnknownFlagError } from "./errors.js";
+import { chooseFont, hasText } from "./export/fonts.js";
 import {
   type FileWriter,
   type ImageEnvironment,
+  type ImageOutput,
   outputBeside,
   writeFrameImage,
   writeGhostImage,
@@ -782,12 +790,51 @@ function frameIn(scene: Scene, at: At, path: string): number {
   return frame;
 }
 
+/** What a command needs to draw and check a scene's text on this machine. */
+interface TextSetup {
+  /** The font family list text is drawn in; `undefined` when no font was looked up. */
+  readonly font: string | undefined;
+  /** What `checkScene` measures the text with, and what it reports about the font. */
+  readonly check: CheckOptions;
+}
+
+/**
+ * Chooses the scene's font and makes the measurer its text is checked with. A scene
+ * without a label or a bubble has nothing to measure, so `check` (`draws` false) then
+ * loads no rasteriser; a command that draws loads it anyway, and text drawn inside a
+ * drawing still gets the font.
+ */
+async function textSetup(
+  scene: Scene,
+  sceneFile: string,
+  { raster, platform }: ImageEnvironment,
+  draws: boolean,
+): Promise<TextSetup> {
+  const text = hasText(scene.timeline);
+  if (!text && !draws) {
+    return { font: undefined, check: {} };
+  }
+  const { family, findings } = chooseFont(
+    scene,
+    sceneFile,
+    platform,
+    await raster.fonts(),
+  );
+  return {
+    font: family,
+    check: text
+      ? { measurer: await raster.measurer(textFont(family)), environment: findings }
+      : {},
+  };
+}
+
 function runCheck(
   scene: Scene,
   invocation: Extract<Invocation, { command: "check" }>,
+  text: TextSetup,
 ): CommandOutcome {
   const { strict, at } = invocation;
-  const { findings, truncated } = checkScene(scene);
+  const { findings, truncated } = checkScene(scene, text.check);
   const report = checkReport(findings, { strict, truncated });
   const exitCode = exitCodeFor(findings, { strict });
   if (at === undefined) {
@@ -816,8 +863,9 @@ function imagesOutcome(
   scene: Scene,
   paths: readonly string[],
   states: readonly StateDescription[],
+  text: TextSetup,
 ): CommandOutcome {
-  const { findings, truncated } = checkScene(scene);
+  const { findings, truncated } = checkScene(scene, text.check);
   const { summary } = checkReport(findings, { strict: false, truncated });
   return {
     kind: "done",
@@ -838,8 +886,17 @@ async function runFrame(
   const frame = frameIn(scene, invocation.at, "frame.at");
   const out =
     invocation.out ?? outputBeside(invocation.scene, `frame-${String(frame)}`);
-  await writeFrameImage(scene, frame, out, environment);
-  return imagesOutcome(scene, [out], [describeState(scene, frame)]);
+  const text = await textSetup(scene, invocation.scene, environment, true);
+  await writeFrameImage(scene, frame, out, output(environment, text));
+  return imagesOutcome(scene, [out], [describeState(scene, frame)], text);
+}
+
+function output(environment: ImageEnvironment, text: TextSetup): ImageOutput {
+  return {
+    raster: environment.raster,
+    write: environment.write,
+    textFont: text.font ?? "sans-serif",
+  };
 }
 
 /** The frames a sheet or a ghost image draws, in order, each once. */
@@ -871,6 +928,7 @@ async function runSheet(
   environment: ImageEnvironment,
 ): Promise<CommandOutcome> {
   const { ghost } = invocation;
+  const text = await textSetup(scene, invocation.scene, environment, true);
   let { row } = invocation;
   let out: string;
   let frames: number[];
@@ -880,7 +938,7 @@ async function runSheet(
     }
     frames = sheetFrames(scene, invocation, SHEET_CELLS);
     out = invocation.out ?? outputBeside(invocation.scene, "sheet");
-    await writeSheetImage(scene, frames, row, out, environment);
+    await writeSheetImage(scene, frames, row, out, output(environment, text));
   } else {
     const actor = findActor(scene.timeline, ghost);
     if (actor.kind === "none") {
@@ -897,7 +955,7 @@ async function runSheet(
       ? state
       : { ...state, rows: state.rows.filter((shown) => shown.row === row) };
   });
-  return imagesOutcome(scene, [out], states);
+  return imagesOutcome(scene, [out], states, text);
 }
 
 /** The failure to report for what a command body threw, or `undefined` to rethrow. */
@@ -934,7 +992,11 @@ export async function runSceneCommand(
   try {
     switch (invocation.command) {
       case "check":
-        return runCheck(scene, invocation);
+        return runCheck(
+          scene,
+          invocation,
+          await textSetup(scene, invocation.scene, environment, false),
+        );
       case "frame":
         return await runFrame(scene, invocation, environment);
       case "sheet":
@@ -990,6 +1052,8 @@ export interface CliOptions {
   readonly raster?: Rasteriser;
   /** Writes an output file; `node:fs` by default. */
   readonly write?: FileWriter;
+  /** The operating system, `process.platform` by default: it picks the default font. */
+  readonly platform?: string;
 }
 
 const realLoad: SceneLoader = (file, notice) => loadScene(file, { notice });
@@ -1074,6 +1138,7 @@ export async function runCli(
       outcome = await runSceneCommand(scene, invocation, {
         raster: options.raster ?? createRasteriser(),
         write: options.write ?? writeOutput,
+        platform: options.platform ?? process.platform,
       });
     } finally {
       installReadWatch(previous);

@@ -7,6 +7,7 @@ import {
   idOf,
   type Painter,
   rowContent,
+  useTextFont,
 } from "../draw/frame.js";
 import { type RowLayout, rowLayout } from "../draw/layout.js";
 import { poseAtFrame } from "../rig/compose.js";
@@ -169,6 +170,7 @@ export function drawRowFrame(
   const { timeline, width, height } = source;
   frameSeconds(frame, timeline.fps);
   clear(ctx, width, height);
+  useTextFont(ctx, source);
   const layout = soleRowLayout(width, height, row);
   drawRow(ctx, layout, rowContent(timeline, layout, frame));
 }

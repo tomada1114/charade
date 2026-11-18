@@ -10,15 +10,16 @@ import type { DrawingContext, ShapeContext } from "./context.js";
 import { drawFigure, facingOf, FIGURE_LINE, INK, PAPER } from "./figure.js";
 import { type RowLayout, rowLayout, rowTransform } from "./layout.js";
 import { propPlacement } from "./prop.js";
+import { isTextTrack, placedText, textFont } from "./text.js";
 
 /** The width of the ground line, in units. */
 const GROUND_LINE = 0.01;
 
 /**
- * The draw order within a row, back to front. Backdrops and text have no vocabulary
- * yet, so the drawer fills `backdrop` with the ground line and leaves `text` empty. A
- * prop is behind the actor unless it is moving or in a near (`R`) hand or foot;
- * `propsInFront` holds those and then the row's free drawings.
+ * The draw order within a row, back to front. Backdrops have no vocabulary yet, so the
+ * drawer fills `backdrop` with the ground line; `text` holds the row's labels and
+ * speech bubbles. A prop is behind the actor unless it is moving or in a near (`R`)
+ * hand or foot; `propsInFront` holds those and then the row's free drawings.
  */
 export const ROW_SLOTS = [
   "backdrop",
@@ -41,6 +42,18 @@ export interface FrameSource {
   readonly width: number;
   readonly height: number;
   readonly timeline: Timeline;
+  /**
+   * The CSS font family list the frame's text is drawn in. Without it the context's
+   * font is left as it is, which on a fresh context is its default sans-serif.
+   */
+  readonly textFont?: string;
+}
+
+/** Sets the font `source` names for its text; called after the context is cleared. */
+export function useTextFont(ctx: DrawingContext, source: FrameSource): void {
+  if (source.textFont !== undefined) {
+    ctx.font = textFont(source.textFont);
+  }
 }
 
 /**
@@ -138,6 +151,7 @@ export function drawFrame(
   ctx.reset();
   ctx.fillStyle = PAPER;
   ctx.fillRect(0, 0, width, height);
+  useTextFont(ctx, source);
   const count = timeline.rows.length;
   timeline.rows.forEach((_, index) => {
     const layout = rowLayout(width, height, count, index);
@@ -236,6 +250,11 @@ export function rowContent(
       );
     }
   }
+  const text = tracks.filter(isTextTrack).map((track) =>
+    guarded(track, (ctx) => {
+      placedText(ctx, timeline, layout, track, frame)?.paint(ctx);
+    }),
+  );
   return {
     backdrop: [
       (ctx) => {
@@ -245,7 +264,7 @@ export function rowContent(
     propsBehind,
     actor: actors,
     propsInFront: [...propsInFront, ...drawings],
-    text: [],
+    text,
   };
 }
 

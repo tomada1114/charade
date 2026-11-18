@@ -1,7 +1,7 @@
 import type { ShapeContext } from "../draw/context.js";
 import type { Point } from "../rig/kinematics.js";
 import type { ChannelName, EffectorName } from "../rig/rig.js";
-import type { BlendMode, Moment } from "../timeline/segments.js";
+import type { BlendMode, Moment, TextAlign } from "../timeline/segments.js";
 import type {
   BuiltinName,
   BuiltinActions,
@@ -171,6 +171,55 @@ export interface DrawOptions {
 }
 
 /**
+ * Options of `row.label`.
+ *
+ * @public
+ */
+export interface LabelOptions {
+  /** Absolute scene time the label appears at, in seconds. Defaults to 0. */
+  readonly at?: number;
+  /**
+   * How long the label is shown, in seconds. Without it the label is open-ended: it
+   * stays to the end of the scene and does not make the scene longer.
+   */
+  readonly duration?: number;
+  /** Where the label's alignment point is along `x`, in row units. Defaults to 0. */
+  readonly x?: number;
+  /**
+   * Where the middle of the label is along `y`, in row units. Defaults to 2, near
+   * the top of the row.
+   */
+  readonly y?: number;
+  /** The font size, in row units; a standing figure is 1 tall. Defaults to 0.16. */
+  readonly size?: number;
+  /** Which part of the label `x` names. Defaults to `center`. */
+  readonly align?: TextAlign;
+  /** The width lines wrap at, in row units. Without it only `\n` breaks a line. */
+  readonly width?: number;
+  /** A name for the label, used in its id. Defaults to `label`. */
+  readonly name?: string;
+}
+
+/**
+ * Options of `actor.say`.
+ *
+ * @public
+ */
+export interface SayOptions {
+  /** Absolute scene time to start at, in seconds. Defaults to the actor's cursor. */
+  readonly at?: number;
+  /**
+   * How long the bubble is shown and the call occupies the actor, in seconds.
+   * Defaults to a reading time: 1 second and 0.08 more for each character.
+   */
+  readonly duration?: number;
+  /** The font size, in row units; a standing figure is 1 tall. Defaults to 0.16. */
+  readonly size?: number;
+  /** The width the text wraps at, in row units. Defaults to 12 times `size`. */
+  readonly width?: number;
+}
+
+/**
  * Options of `row.actor`.
  *
  * @public
@@ -233,6 +282,17 @@ export interface Actor {
    * @returns When the wait plays.
    */
   wait(seconds: number): Span;
+
+  /**
+   * Say something: a speech bubble above the actor's head, which follows the head
+   * while it is shown. The call occupies the actor as a `wait` does, so the next
+   * call follows it; pass `at` to speak while doing something else.
+   *
+   * @param text - What is said; `\n` starts a new line.
+   * @param options - Timing, the font size and the wrapping width.
+   * @returns When the bubble is shown.
+   */
+  say(text: string, options?: SayOptions): Span;
 
   /**
    * Do an action, given as its definition.
@@ -534,6 +594,15 @@ export interface Row {
    * @returns When the drawing is shown.
    */
   draw(draw: DrawFunction, options?: DrawOptions): Span;
+
+  /**
+   * Show free-standing text in the row, drawn in front of everything else in it.
+   *
+   * @param text - The text; `\n` starts a new line.
+   * @param options - When it is shown, where, its size, alignment and name.
+   * @returns When the label is shown.
+   */
+  label(text: string, options?: LabelOptions): Span;
 
   /**
    * Put a prop in the row, given as its definition.

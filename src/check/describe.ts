@@ -1,6 +1,7 @@
 import { facingOf } from "../draw/figure.js";
 import { idOf } from "../draw/frame.js";
 import { propPlacement } from "../draw/prop.js";
+import { isTextTrack } from "../draw/text.js";
 import { poseAtFrame } from "../rig/compose.js";
 import { forwardKinematics, mirrorSkeleton, type Point } from "../rig/kinematics.js";
 import { CHANNEL_NAMES, REST_POSE } from "../rig/rig.js";
@@ -33,6 +34,12 @@ export interface PropState {
   readonly at: Point;
 }
 
+/** One shown label or speech bubble at one frame: what it says. */
+export interface TextState {
+  readonly id: string;
+  readonly text: string;
+}
+
 /** What one row holds at one frame. */
 export interface RowState {
   readonly row: number;
@@ -40,6 +47,8 @@ export interface RowState {
   readonly props: readonly PropState[];
   /** The ids of the free drawings shown. */
   readonly drawings: readonly string[];
+  /** The labels and speech bubbles shown. */
+  readonly texts: readonly TextState[];
 }
 
 /** The state of a scene at one frame: who is where, in which pose, facing which way. */
@@ -70,6 +79,7 @@ export function describeState(scene: Scene, frame: number): StateDescription {
     const actors: ActorState[] = [];
     const props: PropState[] = [];
     const drawings: string[] = [];
+    const texts: TextState[] = [];
     for (const track of timelineRow.tracks) {
       const id = idOf(row, track);
       if (track.kind === "actor") {
@@ -106,6 +116,22 @@ export function describeState(scene: Scene, frame: number): StateDescription {
         } catch {
           // Its holder's function threw at this frame; `check` reports why.
         }
+      } else if (isTextTrack(track)) {
+        // Skips a segment without object data, as the frame drawer does.
+        const data: unknown = track.segments.findLast(
+          ({ start, end, data: candidate }) =>
+            typeof candidate === "object" &&
+            candidate !== null &&
+            frameInSegment(frame, start, end, timeline.fps),
+        )?.data;
+        if (
+          typeof data === "object" &&
+          data !== null &&
+          "text" in data &&
+          typeof data.text === "string"
+        ) {
+          texts.push({ id, text: data.text });
+        }
       } else if (
         track.kind === "draw" &&
         track.segments.some(({ start, end }) =>
@@ -115,7 +141,7 @@ export function describeState(scene: Scene, frame: number): StateDescription {
         drawings.push(id);
       }
     }
-    return { row, actors, props, drawings };
+    return { row, actors, props, drawings, texts };
   });
   return { frame, time: round(frame / timeline.fps), rows };
 }
@@ -154,7 +180,11 @@ export function formatState(state: StateDescription): string {
     for (const drawing of row.drawings) {
       lines.push(`  drawing ${drawing}`);
     }
-    if (row.actors.length + row.props.length + row.drawings.length === 0) {
+    for (const text of row.texts) {
+      lines.push(`  text ${text.id}: ${JSON.stringify(text.text)}`);
+    }
+    const shown = [row.actors, row.props, row.drawings, row.texts];
+    if (shown.every((items) => items.length === 0)) {
       lines.push("  empty");
     }
   }

@@ -52,7 +52,9 @@ recorded sample is how an unintended change in appearance fails a test.
   `restore` and `reset` keep that state as a real context does.
 - The recording context measures text with a deterministic fake, so a bubble's layout in
   the log is not the layout of the real output. Text is tested through this fake only;
-  no font file is committed to the repository.
+  no font file is committed to the repository. The automation project draws one frame
+  with text through skia-canvas and asserts only that it is the same twice and differs
+  from the frame without text.
 - The fake reads the first `<n>px` in `font` as the size `s` (10 when there is none).
   `width` is 0.6 × `s` per code point, both ascents 0.8 × `s` and both descents 0.2 ×
   `s`. `actualBoundingBoxLeft` is 0 for `start` and `left`, `width / 2` for `center`,
@@ -126,7 +128,36 @@ recorded sample is how an unintended change in appearance fails a test.
   draws the frames, `check` or `render`, turns it into an error finding with the same
   code, row, target and time. It is never swallowed.
 - Leaving the frame is a warning. A figure that walks off is ordinary acting, and the
-  first README video ends with one.
+  first README video ends with one. Text follows it, with the same code: clipped text is
+  a fault of looks that `frame` shows at once, an error would stop `render` over a
+  caption a few pixels wide of the edge, and a warning can be raised later only as a
+  breaking change. `--strict` is there for a run that must not ship one.
+- Text too small to read is `ERR_CHECK_TEXT_TOO_SMALL`, a warning for the same reasons.
+  The threshold is 12 px at the output size (`MIN_TEXT_PX`): below it the strokes of a
+  kanji run together, and Latin text is already hard to read. What is measured is the
+  font size in output pixels, the size in row units times the row's pixels per unit, not
+  a glyph box: a glyph box differs by font, and Noto Sans CJK's is 1.45 sizes high.
+  Exactly 12 px passes; the size is rounded to a millionth of a pixel first, so a size
+  that is 12 px but for a rounding step passes too. `measured` holds `size` and `min` in
+  pixels, and the fix names a size in units rounded up, so following it clears the
+  check.
+- A label is measured by the box of its lines and a bubble by its body without the tail,
+  against the row's visible area, at every frame it is shown. They are laid out with the
+  measurer `checkScene` is given (`measurer`), which is the recording context's fake by
+  default; the CLI passes a skia-canvas context set to the chosen font, so the box is
+  the one the frame draws. A bubble whose speaker's function throws at a frame is a
+  failure of the bubble as well, as a held prop's is.
+- Text drawn with `drawText` inside a drawing is not measured: it has no box the check
+  can read without tracking the context's transform, as a free drawing has none.
+- A missing font is `ERR_ENV_FONT_MISSING`, a warning: the scene has a label or a
+  bubble, names no font file, and no family of the system's list is installed. Drawing
+  goes on with the rasteriser's fallback, and an error would stop `render` on a bare
+  Linux machine. A font file the scene names that cannot be read is
+  `ERR_ENV_FONT_UNREADABLE`, an error: the scene asked for one font on every machine,
+  and a video in another is not the one its file describes; `frame` and `sheet` still
+  draw, with the system's list. Both are findings, not thrown, and carry no row. A scene
+  whose only text is drawn with `drawText` gets the chosen font but neither finding,
+  since nothing in the timeline says a drawing draws text.
 - The computed checks are `checkScene` in `src/check/check.ts`, internal: it takes a
   built scene and returns the findings frozen into it followed by the computed ones. It
   composes every actor's pose and calls every free drawing at every frame, drawing on a
@@ -134,7 +165,8 @@ recorded sample is how an unintended change in appearance fails a test.
   frames; it reports its authoring findings alone.
 - The computed codes are `ERR_CHECK_JOINT_LIMIT` (error; `joint`, and `measured` holds
   `value`, `min`, `max`), `ERR_CHECK_OFF_FRAME` (warning; `measured.overshoot` in
-  units), `ERR_CHECK_TEXT_OVERLAP` (warning), `ERR_CHECK_CLOCK_READ` and
+  units), `ERR_CHECK_TEXT_OVERLAP` and `ERR_CHECK_TEXT_TOO_SMALL` (warnings; the second
+  with `measured.size` and `measured.min` in pixels), `ERR_CHECK_CLOCK_READ` and
   `ERR_CHECK_UNSEEDED_RANDOM` (errors). A function that throws at a frame is the error
   `ERR_SCENE_DRAWING_FAILED`, keeping the code the frame drawer throws with. Each
   carries `row` and the item's id as `target`.
@@ -160,8 +192,8 @@ recorded sample is how an unintended change in appearance fails a test.
   later only as a breaking change, so the weaker one is chosen while no text exists to
   tune it on. The test is exact for the skeleton, not a bounding box: a bone's line or
   the head circle touching the text's box. The box is a `TextBox` (`id`, `row`, and `x`,
-  `y`, `width`, `height` in row units from its lower left corner), which `checkScene` is
-  given per frame through `textBoxes`; nothing supplies one until text exists.
+  `y`, `width`, `height` in row units from its lower left corner): the scene's labels
+  and bubble bodies at that frame, or what `textBoxes` returns in their place.
 - A report is capped at `FINDING_CAP` like a scene's findings, authoring findings first
   and computed ones in order of their first frame. When the cap cuts, a warning gives
   way to an error: a dropped error would turn a failing run into exit 0.
@@ -206,8 +238,10 @@ recorded sample is how an unintended change in appearance fails a test.
 - The text description of state — who is where, in which pose, facing which way — is
   printed by `frame` and `sheet` for the frames they drew, and by `check --at` for given
   times without drawing. It is not a command of its own.
-- Text checks need real font metrics, so `check` loads the rasteriser once a scene can
-  have text; until then it loads nothing. It never needs ffmpeg.
+- Text checks need real font metrics, so `check` loads the rasteriser for a scene that
+  has a label or a bubble, to look up the font and to measure with it; for any other
+  scene it loads nothing. It never needs ffmpeg. `frame` and `sheet` run `checkScene`
+  with the same measurer and font findings, so their count is `check`'s.
 - The text is `formatReport` in `src/check/check.ts`: per finding
   `<severity> <code>: <message>`, an `at:` line with the place (row, target, joint,
   seconds, frames) when there is one, and a `fix:` line; then `<n> errors, <m> warnings`
@@ -216,14 +250,17 @@ recorded sample is how an unintended change in appearance fails a test.
   the description is a fifth key, `state`. The description is `describeState` in
   `src/check/describe.ts`: per row, each actor's facing, the positions of its pelvis,
   head, hands and feet in row units, and the channels away from rest; each shown prop's
-  ground point; each shown free drawing's id. Numbers are rounded to three decimals. It
-  composes poses, which calls `drive` functions, and never calls a drawing callback.
+  ground point; each shown free drawing's id; each shown label's and bubble's id and
+  text (`texts`), since a contact sheet cell is too small to read a caption from.
+  Numbers are rounded to three decimals. It composes poses, which calls `drive`
+  functions, and never calls a drawing callback.
 - As text (`formatState`) a description is `state at <seconds> s (frame <n>)`, then per
   row `row <i>` and, indented, `actor <id>: facing <side>, pelvis (x, y), head (x, y)`
   with a `hands:`/`feet:` line and a `pose:` line of the channels away from rest (`rest`
-  when none), `prop <id>: at (x, y)`, `drawing <id>`, or `empty`. `frame` and `sheet`
-  print the same block for each frame they drew, in frame order with a blank line after
-  each, between the `wrote <path>` line and the count: one format for `check --at` and
-  the check images, so an agent matches a block to a cell by the frame number both
-  carry. The sheet and ghost layout is `src/check/sheet.ts`, pure and recorded like any
+  when none), `prop <id>: at (x, y)`, `drawing <id>`, `text <id>: "<text>"` (the text as
+  a JSON string, so a newline stays on the line), or `empty`. `frame` and `sheet` print
+  the same block for each frame they drew, in frame order with a blank line after each,
+  between the `wrote <path>` line and the count: one format for `check --at` and the
+  check images, so an agent matches a block to a cell by the frame number both carry.
+  The sheet and ghost layout is `src/check/sheet.ts`, pure and recorded like any
   drawing; `frame` and `sheet` run `checkScene` only for its count.

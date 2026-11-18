@@ -61,6 +61,8 @@ import {
   type DrawFunction,
   type DrawingContext,
   type DrawOptions,
+  drawText,
+  type DrawTextOptions,
   type DriveOptions,
   type EffectorName,
   type ExitCode,
@@ -68,6 +70,7 @@ import {
   type Finding,
   type FindingCollector,
   type Gradient,
+  type LabelOptions,
   type Moment,
   type MotionFunction,
   type Point,
@@ -76,6 +79,7 @@ import {
   type RandomSource,
   type ReachOptions,
   type Row,
+  type SayOptions,
   type Scene,
   scene,
   type SceneClosedError,
@@ -87,7 +91,9 @@ import {
   svgPath,
   type SvgPathOptions,
   type Stage,
+  type TextAlign,
   type TextMeasurement,
+  type TextSize,
   type Timeline,
   type TimelineRow,
   type TimelineSegment,
@@ -485,7 +491,7 @@ describe("handle types", () => {
 
   it("gives a row an id, an index, an actor, free drawing and its items", () => {
     expectTypeOf<keyof Row>().toEqualTypeOf<
-      "id" | "index" | "actor" | "draw" | "prop" | "backdrop" | "effect"
+      "id" | "index" | "actor" | "draw" | "label" | "prop" | "backdrop" | "effect"
     >();
     expectTypeOf<Row["actor"]>().toEqualTypeOf<(options?: ActorOptions) => Actor>();
     expectTypeOf<Row["draw"]>().toEqualTypeOf<
@@ -495,7 +501,7 @@ describe("handle types", () => {
 
   it("gives an actor an id, its four calls, and do and express", () => {
     expectTypeOf<keyof Actor>().toEqualTypeOf<
-      "id" | "pose" | "reach" | "drive" | "wait" | "do" | "express"
+      "id" | "pose" | "reach" | "drive" | "wait" | "say" | "do" | "express"
     >();
     expectTypeOf<Actor["id"]>().toEqualTypeOf<string>();
     expectTypeOf<Actor["pose"]>().parameters.toEqualTypeOf<
@@ -982,6 +988,79 @@ describe("definition errors", () => {
     expectTypeOf<Exclude<keyof InvalidDefaultError, keyof Error>>().toEqualTypeOf<
       "code" | "kind" | "path"
     >();
+  });
+});
+
+describe("text types", () => {
+  it("gives a row label(text, options) and an actor say(text, options), each a span", () => {
+    expectTypeOf<Row["label"]>().toEqualTypeOf<
+      (text: string, options?: LabelOptions) => Span
+    >();
+    expectTypeOf<Stage["label"]>().toEqualTypeOf<Row["label"]>();
+    expectTypeOf<Actor["say"]>().toEqualTypeOf<
+      (text: string, options?: SayOptions) => Span
+    >();
+  });
+
+  it("states the options of a label and of a bubble", () => {
+    expectTypeOf<TextAlign>().toEqualTypeOf<"left" | "center" | "right">();
+    expectTypeOf<LabelOptions>().toEqualTypeOf<{
+      readonly at?: number;
+      readonly duration?: number;
+      readonly x?: number;
+      readonly y?: number;
+      readonly size?: number;
+      readonly align?: TextAlign;
+      readonly width?: number;
+      readonly name?: string;
+    }>();
+    expectTypeOf<SayOptions>().toEqualTypeOf<{
+      readonly at?: number;
+      readonly duration?: number;
+      readonly size?: number;
+      readonly width?: number;
+    }>();
+  });
+
+  it("rejects text that is not a string and an unknown alignment", () => {
+    const valid = (row: Row, actor: Actor): Span[] => [
+      row.label("Before", { at: 0, align: "left" }),
+      actor.say("こんにちは", { width: 1.5 }),
+    ];
+    expectTypeOf(valid).returns.toEqualTypeOf<Span[]>();
+    const rejected = (row: Row, actor: Actor): void => {
+      // @ts-expect-error text is a string, not a number
+      row.label(5);
+      // @ts-expect-error the alignment is left, center or right
+      row.label("Before", { align: "centre" });
+      // @ts-expect-error a bubble is placed by its speaker, not by a point
+      actor.say("こんにちは", { x: 1 });
+    };
+    expect(rejected).toBeTypeOf("function");
+  });
+
+  it("draws text on a shape context and returns the block's size", () => {
+    expectTypeOf(drawText).toEqualTypeOf<
+      (ctx: ShapeContext, text: string, options?: DrawTextOptions) => TextSize
+    >();
+    expectTypeOf<DrawTextOptions>().toEqualTypeOf<{
+      readonly x?: number;
+      readonly y?: number;
+      readonly size?: number;
+      readonly align?: TextAlign;
+      readonly width?: number;
+    }>();
+    expectTypeOf<TextSize>().toEqualTypeOf<{
+      readonly width: number;
+      readonly height: number;
+    }>();
+    const valid = (ctx: DrawingContext): TextSize => drawText(ctx, "止まれ", { y: 1 });
+    expectTypeOf(valid).returns.toEqualTypeOf<TextSize>();
+    const rejected = (ctx: ShapeContext): void => {
+      // @ts-expect-error size is a number, not a string
+      drawText(ctx, "止まれ", { size: "big" });
+    };
+    expect(rejected).toBeTypeOf("function");
   });
 });
 

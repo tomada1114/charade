@@ -39,6 +39,8 @@ export type {
 } from "./draw/context.js";
 export { svgPath } from "./draw/path-data.js";
 export type { SvgPathOptions } from "./draw/path-data.js";
+export { drawText } from "./draw/text.js";
+export type { DrawTextOptions, TextSize } from "./draw/text.js";
 export {
   AsyncBuildError,
   CharadeError,
@@ -101,6 +103,7 @@ export type {
   ExpressOptions,
   HoldOptions,
   ItemOptions,
+  LabelOptions,
   MotionFunction,
   MoveOptions,
   PlaceOptions,
@@ -109,6 +112,7 @@ export type {
   Prop,
   ReachOptions,
   Row,
+  SayOptions,
   Span,
   Stage,
 } from "./scene/handles.js";
@@ -131,7 +135,7 @@ export type {
 export { scene } from "./scene/scene.js";
 export type { Scene, SceneOptions } from "./scene/scene.js";
 export type { RandomSource } from "./timeline/random.js";
-export type { BlendMode, Moment } from "./timeline/segments.js";
+export type { BlendMode, Moment, TextAlign } from "./timeline/segments.js";
 export type {
   Timeline,
   TimelineRow,

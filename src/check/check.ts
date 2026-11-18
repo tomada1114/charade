@@ -1,7 +1,13 @@
 import { facingOf } from "../draw/figure.js";
 import { drawTrack, idOf } from "../draw/frame.js";
 import { propPlacement } from "../draw/prop.js";
-import { GROUND_UNITS, ROW_UNITS, rowLayout } from "../draw/layout.js";
+import { GROUND_UNITS, type RowLayout, ROW_UNITS, rowLayout } from "../draw/layout.js";
+import {
+  isTextTrack,
+  type PlacedText,
+  placedText,
+  type TextMeasurer,
+} from "../draw/text.js";
 import { CharadeError } from "../errors.js";
 import { poseAtFrame } from "../rig/compose.js";
 import {
@@ -45,9 +51,28 @@ export interface TextBox {
 
 /** What {@link checkScene} takes beyond the scene. */
 export interface CheckOptions {
-  /** The text boxes shown at a frame. A scene has no text yet, so the default is none. */
+  /**
+   * What the scene's labels and bubbles are measured with: a context whose font is the
+   * one they will be drawn in. The default is the recording context's fake measurer.
+   */
+  readonly measurer?: TextMeasurer;
+  /**
+   * The text boxes actors are tested against at a frame, in place of the scene's own
+   * labels and bubbles.
+   */
   readonly textBoxes?: (frame: number) => readonly TextBox[];
+  /**
+   * Findings about the machine rather than the scene, such as a missing font; they
+   * are reported after the scene's own and before the computed ones.
+   */
+  readonly environment?: readonly Finding[];
 }
+
+/**
+ * The smallest font size that reads, in pixels of the output: below it the strokes of
+ * a kanji run together.
+ */
+export const MIN_TEXT_PX = 12;
 
 /** The findings of a scene: those recorded while it was authored, then the computed ones. */
 export interface CheckResult {
@@ -269,6 +294,83 @@ function actorViolations(
   ];
 }
 
+/** A label or bubble at one frame, or what composing its speaker's pose threw. */
+type TextResult =
+  | { readonly row: number; readonly placed: PlacedText }
+  | { readonly row: number; readonly error: unknown };
+
+/** Every label and bubble shown at `frame`, by id. */
+function textsAt(
+  scene: Scene,
+  layouts: readonly RowLayout[],
+  frame: number,
+  measurer: TextMeasurer,
+): Map<string, TextResult> {
+  const texts = new Map<string, TextResult>();
+  scene.timeline.rows.forEach((timelineRow, row) => {
+    const layout = layouts[row];
+    for (const track of layout === undefined ? [] : timelineRow.tracks) {
+      if (!isTextTrack(track) || layout === undefined) {
+        continue;
+      }
+      try {
+        const placed = placedText(measurer, scene.timeline, layout, track, frame);
+        if (placed !== undefined) {
+          texts.set(idOf(row, track), { row, placed });
+        }
+      } catch (error) {
+        texts.set(idOf(row, track), { row, error });
+      }
+    }
+  });
+  return texts;
+}
+
+/** A font size as the fix line names it: rounded up, so following it clears the check. */
+function atLeast(value: number): string {
+  return String(Math.ceil(value * 1000) / 1000);
+}
+
+function textViolations(
+  placed: PlacedText,
+  area: Area,
+  scale: number,
+  row: number,
+  id: string,
+): Violation[] {
+  const { box } = placed;
+  // Rounded, so a size that is the threshold but for a rounding step is not reported.
+  const px = Math.round(placed.size * scale * 1e6) / 1e6;
+  const small: Violation[] =
+    px < MIN_TEXT_PX
+      ? [
+          {
+            key: `small|${id}`,
+            excess: MIN_TEXT_PX - px,
+            finding: {
+              code: "ERR_CHECK_TEXT_TOO_SMALL",
+              severity: "warning",
+              message: `The text of ${id} is ${show(px)} px tall at the output size; below ${String(MIN_TEXT_PX)} px it is hard to read.`,
+              fix: `Give it a size of at least ${atLeast(MIN_TEXT_PX / scale)} units, or use fewer rows or a larger canvas.`,
+              row,
+              target: id,
+              measured: { size: px, min: MIN_TEXT_PX },
+            },
+          },
+        ]
+      : [];
+  return [
+    ...small,
+    ...offFrame(
+      area,
+      { x: box.x, y: box.y },
+      { x: box.x + box.width, y: box.y + box.height },
+      row,
+      id,
+    ),
+  ];
+}
+
 /** The error finding of an item whose function threw at a frame. */
 function failure(error: unknown, row: number, id: string): Violation {
   const reason =
@@ -294,17 +396,33 @@ function failure(error: unknown, row: number, id: string): Violation {
 /** Every violation of one frame, row by row and track by track. */
 function violationsAt(
   scene: Scene,
-  areas: readonly Area[],
+  layouts: readonly RowLayout[],
   frame: number,
-  boxes: readonly TextBox[],
+  options: CheckOptions,
 ): Violation[] {
   const { timeline } = scene;
   const found: Violation[] = [];
+  const texts = textsAt(
+    scene,
+    layouts,
+    frame,
+    options.measurer ?? new RecordingContext(),
+  );
+  const boxes =
+    options.textBoxes?.(frame) ??
+    [...texts].flatMap(([id, text]): TextBox[] =>
+      "placed" in text ? [{ id, row: text.row, ...text.placed.box }] : [],
+    );
   timeline.rows.forEach((timelineRow, row) => {
-    const area = areas[row];
-    if (area === undefined) {
+    const layout = layouts[row];
+    if (layout === undefined) {
       return;
     }
+    const area: Area = {
+      halfWidth: layout.units / 2,
+      bottom: -GROUND_UNITS,
+      top: ROW_UNITS - GROUND_UNITS,
+    };
     for (const track of timelineRow.tracks) {
       const id = idOf(row, track);
       // The author's functions run only inside `watched`, where a clock or random
@@ -341,6 +459,14 @@ function violationsAt(
         if (placed !== undefined) {
           found.push(...offFrame(area, placed.point, placed.point, row, id));
         }
+      } else {
+        const text = texts.get(id);
+        if (text !== undefined && "placed" in text) {
+          found.push(...textViolations(text.placed, area, layout.scale, row, id));
+        } else if (text !== undefined) {
+          // Its speaker's function threw at this frame, so the bubble has no place.
+          found.push(failure(text.error, row, id));
+        }
       }
     }
   });
@@ -349,31 +475,26 @@ function violationsAt(
 
 /**
  * Checks a built scene: the findings recorded while it was authored, then joint
- * limits on the composed pose, items leaving their row, actors over text, and clock
- * or random reads, computed at every frame. Contiguous frames of one violation are
- * one finding, whose `frames` are its first and last frame and whose `time` runs from
- * the first frame's time to where the last frame's ends, as a segment's does.
+ * limits on the composed pose, items leaving their row, text too small to read,
+ * actors over text, and clock or random reads, computed at every frame. Contiguous
+ * frames of one violation are one finding, whose `frames` are its first and last frame
+ * and whose `time` runs from the first frame's time to where the last frame's ends, as
+ * a segment's does.
  */
 export function checkScene(scene: Scene, options: CheckOptions = {}): CheckResult {
   const { timeline } = scene;
   const lastFrame = lastFrameOf(timeline);
   const runs: Run[] = [];
   if (lastFrame !== undefined) {
-    const areas = timeline.rows.map((_, row): Area => {
-      const layout = rowLayout(scene.width, scene.height, timeline.rows.length, row);
-      return {
-        halfWidth: layout.units / 2,
-        bottom: -GROUND_UNITS,
-        top: ROW_UNITS - GROUND_UNITS,
-      };
-    });
+    const layouts = timeline.rows.map((_, row) =>
+      rowLayout(scene.width, scene.height, timeline.rows.length, row),
+    );
     const open = new Map<string, Run>();
     // One outer watch replaces the globals once for the whole scan; each item's own
     // watch is nested inside it and keeps its reads to itself.
     watchReads(() => {
       for (let frame = 0; frame <= lastFrame; frame += 1) {
-        const boxes = options.textBoxes?.(frame) ?? [];
-        for (const violation of violationsAt(scene, areas, frame, boxes)) {
+        for (const violation of violationsAt(scene, layouts, frame, options)) {
           const run = open.get(violation.key);
           if (run !== undefined && run.last >= frame - 1) {
             run.last = frame;
@@ -396,7 +517,7 @@ export function checkScene(scene: Scene, options: CheckOptions = {}): CheckResul
       frames: [run.first, run.last],
     };
   });
-  const all = [...scene.findings, ...computed];
+  const all = [...scene.findings, ...(options.environment ?? []), ...computed];
   const kept = capped(all);
   return {
     findings: kept,
