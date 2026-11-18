@@ -14,10 +14,12 @@ import {
   existsSync,
   mkdirSync,
   mkdtempSync,
+  readdirSync,
   readFileSync,
   rmSync,
   writeFileSync,
 } from "node:fs";
+import { Buffer } from "node:buffer";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import process from "node:process";
@@ -164,6 +166,16 @@ export function publicSubpaths(manifest) {
 }
 
 /**
+ * The command npm names after a package: its name without the scope.
+ *
+ * @param {string} packageName - Package name, possibly scoped.
+ * @returns {string} The unscoped part.
+ */
+function defaultCommandName(packageName) {
+  return packageName.slice(packageName.lastIndexOf("/") + 1);
+}
+
+/**
  * Command names a consumer gets from a packed `bin` field.
  *
  * @param {unknown} manifest - Packed package manifest.
@@ -172,7 +184,7 @@ export function publicSubpaths(manifest) {
  */
 export function publicBinCommands(manifest, packageName) {
   const bin = readKey(manifest, "bin");
-  const defaultName = packageName.slice(packageName.lastIndexOf("/") + 1);
+  const defaultName = defaultCommandName(packageName);
   if (typeof bin === "string") {
     return [defaultName];
   }
@@ -451,6 +463,189 @@ export function checkBinCommands(consumer, packageName, manifest) {
     }
     process.stdout.write(result.stdout);
   }
+}
+
+/**
+ * Packages that could compile or load a `.ts` scene, so their presence would let the
+ * frame step pass without Node's own type stripping and the CLI's resolve hook.
+ */
+export const TRANSPILER_PACKAGES = Object.freeze([
+  "@babel/core",
+  "@esbuild-kit/esm-loader",
+  "@swc-node/register",
+  "@swc/core",
+  "@swc/wasm",
+  "amaro",
+  "esbuild",
+  "esbuild-register",
+  "jiti",
+  "oxc-transform",
+  "sucrase",
+  "ts-blank-space",
+  "ts-node",
+  "tsimp",
+  "tsx",
+  "typescript",
+]);
+
+/**
+ * Every installed package name under a `node_modules` tree, nested ones included.
+ *
+ * @param {string} nodeModules - A `node_modules` directory.
+ * @returns {string[]} Package names, with their scope, in walk order.
+ */
+function installedPackageNames(nodeModules) {
+  if (!existsSync(nodeModules)) {
+    return [];
+  }
+  /** @type {string[]} */
+  const names = [];
+  /**
+   * @param {string} name - Package name, with its scope.
+   * @param {import("node:fs").Dirent} entry - Its directory entry.
+   * @param {string} dir - Its directory.
+   */
+  const visit = (name, entry, dir) => {
+    names.push(name);
+    // A symlink is not followed, so a link back up the tree cannot loop.
+    if (entry.isDirectory()) {
+      names.push(...installedPackageNames(path.join(dir, "node_modules")));
+    }
+  };
+  for (const entry of readdirSync(nodeModules, { withFileTypes: true })) {
+    if (entry.name.startsWith(".")) {
+      continue;
+    }
+    const dir = path.join(nodeModules, entry.name);
+    if (entry.name.startsWith("@") && entry.isDirectory()) {
+      for (const scoped of readdirSync(dir, { withFileTypes: true })) {
+        if (!scoped.name.startsWith(".")) {
+          visit(`${entry.name}/${scoped.name}`, scoped, path.join(dir, scoped.name));
+        }
+      }
+    } else {
+      visit(entry.name, entry, dir);
+    }
+  }
+  return names;
+}
+
+/**
+ * The consumer holds no TypeScript compiler or loader, so a `.ts` scene can only run
+ * through Node's type stripping and the CLI's resolve hook.
+ *
+ * @param {string} consumer - Consumer directory.
+ * @returns {void}
+ * @throws {SmokeError} When a package from {@link TRANSPILER_PACKAGES} is installed.
+ */
+export function checkNoTranspiler(consumer) {
+  step("checking that the consumer has no TypeScript compiler or loader installed");
+  const forbidden = new Set(TRANSPILER_PACKAGES);
+  const found = [
+    ...new Set(
+      installedPackageNames(path.join(consumer, "node_modules")).filter((name) =>
+        forbidden.has(name),
+      ),
+    ),
+  ].sort();
+  if (found.length > 0) {
+    fail("ERR_SMOKE_CONSUMER_TRANSPILER", {
+      what: "Installing the tarball brought a TypeScript compiler or loader into the consumer.",
+      subject: found.join(", "),
+      expected: `none of ${TRANSPILER_PACKAGES.join(", ")} under node_modules`,
+      actual: `${String(found.length)} installed`,
+      next: "Run `npm ls <name>` in a consumer to find which dependency pulls it in, then drop or replace that dependency.",
+    });
+  }
+}
+
+/** The first eight bytes of every PNG file. */
+const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+
+/**
+ * The empty-folder run: a `.ts` scene beside a bare install, drawn with `frame`.
+ *
+ * @remarks
+ * Runs only for a package that ships a command under its own name, which is the
+ * command a scene is drawn with. `NODE_OPTIONS` is dropped so no loader the caller's
+ * shell registers can stand in for type stripping. stderr is not asserted: Node
+ * 24.0–24.11 prints a notice there recommending 24.12, and the run still passes.
+ *
+ * @param {string} consumer - Consumer directory.
+ * @param {string} packageName - Installed package name, imported by the scene.
+ * @param {unknown} manifest - Installed package manifest.
+ * @returns {void}
+ * @throws {SmokeError} When the command fails, writes no PNG, or does not name it.
+ */
+export function checkEmptyFolderFrame(consumer, packageName, manifest) {
+  const command = defaultCommandName(packageName);
+  if (!publicBinCommands(manifest, packageName).includes(command)) {
+    return;
+  }
+
+  const sceneName = "scene.ts";
+  const expectedName = "scene.frame-0.png";
+  const output = path.join(consumer, expectedName);
+  // Erasable syntax only: annotations are all Node's type stripping removes.
+  writeFileSync(
+    path.join(consumer, sceneName),
+    `import { scene } from ${JSON.stringify(packageName)};
+
+const name: string = "hero";
+
+export default scene({ duration: 1 }, (stage) => {
+  stage.row(0).actor({ name });
+});
+`,
+  );
+  rmSync(output, { force: true });
+
+  step(`running ${command} frame ${sceneName} --at 0 through node_modules/.bin`);
+  const executable = path.join(consumer, "node_modules", ".bin", command);
+  const env = { ...process.env };
+  delete env["NODE_OPTIONS"];
+  const result = runNode(executable, ["frame", sceneName, "--at", "0"], {
+    cwd: consumer,
+    env,
+  });
+  if (result.status !== 0) {
+    fail("ERR_SMOKE_FRAME_FAILED", {
+      what: "Drawing a frame of a .ts scene in an empty consumer failed.",
+      subject: `${command} frame ${sceneName} --at 0`,
+      expected: "exit 0",
+      actual: `exit ${String(result.status)}\n${excerpt(result.stderr || result.stdout)}`,
+      next: `Run \`${command} frame ${sceneName} --at 0\` in a folder with only the tarball installed, then fix the error code it prints.`,
+    });
+  }
+  if (!existsSync(output)) {
+    fail("ERR_SMOKE_FRAME_MISSING", {
+      what: "The frame command exited 0 but wrote no PNG beside the scene.",
+      subject: expectedName,
+      expected: output,
+      actual: `path is absent\n${excerpt(result.stdout)}`,
+      next: "Check that `frame` writes `<scene>.frame-<n>.png` beside the scene.",
+    });
+  }
+  const head = readFileSync(output).subarray(0, PNG_SIGNATURE.length);
+  if (!head.equals(PNG_SIGNATURE)) {
+    fail("ERR_SMOKE_FRAME_NOT_PNG", {
+      what: "The frame command wrote a file that is not a PNG.",
+      subject: expectedName,
+      expected: `signature ${PNG_SIGNATURE.toString("hex")}`,
+      actual: `signature ${head.toString("hex") || "<empty>"}`,
+      next: "Check how `frame` encodes its canvas before writing it.",
+    });
+  }
+  if (!result.stdout.includes(expectedName)) {
+    fail("ERR_SMOKE_FRAME_UNREPORTED", {
+      what: "The frame command wrote its PNG but stdout does not name the path.",
+      subject: expectedName,
+      expected: `stdout containing ${expectedName}`,
+      actual: excerpt(result.stdout),
+      next: "Check that `frame` prints `wrote <path>` on stdout.",
+    });
+  }
+  process.stdout.write(result.stdout);
 }
 
 /**
@@ -867,6 +1062,8 @@ export function main(argv) {
       readKey(installedManifest, "exports") !== undefined,
     );
     checkBinCommands(consumer, packageName, installedManifest);
+    checkNoTranspiler(consumer);
+    checkEmptyFolderFrame(consumer, packageName, installedManifest);
     checkRequireInterop(consumer, packageName);
     checkTypeScriptConsumers(consumer, packageName);
     checkDeepImportBlocked(
