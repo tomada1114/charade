@@ -51,20 +51,6 @@ export type { ItemKind } from "./errors.js";
 export type { Point } from "./rig/kinematics.js";
 export type { ChannelName, EffectorName } from "./rig/rig.js";
 export {
-  builtinActions,
-  builtinBackdrops,
-  builtinEffects,
-  builtinExpressions,
-  builtinProps,
-} from "./scene/builtins.js";
-export type {
-  BuiltinActions,
-  BuiltinBackdrops,
-  BuiltinEffects,
-  BuiltinExpressions,
-  BuiltinProps,
-} from "./scene/builtins.js";
-export {
   defineAction,
   defineBackdrop,
   defineEffect,
@@ -85,6 +71,22 @@ export type {
   NoParams,
   PropDefinition,
 } from "./scene/define.js";
+// After `define…`: the built-in items import this entry, and they load while it does.
+export {
+  builtinActions,
+  builtinBackdrops,
+  builtinEffects,
+  builtinExpressions,
+  builtinProps,
+} from "./scene/builtins.js";
+export type {
+  BuiltinActions,
+  BuiltinBackdrops,
+  BuiltinEffects,
+  BuiltinExpressions,
+  BuiltinName,
+  BuiltinProps,
+} from "./scene/builtins.js";
 export type {
   ActionOptions,
   Actor,
@@ -94,8 +96,10 @@ export type {
   DrawOptions,
   DriveOptions,
   ExpressOptions,
+  HoldOptions,
   ItemOptions,
   MotionFunction,
+  MoveOptions,
   PlaceOptions,
   PoseChannels,
   PoseOptions,

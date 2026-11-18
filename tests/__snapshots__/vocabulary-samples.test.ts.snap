@@ -1,0 +1,2722 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`the samples > draws the action sitDown as recorded > frame 0 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 10800000
+clip
+setTransform 4320000 0 0 -4320000 5400000 9504000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -12500 0
+lineTo 12500 0
+stroke
+restore
+save
+save
+translate -2400 0
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineJoin "round"
+lineWidth 150
+fillStyle "#d9b382"
+beginPath
+rect -1800 0 3600 2600
+fill
+stroke
+lineWidth 80
+beginPath
+rect -1436 364 2872 1872
+moveTo -1436 364
+lineTo 1436 2236
+stroke
+restore
+restore
+save
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineCap "round"
+lineJoin "round"
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 6200
+lineTo 0 7600
+lineTo 0 8200
+stroke
+beginPath
+arc 0 9100 900 0 62832
+fillStyle "#ffffff"
+fill
+stroke
+fillStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -324 9235
+quadraticCurveTo -180 9523 -36 9235
+quadraticCurveTo -180 8947 -324 9235
+closePath
+stroke
+beginPath
+arc -180 9235 72 0 62832
+fill
+beginPath
+moveTo -45 9460
+lineTo -315 9460
+stroke
+beginPath
+moveTo 216 9235
+quadraticCurveTo 360 9523 504 9235
+quadraticCurveTo 360 8947 216 9235
+closePath
+stroke
+beginPath
+arc 360 9235 72 0 62832
+fill
+beginPath
+moveTo 225 9460
+lineTo 495 9460
+stroke
+beginPath
+moveTo -180 8740
+quadraticCurveTo 90 8740 360 8740
+quadraticCurveTo 90 8740 -180 8740
+closePath
+fill
+stroke
+lineWidth 250
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+restore
+restore"
+`;
+
+exports[`the samples > draws the action sitDown as recorded > frame 9 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 10800000
+clip
+setTransform 4320000 0 0 -4320000 5400000 9504000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -12500 0
+lineTo 12500 0
+stroke
+restore
+save
+save
+translate -2400 0
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineJoin "round"
+lineWidth 150
+fillStyle "#d9b382"
+beginPath
+rect -1800 0 3600 2600
+fill
+stroke
+lineWidth 80
+beginPath
+rect -1436 364 2872 1872
+moveTo -1436 364
+lineTo 1436 2236
+stroke
+restore
+restore
+save
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineCap "round"
+lineJoin "round"
+beginPath
+moveTo 36 7462
+lineTo 124 5764
+lineTo 331 4178
+stroke
+beginPath
+moveTo -181 4670
+lineTo 252 2310
+lineTo -400 0
+lineTo 388 -139
+stroke
+beginPath
+moveTo -181 4670
+lineTo -73 6066
+lineTo 36 7462
+lineTo 101 8058
+stroke
+beginPath
+arc 199 8953 900 0 62832
+fillStyle "#ffffff"
+fill
+stroke
+fillStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -108 9122
+quadraticCurveTo 66 9393 178 9091
+quadraticCurveTo 4 8820 -108 9122
+closePath
+stroke
+beginPath
+arc 35 9107 72 0 62832
+fill
+beginPath
+moveTo 193 9316
+lineTo -75 9345
+stroke
+beginPath
+moveTo 428 9064
+quadraticCurveTo 603 9334 715 9032
+quadraticCurveTo 540 8762 428 9064
+closePath
+stroke
+beginPath
+arc 572 9048 72 0 62832
+fill
+beginPath
+moveTo 462 9286
+lineTo 730 9257
+stroke
+beginPath
+moveTo -19 8615
+quadraticCurveTo 249 8585 518 8556
+quadraticCurveTo 249 8585 -19 8615
+closePath
+fill
+stroke
+lineWidth 250
+beginPath
+moveTo -181 4670
+lineTo 577 2393
+lineTo 400 0
+lineTo 1199 -30
+stroke
+beginPath
+moveTo 36 7462
+lineTo 80 5762
+lineTo 246 4171
+stroke
+restore
+restore"
+`;
+
+exports[`the samples > draws the action sitDown as recorded > frame 18 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 10800000
+clip
+setTransform 4320000 0 0 -4320000 5400000 9504000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -12500 0
+lineTo 12500 0
+stroke
+restore
+save
+save
+translate -2400 0
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineJoin "round"
+lineWidth 150
+fillStyle "#d9b382"
+beginPath
+rect -1800 0 3600 2600
+fill
+stroke
+lineWidth 80
+beginPath
+rect -1436 364 2872 1872
+moveTo -1436 364
+lineTo 1436 2236
+stroke
+restore
+restore
+save
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineCap "round"
+lineJoin "round"
+beginPath
+moveTo -1 6798
+lineTo 354 5136
+lineTo 1150 3748
+stroke
+beginPath
+moveTo -877 4139
+lineTo 546 2206
+lineTo -400 0
+lineTo 400 -15
+stroke
+beginPath
+moveTo -877 4139
+lineTo -442 5470
+lineTo -1 6798
+lineTo 255 7341
+stroke
+beginPath
+arc 639 8155 900 0 62832
+fillStyle "#ffffff"
+fill
+stroke
+fillStyle "#111111"
+lineWidth 100
+beginPath
+moveTo 404 8415
+quadraticCurveTo 657 8614 664 8292
+quadraticCurveTo 411 8093 404 8415
+closePath
+stroke
+beginPath
+arc 534 8354 72 0 62832
+fill
+beginPath
+moveTo 752 8500
+lineTo 508 8615
+stroke
+beginPath
+moveTo 892 8185
+quadraticCurveTo 1145 8384 1153 8062
+quadraticCurveTo 900 7863 892 8185
+closePath
+stroke
+beginPath
+arc 1022 8123 72 0 62832
+fill
+beginPath
+moveTo 996 8384
+lineTo 1240 8269
+stroke
+beginPath
+moveTo 323 7906
+quadraticCurveTo 567 7791 811 7676
+quadraticCurveTo 567 7791 323 7906
+closePath
+fill
+stroke
+lineWidth 250
+beginPath
+moveTo -877 4139
+lineTo 750 2374
+lineTo 400 0
+lineTo 1200 -5
+stroke
+beginPath
+moveTo -1 6798
+lineTo 186 5109
+lineTo 840 3648
+stroke
+restore
+restore"
+`;
+
+exports[`the samples > draws the action sitDown as recorded > frame 27 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 10800000
+clip
+setTransform 4320000 0 0 -4320000 5400000 9504000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -12500 0
+lineTo 12500 0
+stroke
+restore
+save
+save
+translate -2400 0
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineJoin "round"
+lineWidth 150
+fillStyle "#d9b382"
+beginPath
+rect -1800 0 3600 2600
+fill
+stroke
+lineWidth 80
+beginPath
+rect -1436 364 2872 1872
+moveTo -1436 364
+lineTo 1436 2236
+stroke
+restore
+restore
+save
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineCap "round"
+lineJoin "round"
+beginPath
+moveTo -988 5423
+lineTo -503 3794
+lineTo 502 2549
+stroke
+beginPath
+moveTo -2223 2911
+lineTo 109 2345
+lineTo -400 0
+lineTo 400 8
+stroke
+beginPath
+moveTo -2223 2911
+lineTo -1634 4181
+lineTo -988 5423
+lineTo -650 5919
+stroke
+beginPath
+arc -143 6662 900 0 62832
+fillStyle "#ffffff"
+fill
+stroke
+fillStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -334 6956
+quadraticCurveTo -53 7113 -96 6794
+quadraticCurveTo -377 6637 -334 6956
+closePath
+stroke
+beginPath
+arc -215 6875 72 0 62832
+fill
+beginPath
+moveTo 23 6985
+lineTo -200 7137
+stroke
+beginPath
+moveTo 112 6652
+quadraticCurveTo 393 6808 350 6489
+quadraticCurveTo 68 6333 112 6652
+closePath
+stroke
+beginPath
+arc 231 6571 72 0 62832
+fill
+beginPath
+moveTo 246 6833
+lineTo 469 6680
+stroke
+beginPath
+moveTo -494 6466
+quadraticCurveTo -271 6314 -48 6162
+quadraticCurveTo -271 6314 -494 6466
+closePath
+fill
+stroke
+lineWidth 250
+beginPath
+moveTo -2223 2911
+lineTo 118 2383
+lineTo 400 0
+lineTo 1200 27
+stroke
+beginPath
+moveTo -988 5423
+lineTo -668 3754
+lineTo 208 2415
+stroke
+restore
+restore"
+`;
+
+exports[`the samples > draws the action sitDown as recorded > frame 35 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 10800000
+clip
+setTransform 4320000 0 0 -4320000 5400000 9504000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -12500 0
+lineTo 12500 0
+stroke
+restore
+save
+save
+translate -2400 0
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineJoin "round"
+lineWidth 150
+fillStyle "#d9b382"
+beginPath
+rect -1800 0 3600 2600
+fill
+stroke
+lineWidth 80
+beginPath
+rect -1436 364 2872 1872
+moveTo -1436 364
+lineTo 1436 2236
+stroke
+restore
+restore
+save
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineCap "round"
+lineJoin "round"
+beginPath
+moveTo -2068 5529
+lineTo -1286 4020
+lineTo -101 2944
+stroke
+beginPath
+moveTo -2400 2750
+lineTo -30 2371
+lineTo -400 0
+lineTo 400 0
+stroke
+beginPath
+moveTo -2400 2750
+lineTo -2269 4144
+lineTo -2068 5529
+lineTo -1974 6122
+stroke
+beginPath
+arc -1833 7011 900 0 62832
+fillStyle "#ffffff"
+fill
+stroke
+fillStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -2131 7195
+quadraticCurveTo -1944 7457 -1847 7150
+quadraticCurveTo -2034 6888 -2131 7195
+closePath
+stroke
+beginPath
+arc -1989 7172 72 0 62832
+fill
+beginPath
+moveTo -1821 7373
+lineTo -2087 7416
+stroke
+beginPath
+moveTo -1598 7110
+quadraticCurveTo -1411 7372 -1314 7065
+quadraticCurveTo -1501 6803 -1598 7110
+closePath
+stroke
+beginPath
+arc -1456 7088 72 0 62832
+fill
+beginPath
+moveTo -1554 7331
+lineTo -1287 7289
+stroke
+beginPath
+moveTo -2067 6683
+quadraticCurveTo -1800 6641 -1533 6599
+quadraticCurveTo -1800 6641 -2067 6683
+closePath
+fill
+stroke
+lineWidth 250
+beginPath
+moveTo -2400 2750
+lineTo -32 2361
+lineTo 400 0
+lineTo 1200 0
+stroke
+beginPath
+moveTo -2068 5529
+lineTo -1440 3949
+lineTo -369 2761
+stroke
+restore
+restore"
+`;
+
+exports[`the samples > draws the action sitDown as recorded > frame 44 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 10800000
+clip
+setTransform 4320000 0 0 -4320000 5400000 9504000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -12500 0
+lineTo 12500 0
+stroke
+restore
+save
+save
+translate -2400 0
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineJoin "round"
+lineWidth 150
+fillStyle "#d9b382"
+beginPath
+rect -1800 0 3600 2600
+fill
+stroke
+lineWidth 80
+beginPath
+rect -1436 364 2872 1872
+moveTo -1436 364
+lineTo 1436 2236
+stroke
+restore
+restore
+save
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineCap "round"
+lineJoin "round"
+beginPath
+moveTo -2190 5541
+lineTo -1375 4049
+lineTo -173 2993
+stroke
+beginPath
+moveTo -2400 2750
+lineTo -30 2371
+lineTo -400 0
+lineTo 400 0
+stroke
+beginPath
+moveTo -2400 2750
+lineTo -2330 4148
+lineTo -2190 5541
+lineTo -2130 6138
+stroke
+beginPath
+arc -2041 7034 900 0 62832
+fillStyle "#ffffff"
+fill
+stroke
+fillStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -2349 7200
+quadraticCurveTo -2177 7473 -2063 7172
+quadraticCurveTo -2235 6899 -2349 7200
+closePath
+stroke
+beginPath
+arc -2206 7186 72 0 62832
+fill
+beginPath
+moveTo -2049 7396
+lineTo -2318 7423
+stroke
+beginPath
+moveTo -1812 7147
+quadraticCurveTo -1640 7419 -1526 7118
+quadraticCurveTo -1698 6846 -1812 7147
+closePath
+stroke
+beginPath
+arc -1669 7132 72 0 62832
+fill
+beginPath
+moveTo -1781 7370
+lineTo -1512 7343
+stroke
+beginPath
+moveTo -2256 6694
+quadraticCurveTo -1987 6667 -1718 6640
+quadraticCurveTo -1987 6667 -2256 6694
+closePath
+fill
+stroke
+lineWidth 250
+beginPath
+moveTo -2400 2750
+lineTo -32 2361
+lineTo 400 0
+lineTo 1200 0
+stroke
+beginPath
+moveTo -2190 5541
+lineTo -1528 3975
+lineTo -438 2805
+stroke
+restore
+restore"
+`;
+
+exports[`the samples > draws the action sitDown as recorded > frame 53 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 10800000
+clip
+setTransform 4320000 0 0 -4320000 5400000 9504000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -12500 0
+lineTo 12500 0
+stroke
+restore
+save
+save
+translate -2400 0
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineJoin "round"
+lineWidth 150
+fillStyle "#d9b382"
+beginPath
+rect -1800 0 3600 2600
+fill
+stroke
+lineWidth 80
+beginPath
+rect -1436 364 2872 1872
+moveTo -1436 364
+lineTo 1436 2236
+stroke
+restore
+restore
+save
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineCap "round"
+lineJoin "round"
+beginPath
+moveTo -2190 5541
+lineTo -1375 4049
+lineTo -173 2993
+stroke
+beginPath
+moveTo -2400 2750
+lineTo -30 2371
+lineTo -400 0
+lineTo 400 0
+stroke
+beginPath
+moveTo -2400 2750
+lineTo -2330 4148
+lineTo -2190 5541
+lineTo -2130 6138
+stroke
+beginPath
+arc -2041 7034 900 0 62832
+fillStyle "#ffffff"
+fill
+stroke
+fillStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -2349 7200
+quadraticCurveTo -2177 7473 -2063 7172
+quadraticCurveTo -2235 6899 -2349 7200
+closePath
+stroke
+beginPath
+arc -2206 7186 72 0 62832
+fill
+beginPath
+moveTo -2049 7396
+lineTo -2318 7423
+stroke
+beginPath
+moveTo -1812 7147
+quadraticCurveTo -1640 7419 -1526 7118
+quadraticCurveTo -1698 6846 -1812 7147
+closePath
+stroke
+beginPath
+arc -1669 7132 72 0 62832
+fill
+beginPath
+moveTo -1781 7370
+lineTo -1512 7343
+stroke
+beginPath
+moveTo -2256 6694
+quadraticCurveTo -1987 6667 -1718 6640
+quadraticCurveTo -1987 6667 -2256 6694
+closePath
+fill
+stroke
+lineWidth 250
+beginPath
+moveTo -2400 2750
+lineTo -32 2361
+lineTo 400 0
+lineTo 1200 0
+stroke
+beginPath
+moveTo -2190 5541
+lineTo -1528 3975
+lineTo -438 2805
+stroke
+restore
+restore"
+`;
+
+exports[`the samples > draws the action slump as recorded > frame 0 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 10800000
+clip
+setTransform 4320000 0 0 -4320000 5400000 9504000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -12500 0
+lineTo 12500 0
+stroke
+restore
+save
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineCap "round"
+lineJoin "round"
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 6200
+lineTo 0 7600
+lineTo 0 8200
+stroke
+beginPath
+arc 0 9100 900 0 62832
+fillStyle "#ffffff"
+fill
+stroke
+fillStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -324 9235
+quadraticCurveTo -180 9523 -36 9235
+quadraticCurveTo -180 8947 -324 9235
+closePath
+stroke
+beginPath
+arc -180 9235 72 0 62832
+fill
+beginPath
+moveTo -45 9460
+lineTo -315 9460
+stroke
+beginPath
+moveTo 216 9235
+quadraticCurveTo 360 9523 504 9235
+quadraticCurveTo 360 8947 216 9235
+closePath
+stroke
+beginPath
+arc 360 9235 72 0 62832
+fill
+beginPath
+moveTo 225 9460
+lineTo 495 9460
+stroke
+beginPath
+moveTo -180 8740
+quadraticCurveTo 90 8740 360 8740
+quadraticCurveTo 90 8740 -180 8740
+closePath
+fill
+stroke
+lineWidth 250
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+restore
+restore"
+`;
+
+exports[`the samples > draws the action slump as recorded > frame 8 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 10800000
+clip
+setTransform 4320000 0 0 -4320000 5400000 9504000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -12500 0
+lineTo 12500 0
+stroke
+restore
+save
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineCap "round"
+lineJoin "round"
+beginPath
+moveTo -54 7599
+lineTo -21 5900
+lineTo 10 4300
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 4800
+lineTo -15 6200
+lineTo -54 7599
+lineTo -83 8199
+stroke
+beginPath
+arc -128 9098 900 0 62832
+fillStyle "#ffffff"
+fill
+stroke
+fillStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -458 9216
+quadraticCurveTo -328 9511 -170 9231
+quadraticCurveTo -300 8936 -458 9216
+closePath
+stroke
+beginPath
+arc -314 9224 72 0 62832
+fill
+beginPath
+moveTo -190 9455
+lineTo -460 9442
+stroke
+beginPath
+moveTo 81 9243
+quadraticCurveTo 211 9538 369 9257
+quadraticCurveTo 239 8962 81 9243
+closePath
+stroke
+beginPath
+arc 225 9250 72 0 62832
+fill
+beginPath
+moveTo 79 9468
+lineTo 349 9481
+stroke
+beginPath
+moveTo -290 8729
+quadraticCurveTo -20 8742 250 8756
+quadraticCurveTo -20 8742 -290 8729
+closePath
+fill
+stroke
+lineWidth 250
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo -54 7599
+lineTo -21 5900
+lineTo 10 4300
+stroke
+restore
+restore"
+`;
+
+exports[`the samples > draws the action slump as recorded > frame 16 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 10800000
+clip
+setTransform 4320000 0 0 -4320000 5400000 9504000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -12500 0
+lineTo 12500 0
+stroke
+restore
+save
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineCap "round"
+lineJoin "round"
+beginPath
+moveTo -160 7595
+lineTo -10 5901
+lineTo 153 4310
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 4800
+lineTo -49 6199
+lineTo -160 7595
+lineTo -279 8183
+stroke
+beginPath
+arc -457 9065 900 0 62832
+fillStyle "#ffffff"
+fill
+stroke
+fillStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -802 9133
+quadraticCurveTo -717 9444 -519 9190
+quadraticCurveTo -603 8879 -802 9133
+closePath
+stroke
+beginPath
+arc -660 9162 72 0 62832
+fill
+beginPath
+moveTo -573 9409
+lineTo -837 9356
+stroke
+beginPath
+moveTo -272 9240
+quadraticCurveTo -188 9551 10 9297
+quadraticCurveTo -74 8986 -272 9240
+closePath
+stroke
+beginPath
+arc -131 9269 72 0 62832
+fill
+beginPath
+moveTo -308 9462
+lineTo -43 9516
+stroke
+beginPath
+moveTo -562 8677
+quadraticCurveTo -298 8730 -33 8783
+quadraticCurveTo -298 8730 -562 8677
+closePath
+fill
+stroke
+lineWidth 250
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo -160 7595
+lineTo 13 5904
+lineTo 190 4313
+stroke
+restore
+restore"
+`;
+
+exports[`the samples > draws the action slump as recorded > frame 24 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 10800000
+clip
+setTransform 4320000 0 0 -4320000 5400000 9504000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -12500 0
+lineTo 12500 0
+stroke
+restore
+save
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineCap "round"
+lineJoin "round"
+beginPath
+moveTo 917 7393
+lineTo 795 5697
+lineTo 863 4099
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 4800
+lineTo 210 6184
+lineTo 917 7393
+lineTo 1373 7782
+stroke
+beginPath
+arc 2057 8367 900 0 62832
+fillStyle "#ffffff"
+fill
+stroke
+fillStyle "#111111"
+lineWidth 100
+beginPath
+moveTo 1950 8701
+quadraticCurveTo 2262 8778 2137 8482
+quadraticCurveTo 1824 8404 1950 8701
+closePath
+stroke
+beginPath
+arc 2043 8591 72 0 62832
+fill
+beginPath
+moveTo 2302 8635
+lineTo 2127 8840
+stroke
+beginPath
+moveTo 2300 8290
+quadraticCurveTo 2613 8368 2487 8071
+quadraticCurveTo 2175 7994 2300 8290
+closePath
+stroke
+beginPath
+arc 2394 8181 72 0 62832
+fill
+beginPath
+moveTo 2477 8429
+lineTo 2653 8224
+stroke
+beginPath
+moveTo 1667 8270
+quadraticCurveTo 1842 8065 2017 7859
+quadraticCurveTo 1842 8065 1667 8270
+closePath
+fill
+stroke
+lineWidth 250
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 917 7393
+lineTo 990 5694
+lineTo 1181 4106
+stroke
+restore
+restore"
+`;
+
+exports[`the samples > draws the action slump as recorded > frame 31 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 10800000
+clip
+setTransform 4320000 0 0 -4320000 5400000 9504000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -12500 0
+lineTo 12500 0
+stroke
+restore
+save
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineCap "round"
+lineJoin "round"
+beginPath
+moveTo 1067 7314
+lineTo 903 5622
+lineTo 957 4023
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 4800
+lineTo 250 6178
+lineTo 1067 7314
+lineTo 1647 7470
+stroke
+beginPath
+arc 2515 7705 900 0 62832
+fillStyle "#ffffff"
+fill
+stroke
+fillStyle "#111111"
+lineWidth 100
+beginPath
+moveTo 2561 8053
+quadraticCurveTo 2877 7989 2636 7775
+quadraticCurveTo 2321 7839 2561 8053
+closePath
+stroke
+beginPath
+arc 2599 7914 72 0 62832
+fill
+beginPath
+moveTo 2851 7842
+lineTo 2781 8103
+stroke
+beginPath
+moveTo 2702 7532
+quadraticCurveTo 3018 7468 2777 7254
+quadraticCurveTo 2462 7318 2702 7532
+closePath
+stroke
+beginPath
+arc 2740 7393 72 0 62832
+fill
+beginPath
+moveTo 2922 7582
+lineTo 2992 7321
+stroke
+beginPath
+moveTo 2121 7785
+quadraticCurveTo 2191 7524 2262 7264
+quadraticCurveTo 2191 7524 2121 7785
+closePath
+fill
+stroke
+lineWidth 250
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 1067 7314
+lineTo 1125 5615
+lineTo 1318 4027
+stroke
+restore
+restore"
+`;
+
+exports[`the samples > draws the action slump as recorded > frame 39 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 10800000
+clip
+setTransform 4320000 0 0 -4320000 5400000 9504000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -12500 0
+lineTo 12500 0
+stroke
+restore
+save
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineCap "round"
+lineJoin "round"
+beginPath
+moveTo 967 7368
+lineTo 831 5674
+lineTo 895 4075
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 4800
+lineTo 223 6182
+lineTo 967 7368
+lineTo 1522 7595
+stroke
+beginPath
+arc 2356 7934 900 0 62832
+fillStyle "#ffffff"
+fill
+stroke
+fillStyle "#111111"
+lineWidth 100
+beginPath
+moveTo 2359 8285
+quadraticCurveTo 2680 8260 2467 8018
+quadraticCurveTo 2146 8043 2359 8285
+closePath
+stroke
+beginPath
+arc 2413 8152 72 0 62832
+fill
+beginPath
+moveTo 2672 8112
+lineTo 2570 8362
+stroke
+beginPath
+moveTo 2562 7785
+quadraticCurveTo 2883 7760 2671 7518
+quadraticCurveTo 2350 7543 2562 7785
+closePath
+stroke
+beginPath
+arc 2617 7652 72 0 62832
+fill
+beginPath
+moveTo 2774 7862
+lineTo 2876 7611
+stroke
+beginPath
+moveTo 1955 7965
+quadraticCurveTo 2056 7715 2158 7465
+quadraticCurveTo 2056 7715 1955 7965
+closePath
+fill
+stroke
+lineWidth 250
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 967 7368
+lineTo 1035 5670
+lineTo 1226 4081
+stroke
+restore
+restore"
+`;
+
+exports[`the samples > draws the action slump as recorded > frame 47 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 10800000
+clip
+setTransform 4320000 0 0 -4320000 5400000 9504000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -12500 0
+lineTo 12500 0
+stroke
+restore
+save
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineCap "round"
+lineJoin "round"
+beginPath
+moveTo 967 7368
+lineTo 831 5674
+lineTo 895 4075
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 4800
+lineTo 223 6182
+lineTo 967 7368
+lineTo 1522 7595
+stroke
+beginPath
+arc 2356 7934 900 0 62832
+fillStyle "#ffffff"
+fill
+stroke
+fillStyle "#111111"
+lineWidth 100
+beginPath
+moveTo 2359 8285
+quadraticCurveTo 2680 8260 2467 8018
+quadraticCurveTo 2146 8043 2359 8285
+closePath
+stroke
+beginPath
+arc 2413 8152 72 0 62832
+fill
+beginPath
+moveTo 2672 8112
+lineTo 2570 8362
+stroke
+beginPath
+moveTo 2562 7785
+quadraticCurveTo 2883 7760 2671 7518
+quadraticCurveTo 2350 7543 2562 7785
+closePath
+stroke
+beginPath
+arc 2617 7652 72 0 62832
+fill
+beginPath
+moveTo 2774 7862
+lineTo 2876 7611
+stroke
+beginPath
+moveTo 1955 7965
+quadraticCurveTo 2056 7715 2158 7465
+quadraticCurveTo 2056 7715 1955 7965
+closePath
+fill
+stroke
+lineWidth 250
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 967 7368
+lineTo 1035 5670
+lineTo 1226 4081
+stroke
+restore
+restore"
+`;
+
+exports[`the samples > draws the action throw as recorded > frame 0 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 10800000
+clip
+setTransform 4320000 0 0 -4320000 5400000 9504000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -12500 0
+lineTo 12500 0
+stroke
+restore
+save
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineCap "round"
+lineJoin "round"
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 6200
+lineTo 0 7600
+lineTo 0 8200
+stroke
+beginPath
+arc 0 9100 900 0 62832
+fillStyle "#ffffff"
+fill
+stroke
+fillStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -324 9235
+quadraticCurveTo -180 9523 -36 9235
+quadraticCurveTo -180 8947 -324 9235
+closePath
+stroke
+beginPath
+arc -180 9235 72 0 62832
+fill
+beginPath
+moveTo -45 9460
+lineTo -315 9460
+stroke
+beginPath
+moveTo 216 9235
+quadraticCurveTo 360 9523 504 9235
+quadraticCurveTo 360 8947 216 9235
+closePath
+stroke
+beginPath
+arc 360 9235 72 0 62832
+fill
+beginPath
+moveTo 225 9460
+lineTo 495 9460
+stroke
+beginPath
+moveTo -180 8740
+quadraticCurveTo 90 8740 360 8740
+quadraticCurveTo 90 8740 -180 8740
+closePath
+fill
+stroke
+lineWidth 250
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+restore
+save
+save
+translate 0 3800
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+beginPath
+arc 0 600 600 0 62832
+fillStyle "#e4572e"
+fill
+lineWidth 150
+stroke
+beginPath
+arc -540 600 660 -9000 9000
+lineWidth 80
+stroke
+restore
+restore
+restore"
+`;
+
+exports[`the samples > draws the action throw as recorded > frame 9 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 10800000
+clip
+setTransform 4320000 0 0 -4320000 5400000 9504000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -12500 0
+lineTo 12500 0
+stroke
+restore
+save
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineCap "round"
+lineJoin "round"
+beginPath
+moveTo -1260 7471
+lineTo 406 7132
+lineTo 2006 7108
+stroke
+beginPath
+moveTo -444 4800
+lineTo 1060 2930
+lineTo 530 589
+lineTo 1311 413
+stroke
+beginPath
+moveTo -444 4800
+lineTo -753 6166
+lineTo -1260 7471
+lineTo -1215 8069
+stroke
+beginPath
+arc -1149 8967 900 0 62832
+fillStyle "#ffffff"
+fill
+stroke
+fillStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -1462 9125
+quadraticCurveTo -1297 9402 -1175 9104
+quadraticCurveTo -1340 8827 -1462 9125
+closePath
+stroke
+beginPath
+arc -1318 9114 72 0 62832
+fill
+beginPath
+moveTo -1167 9329
+lineTo -1436 9349
+stroke
+beginPath
+moveTo -923 9085
+quadraticCurveTo -758 9362 -636 9064
+quadraticCurveTo -801 8787 -923 9085
+closePath
+stroke
+beginPath
+arc -780 9075 72 0 62832
+fill
+beginPath
+moveTo -898 9309
+lineTo -628 9289
+stroke
+beginPath
+moveTo -1355 8621
+quadraticCurveTo -1086 8601 -816 8581
+quadraticCurveTo -1086 8601 -1355 8621
+closePath
+fill
+stroke
+lineWidth 250
+beginPath
+moveTo -444 4800
+lineTo -223 2410
+lineTo -2 20
+lineTo 798 23
+stroke
+beginPath
+moveTo -1260 7471
+lineTo -373 8921
+lineTo -1123 10334
+stroke
+restore
+save
+save
+translate -1123 9834
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+beginPath
+arc 0 600 600 0 62832
+fillStyle "#e4572e"
+fill
+lineWidth 150
+stroke
+beginPath
+arc -540 600 660 -9000 9000
+lineWidth 80
+stroke
+restore
+restore
+restore"
+`;
+
+exports[`the samples > draws the action throw as recorded > frame 19 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 10800000
+clip
+setTransform 4320000 0 0 -4320000 5400000 9504000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -12500 0
+lineTo 12500 0
+stroke
+restore
+save
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineCap "round"
+lineJoin "round"
+beginPath
+moveTo 1679 7224
+lineTo 891 5717
+lineTo 711 4127
+stroke
+beginPath
+moveTo 823 4563
+lineTo 1784 2364
+lineTo 2200 0
+lineTo 2974 201
+stroke
+beginPath
+moveTo 823 4563
+lineTo 1174 5918
+lineTo 1679 7224
+lineTo 1878 7790
+stroke
+beginPath
+arc 2175 8639 900 0 62832
+fillStyle "#ffffff"
+fill
+stroke
+fillStyle "#111111"
+lineWidth 100
+beginPath
+moveTo 1914 8874
+quadraticCurveTo 2145 9098 2186 8779
+quadraticCurveTo 1955 8554 1914 8874
+closePath
+stroke
+beginPath
+arc 2050 8826 72 0 62832
+fill
+beginPath
+moveTo 2252 8994
+lineTo 1997 9083
+stroke
+beginPath
+moveTo 2424 8695
+quadraticCurveTo 2655 8919 2696 8600
+quadraticCurveTo 2464 8376 2424 8695
+closePath
+stroke
+beginPath
+arc 2560 8648 72 0 62832
+fill
+beginPath
+moveTo 2507 8905
+lineTo 2762 8815
+stroke
+beginPath
+moveTo 1886 8359
+quadraticCurveTo 2141 8270 2396 8180
+quadraticCurveTo 2141 8270 1886 8359
+closePath
+fill
+stroke
+lineWidth 250
+beginPath
+moveTo 823 4563
+lineTo 1480 2254
+lineTo -7 370
+lineTo 682 -38
+stroke
+beginPath
+moveTo 1679 7224
+lineTo 3268 6620
+lineTo 4846 6887
+stroke
+restore
+save
+save
+translate 2616 9742
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+beginPath
+arc 0 600 600 0 62832
+fillStyle "#e4572e"
+fill
+lineWidth 150
+stroke
+beginPath
+arc -540 600 660 -9000 9000
+lineWidth 80
+stroke
+restore
+restore
+restore"
+`;
+
+exports[`the samples > draws the action throw as recorded > frame 28 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 10800000
+clip
+setTransform 4320000 0 0 -4320000 5400000 9504000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -12500 0
+lineTo 12500 0
+stroke
+restore
+save
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineCap "round"
+lineJoin "round"
+beginPath
+moveTo 2517 6953
+lineTo 1009 6169
+lineTo -16 4939
+stroke
+beginPath
+moveTo 1191 4502
+lineTo 2332 2391
+lineTo 2183 -4
+lineTo 2983 26
+stroke
+beginPath
+moveTo 1191 4502
+lineTo 1732 5794
+lineTo 2517 6953
+lineTo 2749 7506
+stroke
+beginPath
+arc 3097 8336 900 0 62832
+fillStyle "#ffffff"
+fill
+stroke
+fillStyle "#111111"
+lineWidth 100
+beginPath
+moveTo 2850 8586
+quadraticCurveTo 3094 8796 3116 8474
+quadraticCurveTo 2872 8265 2850 8586
+closePath
+stroke
+beginPath
+arc 2983 8530 72 0 62832
+fill
+beginPath
+moveTo 3194 8685
+lineTo 2945 8790
+stroke
+beginPath
+moveTo 3348 8377
+quadraticCurveTo 3592 8587 3614 8266
+quadraticCurveTo 3370 8056 3348 8377
+closePath
+stroke
+beginPath
+arc 3481 8321 72 0 62832
+fill
+beginPath
+moveTo 3443 8581
+lineTo 3692 8477
+stroke
+beginPath
+moveTo 2792 8074
+quadraticCurveTo 3041 7969 3290 7865
+quadraticCurveTo 3041 7969 2792 8074
+closePath
+fill
+stroke
+lineWidth 250
+beginPath
+moveTo 1191 4502
+lineTo 1725 2163
+lineTo 0 495
+lineTo 658 41
+stroke
+beginPath
+moveTo 2517 6953
+lineTo 3470 5545
+lineTo 4717 4542
+stroke
+restore
+save
+save
+translate 8432 3525
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+beginPath
+arc 0 600 600 0 62832
+fillStyle "#e4572e"
+fill
+lineWidth 150
+stroke
+beginPath
+arc -540 600 660 -9000 9000
+lineWidth 80
+stroke
+restore
+restore
+restore"
+`;
+
+exports[`the samples > draws the action throw as recorded > frame 37 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 10800000
+clip
+setTransform 4320000 0 0 -4320000 5400000 9504000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -12500 0
+lineTo 12500 0
+stroke
+restore
+save
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineCap "round"
+lineJoin "round"
+beginPath
+moveTo 502 7529
+lineTo 143 5867
+lineTo -72 4281
+stroke
+beginPath
+moveTo 232 4742
+lineTo 604 2371
+lineTo 406 -21
+lineTo 1204 -71
+stroke
+beginPath
+moveTo 232 4742
+lineTo 340 6138
+lineTo 502 7529
+lineTo 548 8127
+stroke
+beginPath
+arc 617 9024 900 0 62832
+fillStyle "#ffffff"
+fill
+stroke
+fillStyle "#111111"
+lineWidth 100
+beginPath
+moveTo 305 9184
+quadraticCurveTo 470 9460 592 9161
+quadraticCurveTo 426 8885 305 9184
+closePath
+stroke
+beginPath
+arc 448 9173 72 0 62832
+fill
+beginPath
+moveTo 600 9386
+lineTo 331 9407
+stroke
+beginPath
+moveTo 843 9142
+quadraticCurveTo 1009 9418 1130 9120
+quadraticCurveTo 964 8844 843 9142
+closePath
+stroke
+beginPath
+arc 987 9131 72 0 62832
+fill
+beginPath
+moveTo 869 9366
+lineTo 1139 9345
+stroke
+beginPath
+moveTo 410 8679
+quadraticCurveTo 679 8658 948 8637
+quadraticCurveTo 679 8658 410 8679
+closePath
+fill
+stroke
+lineWidth 250
+beginPath
+moveTo 232 4742
+lineTo 621 2374
+lineTo -2 56
+lineTo 778 -122
+stroke
+beginPath
+moveTo 502 7529
+lineTo 698 5840
+lineTo 975 4264
+stroke
+restore
+save
+save
+translate 11200 0
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+beginPath
+arc 0 600 600 0 62832
+fillStyle "#e4572e"
+fill
+lineWidth 150
+stroke
+beginPath
+arc -540 600 660 -9000 9000
+lineWidth 80
+stroke
+restore
+restore
+restore"
+`;
+
+exports[`the samples > draws the action throw as recorded > frame 47 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 10800000
+clip
+setTransform 4320000 0 0 -4320000 5400000 9504000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -12500 0
+lineTo 12500 0
+stroke
+restore
+save
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineCap "round"
+lineJoin "round"
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 6200
+lineTo 0 7600
+lineTo 0 8200
+stroke
+beginPath
+arc 0 9100 900 0 62832
+fillStyle "#ffffff"
+fill
+stroke
+fillStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -324 9235
+quadraticCurveTo -180 9523 -36 9235
+quadraticCurveTo -180 8947 -324 9235
+closePath
+stroke
+beginPath
+arc -180 9235 72 0 62832
+fill
+beginPath
+moveTo -45 9460
+lineTo -315 9460
+stroke
+beginPath
+moveTo 216 9235
+quadraticCurveTo 360 9523 504 9235
+quadraticCurveTo 360 8947 216 9235
+closePath
+stroke
+beginPath
+arc 360 9235 72 0 62832
+fill
+beginPath
+moveTo 225 9460
+lineTo 495 9460
+stroke
+beginPath
+moveTo -180 8740
+quadraticCurveTo 90 8740 360 8740
+quadraticCurveTo 90 8740 -180 8740
+closePath
+fill
+stroke
+lineWidth 250
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+restore
+save
+save
+translate 11200 0
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+beginPath
+arc 0 600 600 0 62832
+fillStyle "#e4572e"
+fill
+lineWidth 150
+stroke
+beginPath
+arc -540 600 660 -9000 9000
+lineWidth 80
+stroke
+restore
+restore
+restore"
+`;
+
+exports[`the samples > draws the action throw as recorded > frame 56 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 10800000
+clip
+setTransform 4320000 0 0 -4320000 5400000 9504000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -12500 0
+lineTo 12500 0
+stroke
+restore
+save
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineCap "round"
+lineJoin "round"
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 6200
+lineTo 0 7600
+lineTo 0 8200
+stroke
+beginPath
+arc 0 9100 900 0 62832
+fillStyle "#ffffff"
+fill
+stroke
+fillStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -324 9235
+quadraticCurveTo -180 9523 -36 9235
+quadraticCurveTo -180 8947 -324 9235
+closePath
+stroke
+beginPath
+arc -180 9235 72 0 62832
+fill
+beginPath
+moveTo -45 9460
+lineTo -315 9460
+stroke
+beginPath
+moveTo 216 9235
+quadraticCurveTo 360 9523 504 9235
+quadraticCurveTo 360 8947 216 9235
+closePath
+stroke
+beginPath
+arc 360 9235 72 0 62832
+fill
+beginPath
+moveTo 225 9460
+lineTo 495 9460
+stroke
+beginPath
+moveTo -180 8740
+quadraticCurveTo 90 8740 360 8740
+quadraticCurveTo 90 8740 -180 8740
+closePath
+fill
+stroke
+lineWidth 250
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+restore
+save
+save
+translate 11200 0
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+beginPath
+arc 0 600 600 0 62832
+fillStyle "#e4572e"
+fill
+lineWidth 150
+stroke
+beginPath
+arc -540 600 660 -9000 9000
+lineWidth 80
+stroke
+restore
+restore
+restore"
+`;
+
+exports[`the samples > draws the expression dejected as recorded > frame 0 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 10800000
+clip
+setTransform 4320000 0 0 -4320000 5400000 9504000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -12500 0
+lineTo 12500 0
+stroke
+restore
+save
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineCap "round"
+lineJoin "round"
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 6200
+lineTo 0 7600
+lineTo 0 8200
+stroke
+beginPath
+arc 0 9100 900 0 62832
+fillStyle "#ffffff"
+fill
+stroke
+fillStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -324 9235
+quadraticCurveTo -180 9523 -36 9235
+quadraticCurveTo -180 8947 -324 9235
+closePath
+stroke
+beginPath
+arc -180 9235 72 0 62832
+fill
+beginPath
+moveTo -45 9460
+lineTo -315 9460
+stroke
+beginPath
+moveTo 216 9235
+quadraticCurveTo 360 9523 504 9235
+quadraticCurveTo 360 8947 216 9235
+closePath
+stroke
+beginPath
+arc 360 9235 72 0 62832
+fill
+beginPath
+moveTo 225 9460
+lineTo 495 9460
+stroke
+beginPath
+moveTo -180 8740
+quadraticCurveTo 90 8740 360 8740
+quadraticCurveTo 90 8740 -180 8740
+closePath
+fill
+stroke
+lineWidth 250
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+restore
+restore"
+`;
+
+exports[`the samples > draws the expression focused as recorded > frame 0 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 10800000
+clip
+setTransform 4320000 0 0 -4320000 5400000 9504000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -12500 0
+lineTo 12500 0
+stroke
+restore
+save
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineCap "round"
+lineJoin "round"
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 6200
+lineTo 0 7600
+lineTo 0 8200
+stroke
+beginPath
+arc 0 9100 900 0 62832
+fillStyle "#ffffff"
+fill
+stroke
+fillStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -324 9235
+quadraticCurveTo -180 9523 -36 9235
+quadraticCurveTo -180 8947 -324 9235
+closePath
+stroke
+beginPath
+arc -180 9235 72 0 62832
+fill
+beginPath
+moveTo -45 9460
+lineTo -315 9460
+stroke
+beginPath
+moveTo 216 9235
+quadraticCurveTo 360 9523 504 9235
+quadraticCurveTo 360 8947 216 9235
+closePath
+stroke
+beginPath
+arc 360 9235 72 0 62832
+fill
+beginPath
+moveTo 225 9460
+lineTo 495 9460
+stroke
+beginPath
+moveTo -180 8740
+quadraticCurveTo 90 8740 360 8740
+quadraticCurveTo 90 8740 -180 8740
+closePath
+fill
+stroke
+lineWidth 250
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+restore
+restore"
+`;
+
+exports[`the samples > draws the expression neutral as recorded > frame 0 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 10800000
+clip
+setTransform 4320000 0 0 -4320000 5400000 9504000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -12500 0
+lineTo 12500 0
+stroke
+restore
+save
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineCap "round"
+lineJoin "round"
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 6200
+lineTo 0 7600
+lineTo 0 8200
+stroke
+beginPath
+arc 0 9100 900 0 62832
+fillStyle "#ffffff"
+fill
+stroke
+fillStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -324 9235
+quadraticCurveTo -180 9523 -36 9235
+quadraticCurveTo -180 8947 -324 9235
+closePath
+stroke
+beginPath
+arc -180 9235 72 0 62832
+fill
+beginPath
+moveTo -45 9460
+lineTo -315 9460
+stroke
+beginPath
+moveTo 216 9235
+quadraticCurveTo 360 9523 504 9235
+quadraticCurveTo 360 8947 216 9235
+closePath
+stroke
+beginPath
+arc 360 9235 72 0 62832
+fill
+beginPath
+moveTo 225 9460
+lineTo 495 9460
+stroke
+beginPath
+moveTo -180 8740
+quadraticCurveTo 90 8740 360 8740
+quadraticCurveTo 90 8740 -180 8740
+closePath
+fill
+stroke
+lineWidth 250
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+restore
+restore"
+`;
+
+exports[`the samples > draws the prop ball as recorded > frame 0 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 10800000
+clip
+setTransform 4320000 0 0 -4320000 5400000 9504000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -12500 0
+lineTo 12500 0
+stroke
+restore
+save
+save
+translate -3000 0
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+beginPath
+arc 0 600 600 0 62832
+fillStyle "#e4572e"
+fill
+lineWidth 150
+stroke
+beginPath
+arc -540 600 660 -9000 9000
+lineWidth 80
+stroke
+restore
+restore
+save
+save
+translate 0 0
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+beginPath
+arc 0 1200 1200 0 62832
+fillStyle "#f2c14e"
+fill
+lineWidth 150
+stroke
+beginPath
+arc -1080 1200 1320 -9000 9000
+lineWidth 80
+stroke
+restore
+restore
+restore"
+`;
+
+exports[`the samples > draws the prop box as recorded > frame 0 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 10800000
+clip
+setTransform 4320000 0 0 -4320000 5400000 9504000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -12500 0
+lineTo 12500 0
+stroke
+restore
+save
+save
+translate -4000 0
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineJoin "round"
+lineWidth 150
+fillStyle "#d9b382"
+beginPath
+rect -1800 0 3600 2600
+fill
+stroke
+lineWidth 80
+beginPath
+rect -1436 364 2872 1872
+moveTo -1436 364
+lineTo 1436 2236
+stroke
+restore
+restore
+save
+save
+translate 3500 0
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineJoin "round"
+lineWidth 150
+fillStyle "#b9c4cc"
+beginPath
+rect -2500 0 5000 5000
+fill
+stroke
+lineWidth 80
+beginPath
+rect -1800 700 3600 3600
+moveTo -1800 700
+lineTo 1800 4300
+stroke
+restore
+restore
+restore"
+`;

@@ -159,6 +159,33 @@ export default scene((stage) => {
 });
 ```
 
+- The first built-ins are the actions `sitDown`, `throw` and `slump`, the expressions
+  `neutral`, `dejected` and `focused`, and the props `ball` and `box`. A built-in is
+  named by a string, and its parameters are typed by that name. `mood` puts an
+  expression on the face for the length of an action, and an action lists the moods that
+  also change its body. `throw` takes the prop it throws: the ball rides the near hand
+  until the mark `release`, then flies a parabola. A prop has `place`, `hold` (it rides
+  a hand or a foot) and `move` (a straight or arced path), which is how your own action
+  moves one.
+
+```ts
+import { scene } from "charade";
+
+export default scene({ rows: 2 }, (stage) => {
+  const top = stage.row(0);
+  top.prop("box").place({ x: -0.24, y: 0 });
+  const sitter = top.actor();
+  sitter.do("sitDown", { mood: "dejected" });
+  sitter.do("slump");
+
+  const bottom = stage.row(1);
+  const ball = bottom.prop("ball");
+  const thrower = bottom.actor();
+  const thrown = thrower.do("throw", { ball, to: { x: 2, y: 0 }, mood: "focused" });
+  thrower.express("neutral", { at: thrown.marks.release });
+});
+```
+
 See the generated TypeDoc documentation from `pnpm docs:build` for the full API
 reference.
 

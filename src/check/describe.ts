@@ -1,10 +1,11 @@
-import { facingOf, idOf } from "../draw/frame.js";
+import { facingOf } from "../draw/figure.js";
+import { idOf } from "../draw/frame.js";
+import { propPlacement } from "../draw/prop.js";
 import { poseAtFrame } from "../rig/compose.js";
 import { forwardKinematics, mirrorSkeleton, type Point } from "../rig/kinematics.js";
 import { CHANNEL_NAMES, REST_POSE } from "../rig/rig.js";
 import type { Scene } from "../scene/scene.js";
 import { frameInSegment } from "../timeline/time.js";
-import { propPoint } from "./check.js";
 
 /** Where an actor's body is, in its row's units. The feet are the ankle points. */
 export interface ActorPoints {
@@ -97,9 +98,13 @@ export function describeState(scene: Scene, frame: number): StateDescription {
           actors.push({ id, facing, points: null, pose: null });
         }
       } else if (track.kind === "prop") {
-        const at = propPoint(track, frame, timeline.fps);
-        if (at !== undefined) {
-          props.push({ id, at: rounded(at) });
+        try {
+          const placed = propPlacement(timeline, row, track, frame);
+          if (placed !== undefined) {
+            props.push({ id, at: rounded(placed.point) });
+          }
+        } catch {
+          // Its holder's function threw at this frame; `check` reports why.
         }
       } else if (
         track.kind === "draw" &&

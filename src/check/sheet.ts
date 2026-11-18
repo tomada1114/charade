@@ -1,8 +1,7 @@
 import type { DrawingContext } from "../draw/context.js";
-import { drawFigure, INK, PAPER } from "../draw/figure.js";
+import { drawFigure, facingOf, INK, PAPER } from "../draw/figure.js";
 import {
   drawRow,
-  facingOf,
   FrameItemError,
   type FrameSource,
   idOf,

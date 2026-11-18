@@ -18,7 +18,9 @@ import {
   DEFAULT_BLEND_MICROS,
   type DrawData,
   type DriveData,
+  type HoldData,
   type ItemData,
+  type MoveData,
   type PlaceData,
   isMotion,
 } from "../timeline/segments.js";
@@ -42,7 +44,8 @@ export interface StageSettings {
 interface MutableSegment {
   readonly start: Micros;
   readonly end: Micros | null;
-  readonly data: ActorSegmentData | DrawData | ItemData | PlaceData;
+  readonly data:
+    ActorSegmentData | DrawData | ItemData | PlaceData | HoldData | MoveData;
 }
 
 interface MutableTrack {
@@ -116,6 +119,11 @@ const ACTION_OPTIONS = [...TIMING, "mood", "blend", "mode"];
 const EXPRESS_OPTIONS = [...TIMING, "blend", "mode"];
 const ITEM_OPTIONS: readonly string[] = TIMING;
 const PLACE_OPTIONS = ["at"];
+const HOLD_OPTIONS = ["at", "offset"];
+const MOVE_OPTIONS = [...TIMING, "arc"];
+
+/** How long a prop's move takes when the call does not say: 0.5 s. */
+const DEFAULT_MOVE_MICROS: Micros = 500_000;
 
 const ITEM_METHODS: Readonly<Record<ItemKind, string>> = {
   action: "do",
@@ -742,7 +750,7 @@ export class SceneBuilder {
 
   #point(
     target: unknown,
-    call: "reach" | "place",
+    call: "reach" | "place" | "move" | "hold",
     where: Where,
   ): { readonly x: number; readonly y: number } | undefined {
     if (isRecord(target)) {
@@ -760,7 +768,9 @@ export class SceneBuilder {
       "ERR_SCENE_OUT_OF_RANGE",
       call === "reach"
         ? "The target of reach is not a point with finite x and y; the call was recorded as a wait."
-        : "The point given to place is not a point with finite x and y; the prop was not moved.",
+        : call === "hold"
+          ? "hold's options.offset is not a point with finite x and y; the prop was not moved."
+          : `The point given to ${call} is not a point with finite x and y; the prop was not moved.`,
       "Pass { x, y } in row units: the origin is on the ground at the row's centre, y up.",
       where,
     );
@@ -913,6 +923,7 @@ export class SceneBuilder {
     bag: Readonly<Record<string, unknown>>,
     offset: Micros,
     where: Where,
+    holder?: MutableTrack,
   ): Readonly<Record<string, unknown>> | undefined {
     const resolved: Record<string, unknown> = {};
     let runnable = true;
@@ -935,7 +946,7 @@ export class SceneBuilder {
             where,
           );
         } else {
-          resolved[key] = this.#propHandle(prop, offset);
+          resolved[key] = this.#propHandle(prop, offset, holder);
         }
         continue;
       }
@@ -1109,7 +1120,9 @@ export class SceneBuilder {
     const mood = this.#mood(bag["mood"], where);
     const start = this.#startOf(actor, "do", bag["at"], where);
     const params =
-      action === undefined ? undefined : this.#resolve(action, bag, start, where);
+      action === undefined
+        ? undefined
+        : this.#resolve(action, bag, start, where, actor.track);
 
     const clipState: ActorState = {
       id: actor.id,
@@ -1237,12 +1250,19 @@ export class SceneBuilder {
     return Object.freeze(times);
   }
 
-  /** The handle of a prop; inside an action's `build`, `at` counts from `offset`. */
-  #propHandle(prop: PropState, offset: Micros): Prop {
+  /**
+   * The handle of a prop; inside an action's `build`, `at` counts from `offset` and
+   * `holder` is the track of the actor doing the action.
+   */
+  #propHandle(prop: PropState, offset: Micros, holder?: MutableTrack): Prop {
     const handle: Prop = Object.freeze({
       id: prop.id,
       place: (point: unknown, options?: unknown) =>
         this.#placeProp(prop, point, options, offset),
+      hold: (effector: unknown, options?: unknown) =>
+        this.#holdProp(prop, effector, options, offset, holder),
+      move: (to: unknown, options?: unknown) =>
+        this.#moveProp(prop, to, options, offset),
     });
     this.#props.set(handle, prop);
     return handle;
@@ -1262,6 +1282,94 @@ export class SceneBuilder {
       });
     }
     return spanOf(start - offset, null);
+  }
+
+  #holdProp(
+    prop: PropState,
+    effector: unknown,
+    options: unknown,
+    shift: Micros,
+    holder: MutableTrack | undefined,
+  ): Span {
+    this.#open();
+    const where: Where = { row: prop.row, target: prop.id };
+    const bag = this.#options(options, HOLD_OPTIONS, "hold", where);
+    const start = (this.#seconds(bag["at"], "hold's options.at", where) ?? 0) + shift;
+    const actor =
+      holder ?? this.#rows[prop.row]?.tracks.find((track) => track.kind === "actor");
+    const offset =
+      bag["offset"] === undefined
+        ? { x: 0, y: 0 }
+        : this.#point(bag["offset"], "hold", where);
+    if (!isEffectorName(effector)) {
+      const named = typeof effector === "string";
+      this.#report(
+        "ERR_SCENE_UNKNOWN_EFFECTOR",
+        `hold puts a prop in a hand or on a foot, not ${named ? effector : "that"}; the prop was not moved.`,
+        `Use one of: ${EFFECTOR_NAMES.join(", ")}.`,
+        where,
+        { nearest: named ? nearestNames(effector, EFFECTOR_NAMES) : [] },
+      );
+    } else if (actor === undefined) {
+      this.#report(
+        "ERR_SCENE_NO_ACTOR",
+        `hold has no one to hold the prop: row ${String(prop.row)} has no actor yet; the prop was not moved.`,
+        "Create the row's actor with row.actor() before the prop is held.",
+        where,
+      );
+    } else if (!this.#rows[prop.row]?.tracks.includes(actor)) {
+      // A hold names its holder by track key within the prop's row, where another
+      // row's actor would be read as that row's own actor of the same name.
+      this.#report(
+        "ERR_SCENE_NO_ACTOR",
+        `hold has no one to hold the prop: the actor doing the action is not in row ${String(prop.row)}, the prop's row; the prop was not moved.`,
+        "Pass the action a prop of the actor's own row.",
+        where,
+      );
+    } else if (offset !== undefined) {
+      prop.track.segments.push({
+        start,
+        end: null,
+        data: {
+          kind: "hold",
+          effector,
+          actor: { name: actor.name, occurrence: actor.occurrence },
+          offset,
+        },
+      });
+    }
+    return spanOf(start - shift, null);
+  }
+
+  #moveProp(prop: PropState, to: unknown, options: unknown, offset: Micros): Span {
+    this.#open();
+    const where: Where = { row: prop.row, target: prop.id };
+    const bag = this.#options(options, MOVE_OPTIONS, "move", where);
+    const start = (this.#seconds(bag["at"], "move's options.at", where) ?? 0) + offset;
+    const end =
+      start +
+      (this.#seconds(bag["duration"], "move's options.duration", where) ??
+        DEFAULT_MOVE_MICROS);
+    const arc = bag["arc"] ?? 0;
+    const finite = typeof arc === "number" && Number.isFinite(arc);
+    if (!finite) {
+      this.#report(
+        "ERR_SCENE_OUT_OF_RANGE",
+        "move's options.arc is not a finite number; a straight line was used.",
+        "Give arc a finite number of row units, or leave it out.",
+        where,
+      );
+    }
+    const target = this.#point(to, "move", where);
+    if (target !== undefined) {
+      prop.track.segments.push({
+        start,
+        end,
+        data: { kind: "move", x: target.x, y: target.y, arc: finite ? arc + 0 : 0 },
+      });
+      this.#latest = Math.max(this.#latest, end);
+    }
+    return spanOf(start - offset, end - offset);
   }
 
   /** Records a prop, backdrop or effect on `row`: its track, and when it is shown. */

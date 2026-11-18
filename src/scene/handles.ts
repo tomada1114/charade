@@ -304,7 +304,6 @@ export interface ActionOptions {
    * The expression the face shows while the action plays. An action lists the moods
    * that also change its body.
    */
-  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents -- no names until the generated index fills the map
   readonly mood?: BuiltinName<BuiltinExpressions> | ExpressionDefinition;
   /** The blend of the action's calls that do not set their own, in seconds. */
   readonly blend?: number;
@@ -355,10 +354,51 @@ export interface PlaceOptions {
 }
 
 /**
+ * Options of `prop.hold`.
+ *
+ * @public
+ */
+export interface HoldOptions {
+  /**
+   * Scene time the prop is taken at, in seconds. Defaults to 0; inside an action's
+   * `build`, time 0 is the action's start.
+   */
+  readonly at?: number;
+  /**
+   * Where the prop's ground point sits from the hand or foot, in row units with `x`
+   * the way the holder faces: `{ x: 0, y: -0.05 }` lowers a small ball into the palm.
+   * Defaults to none, the ground point on the effector.
+   */
+  readonly offset?: Point;
+}
+
+/**
+ * Options of `prop.move`.
+ *
+ * @public
+ */
+export interface MoveOptions {
+  /**
+   * Scene time the prop sets off at, in seconds. Defaults to 0; inside an action's
+   * `build`, time 0 is the action's start.
+   */
+  readonly at?: number;
+  /** How long the prop takes to arrive, in seconds. Defaults to 0.5. */
+  readonly duration?: number;
+  /**
+   * How far the path rises above the straight line at its middle, in row units: a
+   * thrown thing's parabola. Negative sags below it. Defaults to 0, a straight line.
+   */
+  readonly arc?: number;
+}
+
+/**
  * A prop in a row. An action that moves it takes the handle as a parameter.
  *
  * @remarks
- * The prop stands with its ground point on the row's origin until it is placed.
+ * The prop stands with its ground point on the row's origin until it is placed,
+ * held or moved; the call that started last says where it is. It draws behind the
+ * row's actor, and in front of it while it moves or is in a near (`R`) hand or foot.
  * You are handed a prop by `row.prop()`; you never implement this interface.
  *
  * @public
@@ -375,6 +415,28 @@ export interface Prop {
    * @returns When the placement holds; it is open-ended.
    */
   place(point: Point, options?: PlaceOptions): Span;
+
+  /**
+   * Put the prop's ground point on a hand or a foot of the row's actor, from `at`
+   * on: it rides the effector until it is placed, held or moved again. Inside an
+   * action's `build` the holder is the actor doing the action.
+   *
+   * @param effector - Which hand or foot carries the prop.
+   * @param options - When.
+   * @returns When the hold lasts; it is open-ended.
+   */
+  hold(effector: EffectorName, options?: HoldOptions): Span;
+
+  /**
+   * Send the prop from where it is at `at` to `to`, along a closed-form path: a
+   * straight line at constant speed, lifted at its middle by `arc`. It stays on `to`
+   * afterwards.
+   *
+   * @param to - Where the ground point arrives, in row units.
+   * @param options - When, for how long, and how high the path arcs.
+   * @returns When the prop is on its way.
+   */
+  move(to: Point, options?: MoveOptions): Span;
 }
 
 /**

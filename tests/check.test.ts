@@ -171,6 +171,42 @@ describe("leaving the frame", () => {
   });
 });
 
+describe("a prop that is carried or thrown", () => {
+  it("warns while a moved prop is outside its row, measured along its path", () => {
+    const built = scene({ duration: 2 }, (stage) => {
+      // 1080 px wide at 432 px per unit shows 1.25 units either side of the centre.
+      stage.prop("ball").move({ x: 2.5, y: 0 }, { duration: 2 });
+    });
+    const { findings } = checkScene(built);
+    expect(findings).toHaveLength(1);
+    expect(findings[0]).toMatchObject({
+      code: "ERR_CHECK_OFF_FRAME",
+      severity: "warning",
+      target: "row0/prop/ball/0",
+      frames: [31, 60],
+    });
+  });
+
+  it("reports a held prop whose holder's motion throws as a failure of the prop too", () => {
+    const built = scene({ duration: 1 }, (stage) => {
+      stage.actor().drive((t) => {
+        if (t > 0.5) {
+          throw new Error("no");
+        }
+        return { spine: 0 };
+      });
+      stage.prop("ball").hold("handR");
+    });
+    const failed = checkScene(built).findings.filter(
+      (finding) => finding.code === "ERR_SCENE_DRAWING_FAILED",
+    );
+    expect(failed.map((finding) => finding.target)).toEqual([
+      "row0/actor/actor/0",
+      "row0/prop/ball/0",
+    ]);
+  });
+});
+
 describe("actor over text", () => {
   const box = (over: Partial<TextBox>): TextBox => ({
     id: "row0/label/title/0",
@@ -530,6 +566,35 @@ describe("the state description (R5)", () => {
     expect(text).toContain("pose: rest");
     expect(text).toContain("prop row0/prop/ball/0: at (0.25, 0)");
     expect(text).toContain("row 1\n  empty\n");
+  });
+
+  it("describes a held prop where the hand is, and a moved one on its path", () => {
+    const built = scene({ duration: 2 }, (stage) => {
+      const ball = stage.prop("ball");
+      stage.actor();
+      ball.hold("handR");
+      ball.move({ x: 1, y: 0.43 }, { at: 1, duration: 1 });
+    });
+    expect(describeState(built, 0).rows[0]?.props).toEqual([
+      { id: "row0/prop/ball/0", at: { x: 0, y: 0.43 } },
+    ]);
+    expect(describeState(built, 45).rows[0]?.props).toEqual([
+      { id: "row0/prop/ball/0", at: { x: 0.5, y: 0.43 } },
+    ]);
+  });
+
+  it("leaves out a prop whose holder cannot be composed", () => {
+    const built = scene({ duration: 1 }, (stage) => {
+      stage.actor().drive((t) => {
+        if (t > 0.5) {
+          throw new Error("no");
+        }
+        return { spine: 0 };
+      });
+      stage.prop("ball").hold("handR");
+    });
+    expect(describeState(built, 3).rows[0]?.props).toHaveLength(1);
+    expect(describeState(built, 20).rows[0]?.props).toEqual([]);
   });
 
   it("mirrors a figure that faces left", () => {

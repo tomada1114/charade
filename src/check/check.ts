@@ -1,4 +1,6 @@
-import { drawTrack, facingOf, idOf } from "../draw/frame.js";
+import { facingOf } from "../draw/figure.js";
+import { drawTrack, idOf } from "../draw/frame.js";
+import { propPlacement } from "../draw/prop.js";
 import { GROUND_UNITS, ROW_UNITS, rowLayout } from "../draw/layout.js";
 import { CharadeError } from "../errors.js";
 import { poseAtFrame } from "../rig/compose.js";
@@ -18,7 +20,6 @@ import {
   SEGMENT_LENGTHS,
 } from "../rig/rig.js";
 import type { Scene } from "../scene/scene.js";
-import { frameInSegment } from "../timeline/time.js";
 import {
   computeDuration,
   type Timeline,
@@ -268,43 +269,6 @@ function actorViolations(
   ];
 }
 
-function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
-  return typeof value === "object" && value !== null;
-}
-
-/**
- * Where a prop's ground point is at `frame`, or `undefined` while it is not shown: the
- * placement that started last, the row's origin before any.
- */
-export function propPoint(
-  track: TimelineTrack,
-  frame: number,
-  fps: number,
-): Point | undefined {
-  let shown = false;
-  let point: Point = { x: 0, y: 0 };
-  let placedAt = -1;
-  for (const { data, start, end } of track.segments) {
-    if (!isRecord(data) || !frameInSegment(frame, start, end, fps)) {
-      continue;
-    }
-    if (data["kind"] === "prop") {
-      shown = true;
-    }
-    const { x, y } = data;
-    if (
-      data["kind"] === "place" &&
-      typeof x === "number" &&
-      typeof y === "number" &&
-      start >= placedAt
-    ) {
-      point = { x, y };
-      placedAt = start;
-    }
-  }
-  return shown ? point : undefined;
-}
-
 /** The error finding of an item whose function threw at a frame. */
 function failure(error: unknown, row: number, id: string): Violation {
   const reason =
@@ -345,10 +309,10 @@ function violationsAt(
       const id = idOf(row, track);
       // The author's functions run only inside `watched`, where a clock or random
       // read is noted.
-      const watched = <T>(run: () => T): T | undefined => {
+      const watched = <T>(run: () => T, noteReads = true): T | undefined => {
         try {
           const { value, reads } = watchReads(run);
-          for (const read of reads) {
+          for (const read of noteReads ? reads : []) {
             found.push({
               key: `read|${id}|${read}`,
               excess: 0,
@@ -371,9 +335,11 @@ function violationsAt(
           drawTrack(new RecordingContext(), timeline, row, track, frame);
         });
       } else if (track.kind === "prop") {
-        const point = propPoint(track, frame, timeline.fps);
-        if (point !== undefined) {
-          found.push(...offFrame(area, point, point, row, id));
+        // A held prop composes its holder's pose, which calls the holder's functions.
+        // Their reads are the holder's, which its own track already reports.
+        const placed = watched(() => propPlacement(timeline, row, track, frame), false);
+        if (placed !== undefined) {
+          found.push(...offFrame(area, placed.point, placed.point, row, id));
         }
       }
     }
