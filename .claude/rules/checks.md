@@ -106,8 +106,9 @@ recorded sample is how an unintended change in appearance fails a test.
   `ERR_SCENE_NO_DURATION`, the vocabulary findings `ERR_SCENE_UNKNOWN_ACTION`,
   `ERR_SCENE_UNKNOWN_EXPRESSION`, `ERR_SCENE_UNKNOWN_PROP`,
   `ERR_SCENE_UNKNOWN_BACKDROP`, `ERR_SCENE_UNKNOWN_EFFECT` and `ERR_SCENE_UNKNOWN_MARK`
-  (each with `nearest`), `ERR_SCENE_MISSING_PARAMETER` and `ERR_SCENE_MISSING_MARK`, and
-  the warning `ERR_SCENE_FULL_BODY_CUT`. `define…` throws `ReservedParameterError`,
+  (each with `nearest`), `ERR_SCENE_MISSING_PARAMETER`, `ERR_SCENE_MISSING_MARK` and
+  `ERR_SCENE_NO_ACTOR` (a prop held in a row that has no actor yet), and the warning
+  `ERR_SCENE_FULL_BODY_CUT`. `define…` throws `ReservedParameterError`,
   `InvalidDefaultError` and `InvalidDefinitionError` (`ERR_DEFINE_`, each carrying
   `kind` and `path`). An authoring finding carries its `row` and the handle's id as
   `target`, and the channel as `joint`; it has no `source` yet, since reading a call
@@ -147,8 +148,10 @@ recorded sample is how an unintended change in appearance fails a test.
 - Leaving the frame is measured on the figure's joints and its head circle against the
   row's visible area (`width / scale` units across, −0.3 to 2.2 up), with any part
   outside counting; line width is ignored. A prop is measured at its ground point while
-  it is shown, since its drawing has no extent the check can read. A free drawing is not
-  measured.
+  it is shown, since its drawing has no extent the check can read: where it was placed,
+  on the effector that holds it, or along its move. A held prop composes its holder's
+  pose, so a holder whose function throws at a frame is a failure of the prop as well. A
+  free drawing is not measured.
 - An actor over text is a warning, not an error. Text is the top slot, so what is hidden
   is part of the figure, which a hand passing behind a label does on purpose; an error
   would stop `render` on a question of looks; and a warning can be raised to an error

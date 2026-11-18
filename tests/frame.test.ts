@@ -11,7 +11,14 @@ import {
   rowContent,
 } from "../src/draw/frame.js";
 import { rowLayout } from "../src/draw/layout.js";
-import { type Moment, type Scene, scene, type Timeline } from "../src/index.js";
+import {
+  defineProp,
+  type Moment,
+  type Scene,
+  scene,
+  type Timeline,
+} from "../src/index.js";
+import { parseTimeline, serializeTimeline } from "../src/timeline/json.js";
 
 function record(source: FrameSource, frame: number): readonly LogEntry[] {
   const ctx = new RecordingContext();
@@ -453,5 +460,173 @@ describe("the figure's strokes", () => {
     for (const radius of radii) {
       expect(radius).toBeGreaterThanOrEqual(0);
     }
+  });
+});
+
+describe("props", () => {
+  /** A prop whose drawing is one marker call, so it is found in a frame's log. */
+  const marker = defineProp({
+    name: "marker",
+    description: "A marker.",
+    params: { size: { type: "number", default: 0.25, doc: "The marker's size." } },
+    draw(ctx, { size }, moment) {
+      ctx.rect(7, 7, size, moment.duration === Infinity ? 1 : moment.progress);
+    },
+  });
+
+  function indexOf(log: readonly LogEntry[], call: string, first: number): number {
+    return log.findIndex((entry) => entry.call === call && entry.args[0] === first);
+  }
+
+  /** The index of the head's circle: the one full-turn arc the figure draws first. */
+  function headIndex(log: readonly LogEntry[]): number {
+    return log.findIndex((entry) => entry.call === "arc" && entry.args[2] === 900);
+  }
+
+  it("draws a placed prop at its ground point, in row units, behind the actor", () => {
+    const built = scene({ duration: 1 }, (stage) => {
+      stage.actor();
+      stage.prop(marker).place({ x: 0.5, y: 0.25 });
+    });
+    const log = record(built, 0);
+    const moved = indexOf(log, "translate", 5000);
+    expect(log[moved]).toEqual({ call: "translate", args: [5000, 2500] });
+    expect(log.slice(moved + 1, moved + 5)).toEqual([
+      { call: "strokeStyle", args: ["#111111"] },
+      { call: "fillStyle", args: ["#111111"] },
+      { call: "lineWidth", args: [250] },
+      { call: "rect", args: [70000, 70000, 2500, 10000] },
+    ]);
+    expect(moved).toBeGreaterThan(indexOf(log, "moveTo", -12500));
+    expect(moved).toBeLessThan(headIndex(log));
+  });
+
+  it("draws a prop in the near hand, and one on its way, in front of the actor", () => {
+    const built = scene({ duration: 2 }, (stage) => {
+      const prop = stage.prop(marker);
+      stage.actor();
+      prop.hold("handR");
+      prop.move({ x: 1, y: 0 }, { at: 1, duration: 0.5 });
+    });
+    for (const frame of [0, 40, 60]) {
+      const log = record(built, frame);
+      expect(indexOf(log, "rect", 70000)).toBeGreaterThan(headIndex(log));
+    }
+    expect(record(built, 0)).toContainEqual({ call: "translate", args: [0, 4300] });
+    expect(record(built, 60)).toContainEqual({ call: "translate", args: [10000, 0] });
+  });
+
+  it("draws a prop in the far hand behind the actor", () => {
+    const built = scene({ duration: 1 }, (stage) => {
+      stage.actor();
+      stage.prop(marker).hold("handL");
+    });
+    const log = record(built, 0);
+    expect(indexOf(log, "rect", 70000)).toBeGreaterThan(-1);
+    expect(indexOf(log, "rect", 70000)).toBeLessThan(headIndex(log));
+  });
+
+  it("gives the prop its parameters, and its segment's moment", () => {
+    const built = scene({ duration: 2 }, (stage) => {
+      stage.prop(marker, { size: 0.5, at: 1, duration: 1 });
+    });
+    expect(indexOf(record(built, 29), "rect", 70000)).toBe(-1);
+    expect(record(built, 45)).toContainEqual({
+      call: "rect",
+      args: [70000, 70000, 5000, 5000],
+    });
+  });
+
+  it("keeps what a prop sets on the context to itself", () => {
+    const loud = defineProp({
+      name: "loud",
+      description: "Sets state and leaves it.",
+      draw(ctx) {
+        ctx.lineWidth = 3;
+        ctx.save();
+      },
+    });
+    const built = scene({ duration: 1 }, (stage) => {
+      stage.prop(loud);
+      stage.actor();
+    });
+    const widths = record(built, 0)
+      .filter((entry) => entry.call === "lineWidth")
+      .map((entry) => entry.args[0]);
+    // The prop's own 3, then the figure starts from its own weight.
+    const loudest = widths.indexOf(30000);
+    expect(loudest).toBeGreaterThan(-1);
+    expect(widths[loudest + 1]).toBe(250);
+  });
+
+  it("draws a built-in named by a string, also from a parsed timeline", () => {
+    const built = scene({ duration: 1 }, (stage) => {
+      stage.prop("ball").place({ x: 0.5, y: 0 });
+    });
+    const log = record(built, 0);
+    // The ball's body: a circle of its radius, resting on its ground point.
+    expect(log).toContainEqual({
+      call: "arc",
+      args: [0, 600, 600, 0, Math.round(Math.PI * 2e4)],
+    });
+    const parsed = parseTimeline(serializeTimeline(built.timeline));
+    if (!parsed.ok) {
+      throw new Error(parsed.reason);
+    }
+    expect(record({ ...built, timeline: parsed.document.timeline }, 0)).toEqual(log);
+  });
+
+  it("draws nothing for a name that is no built-in, or a definition without its function", () => {
+    const built = scene({ duration: 1 }, (stage) => {
+      stage.prop(marker);
+    });
+    const [track] = built.timeline.rows[0]?.tracks ?? [];
+    const withData = (data: unknown): FrameSource => ({
+      ...built,
+      timeline: {
+        ...built.timeline,
+        rows: [{ tracks: [{ ...track, segments: [{ start: 0, end: null, data }] }] }],
+      } as Timeline,
+    });
+    expect(indexOf(record(built, 0), "rect", 70000)).toBeGreaterThan(-1);
+    for (const data of [
+      { kind: "prop", name: "hasOwnProperty", definition: null, params: {} },
+      { kind: "prop", name: "marker", definition: { draw: { $omitted: "function" } } },
+      { kind: "prop", name: "marker", definition: "marker", params: {} },
+    ]) {
+      const calls = record(withData(data), 0).map((entry) => entry.call);
+      expect(calls).not.toContain("translate");
+      expect(calls).not.toContain("arc");
+    }
+  });
+
+  it("names the prop when its drawing throws, and when its holder's motion does", () => {
+    const broken = defineProp({
+      name: "broken",
+      description: "Throws.",
+      draw() {
+        throw new Error("no");
+      },
+    });
+    const drawn = scene({ duration: 1 }, (stage) => {
+      stage.prop(broken);
+    });
+    expect(() => record(drawn, 3)).toThrow(
+      expect.objectContaining({
+        code: "ERR_SCENE_DRAWING_FAILED",
+        target: "row0/prop/broken/0",
+        frame: 3,
+      }),
+    );
+    const held = scene({ duration: 1 }, (stage) => {
+      stage.actor().drive((t) => {
+        if (t > 0.5) {
+          throw new Error("no");
+        }
+        return { spine: 0 };
+      });
+      stage.prop(marker).hold("handR");
+    });
+    expect(() => record(held, 20)).toThrow(FrameItemError);
   });
 });

@@ -15,6 +15,7 @@ import {
   ReservedParameterError,
   type Scene,
   scene,
+  SceneClosedError,
   type Stage,
 } from "../src/index.js";
 import type { Vocabulary } from "../src/scene/builtins.js";
@@ -899,11 +900,11 @@ describe("a.do with a name", () => {
     expect(segments(built)[0]).toMatchObject({ data: { kind: "wait" } });
   });
 
-  it("says there are no built-in actions yet when none exist", () => {
+  it("says there are no built-in backdrops yet while none exist", () => {
     const built = scene({ duration: 1 }, (stage) => {
-      loose(stage.actor())["do"]?.("sitDown");
+      loose(stage)["backdrop"]?.("plain");
     });
-    const finding = only(built, "ERR_SCENE_UNKNOWN_ACTION");
+    const finding = only(built, "ERR_SCENE_UNKNOWN_BACKDROP");
     expect(finding.nearest).toEqual([]);
   });
 
@@ -1216,6 +1217,200 @@ describe("prop.place and prop parameters", () => {
       loose(stage.prop(ballProp))["place"]?.(...args);
     });
     expect(codes(built)).toEqual([code]);
+  });
+});
+
+describe("prop.hold and prop.move", () => {
+  const tossParams = { thing: { type: "prop", doc: "What is tossed." } } as const;
+  const tossAction: ActionDefinition<typeof tossParams> = defineAction({
+    name: "toss",
+    description: "",
+    params: tossParams,
+    build(clip: Clip, { thing }) {
+      clip.wait(1);
+      thing.hold("handL", { offset: { x: 0, y: -0.05 } });
+      thing.move({ x: 1, y: 0 }, { at: 0.5, duration: 0.25, arc: 0.2 });
+    },
+  });
+
+  it("records a hold by the row's actor, open-ended", () => {
+    const built = scene({ duration: 2 }, (stage) => {
+      const ball = stage.prop(ballProp);
+      stage.actor({ name: "hero" });
+      expect(ball.hold("handR", { at: 1 })).toMatchObject({ start: 1, end: Infinity });
+    });
+    expect(built.findings).toEqual([]);
+    expect(segments(built, "prop").slice(1)).toEqual([
+      {
+        start: 1_000_000,
+        end: null,
+        data: {
+          kind: "hold",
+          effector: "handR",
+          actor: { name: "hero", occurrence: 0 },
+          offset: { x: 0, y: 0 },
+        },
+      },
+    ]);
+  });
+
+  it("records a move with its arc, half a second long unless told otherwise", () => {
+    const built = scene((stage) => {
+      const ball = stage.prop(ballProp);
+      expect(ball.move({ x: 1, y: -0 })).toMatchObject({ start: 0, end: 0.5 });
+      ball.move({ x: 2, y: 0.5 }, { at: 1, duration: 2, arc: -0 });
+    });
+    expect(built.findings).toEqual([]);
+    expect(segments(built, "prop").slice(1)).toEqual([
+      { start: 0, end: 500_000, data: { kind: "move", x: 1, y: 0, arc: 0 } },
+      {
+        start: 1_000_000,
+        end: 3_000_000,
+        data: { kind: "move", x: 2, y: 0.5, arc: 0 },
+      },
+    ]);
+  });
+
+  it("counts a move towards the scene's length", () => {
+    const built = scene((stage) => {
+      stage.prop(ballProp).move({ x: 1, y: 0 }, { at: 1, duration: 1 });
+      expect(stage.sync()).toBe(2);
+    });
+    expect(codes(built)).toEqual([]);
+  });
+
+  it("lets an action hold and move a prop, in its own time and by its own actor", () => {
+    const built = scene({ rows: 1 }, (stage) => {
+      const ball = stage.prop(ballProp);
+      stage.actor({ name: "first" });
+      const hero = stage.actor({ name: "second" });
+      hero.wait(2);
+      hero.do(tossAction, { thing: ball });
+    });
+    expect(codes(built)).toEqual(["ERR_SCENE_ROW_HAS_ACTOR"]);
+    expect(segments(built, "prop").slice(1)).toEqual([
+      {
+        start: 2_000_000,
+        end: null,
+        data: {
+          kind: "hold",
+          effector: "handL",
+          actor: { name: "second", occurrence: 0 },
+          offset: { x: 0, y: -0.05 },
+        },
+      },
+      {
+        start: 2_500_000,
+        end: 2_750_000,
+        data: { kind: "move", x: 1, y: 0, arc: 0.2 },
+      },
+    ]);
+  });
+
+  it("reports a hold in a row without an actor, and does not record it", () => {
+    const built = scene({ duration: 1 }, (stage) => {
+      stage.prop(ballProp).hold("handR");
+    });
+    const finding = only(built, "ERR_SCENE_NO_ACTOR");
+    expect(finding).toMatchObject({
+      severity: "error",
+      row: 0,
+      target: "row0/prop/ball/0",
+    });
+    expect(segments(built, "prop")).toHaveLength(1);
+  });
+
+  it("reports a hold inside an action by an actor of another row, and does not record it", () => {
+    const built = scene({ duration: 2, rows: 2 }, (stage) => {
+      const ball = stage.row(1).prop(ballProp);
+      stage.row(1).actor();
+      stage.row(0).actor().do(tossAction, { thing: ball });
+    });
+    expect(only(built, "ERR_SCENE_NO_ACTOR")).toMatchObject({
+      row: 1,
+      target: "row1/prop/ball/0",
+    });
+    const kinds = built.timeline.rows[1]?.tracks
+      .find((track) => track.kind === "prop")
+      ?.segments.map(({ data }) => (data as { kind: string }).kind);
+    expect(kinds).toEqual(["prop", "move"]);
+  });
+
+  it("reports both a bad offset and a bad effector in one hold", () => {
+    const built = scene({ duration: 1 }, (stage) => {
+      stage.actor();
+      loose(stage.prop(ballProp))["hold"]?.("handr", { offset: { x: 1 } });
+    });
+    expect(codes(built)).toEqual([
+      "ERR_SCENE_OUT_OF_RANGE",
+      "ERR_SCENE_UNKNOWN_EFFECTOR",
+    ]);
+    expect(segments(built, "prop")).toHaveLength(1);
+  });
+
+  it("reports a hold by something that is not a hand or a foot, with the nearest", () => {
+    const built = scene({ duration: 1 }, (stage) => {
+      stage.actor();
+      loose(stage.prop(ballProp))["hold"]?.("handr");
+      loose(stage.prop(ballProp))["hold"]?.(3);
+    });
+    expect(codes(built)).toEqual([
+      "ERR_SCENE_UNKNOWN_EFFECTOR",
+      "ERR_SCENE_UNKNOWN_EFFECTOR",
+    ]);
+    expect(built.findings[0]?.nearest).toEqual(["handR", "handL"]);
+    expect(built.findings[1]?.nearest).toEqual([]);
+    expect(segments(built, "prop")).toHaveLength(1);
+  });
+
+  it.each([
+    ["hold", ["handR", { offset: { x: 1 } }], "ERR_SCENE_OUT_OF_RANGE"],
+    ["hold", ["handR", { at: -1 }], "ERR_SCENE_OUT_OF_RANGE"],
+    ["hold", ["handR", { when: 1 }], "ERR_SCENE_UNKNOWN_OPTION"],
+    ["move", [{ x: Number.NaN, y: 0 }], "ERR_SCENE_OUT_OF_RANGE"],
+    ["move", [{ x: 1, y: 0 }, { arc: Infinity }], "ERR_SCENE_OUT_OF_RANGE"],
+    ["move", [{ x: 1, y: 0 }, { arc: "high" }], "ERR_SCENE_OUT_OF_RANGE"],
+    ["move", [{ x: 1, y: 0 }, { duration: -1 }], "ERR_SCENE_OUT_OF_RANGE"],
+    ["move", [{ x: 1, y: 0 }, { height: 1 }], "ERR_SCENE_UNKNOWN_OPTION"],
+  ])("reports a %s given %j", (call, args, code) => {
+    const built = scene({ duration: 1 }, (stage) => {
+      stage.actor();
+      loose(stage.prop(ballProp))[call]?.(...args);
+    });
+    expect(codes(built)).toEqual([code]);
+  });
+
+  it("does not record a hold with a bad offset or a move with a bad point", () => {
+    const built = scene({ duration: 1 }, (stage) => {
+      stage.actor();
+      const ball = loose(stage.prop(ballProp));
+      ball["hold"]?.("handR", { offset: "low" });
+      ball["move"]?.("there");
+    });
+    expect(segments(built, "prop")).toHaveLength(1);
+  });
+
+  it("uses a straight line and the default length for a move's bad options", () => {
+    const built = scene({ duration: 1 }, (stage) => {
+      loose(stage.prop(ballProp))["move"]?.(
+        { x: 1, y: 0 },
+        { arc: "high", duration: -1 },
+      );
+    });
+    expect(segments(built, "prop")[1]).toEqual({
+      start: 0,
+      end: 500_000,
+      data: { kind: "move", x: 1, y: 0, arc: 0 },
+    });
+  });
+
+  it("throws once the scene has returned", () => {
+    let kept: Prop | undefined;
+    scene({ duration: 1 }, (stage) => {
+      kept = stage.prop(ballProp);
+    });
+    expect(() => kept?.hold("handR")).toThrow(SceneClosedError);
+    expect(() => kept?.move({ x: 1, y: 0 })).toThrow(SceneClosedError);
   });
 });
 

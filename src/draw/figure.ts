@@ -7,10 +7,16 @@ import {
   segmentDirections,
 } from "../rig/kinematics.js";
 import { type Pose, SEGMENT_LENGTHS } from "../rig/rig.js";
+import type { TimelineTrack } from "../timeline/timeline.js";
 import type { DrawingContext } from "./context.js";
 
 /** Which way an actor faces. Vocabulary is written facing right. */
 export type Facing = "right" | "left";
+
+/** The facing an actor's track carries; right unless it says `left`. */
+export function facingOf(track: TimelineTrack): Facing {
+  return "facing" in track && track.facing === "left" ? "left" : "right";
+}
 
 /** The colour every line of the picture is drawn in. */
 export const INK = "#111111";

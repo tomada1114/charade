@@ -76,11 +76,11 @@ recorded sample is written against; changing any of it changes all of them at on
   `PoseOptions`, `ReachOptions`, `DriveOptions` and `DrawOptions`. The vocabulary calls
   add `Actor.do` and `Actor.express`, `Row.prop`, `Row.backdrop` and `Row.effect`, the
   handles `Clip` (what an action's `build` records on) and `Prop`, and the option types
-  `ActionOptions`, `ExpressOptions`, `ItemOptions` and `PlaceOptions`;
-  `.claude/rules/vocabulary.md` holds how they behave. Handles are interfaces an author
-  is handed and never implements, so a later issue adds a method as a minor change.
-  `row.actor` and `row.draw` take an options bag rather than a positional name, so
-  placement and layering can be added the same way.
+  `ActionOptions`, `ExpressOptions`, `ItemOptions`, `PlaceOptions`, `HoldOptions` and
+  `MoveOptions`; `.claude/rules/vocabulary.md` holds how they behave. Handles are
+  interfaces an author is handed and never implements, so a later issue adds a method as
+  a minor change. `row.actor` and `row.draw` take an options bag rather than a
+  positional name, so placement and layering can be added the same way.
 - An id is `row<i>` for a row and `row<i>/<kind>/<name>/<occurrence>` for an item; an
   actor's default name is `actor` and a drawing's is `draw`.
 - A bad scene option is a finding and its default is used (`rows` is clamped into 1–4
@@ -167,7 +167,9 @@ recorded sample is written against; changing any of it changes all of them at on
 - The composed pose at a frame is `poseAtFrame` in `src/rig/compose.ts`, internal. It
   compares in frame units (`µs × fps` against `n × 1e6`), reads a segment's data field
   by field so a parsed or hand-built timeline cannot break it, and skips a channel whose
-  value is not a finite number.
+  value is not a finite number. `poseAtInstant` composes the same at a time that is not
+  a frame's, given in frame units: a prop let go between two frames starts its path from
+  where the hand was at that microsecond, not at the frame before.
 - `drive` takes one function of time that returns a map of channel values, as in
   `a.drive(t => ({ spine: Math.sin(t * 3) * 0.1 }))`. The channels it names are the keys
   it returns when it is called once with `t = 0` as the call is recorded: an unknown
@@ -316,11 +318,12 @@ change to the shape raises the version.
 - A segment's `data` is an object with a `kind`: `pose` (channels, mode, and the three
   phases in microseconds), `reach` (effector, target, phases), `drive` (the function,
   the channel names read at `t = 0`, mode, blend), `wait`, `draw` (the callback),
-  `place` (a prop's ground point `x`, `y`), or `prop`, `backdrop` and `effect` (name,
-  definition or `null`, resolved params). An action records its clip's calls on the
-  actor's track as ordinary segments, and an expression records a `pose`. These live in
-  `src/timeline/segments.ts`. Nothing is released yet, so this shape is still JSON
-  version 1.
+  `place` (a prop's ground point `x`, `y`), `hold` (the effector, the holding actor's
+  track `name` and `occurrence`, the `offset`), `move` (where it arrives, `x`, `y`, and
+  its `arc`), or `prop`, `backdrop` and `effect` (name, definition or `null`, resolved
+  params). An action records its clip's calls on the actor's track as ordinary segments,
+  and an expression records a `pose`. These live in `src/timeline/segments.ts`. Nothing
+  is released yet, so this shape is still JSON version 1.
 
 ## The drawing interface
 
@@ -393,13 +396,25 @@ change to the shape raises the version.
 - The figure draws the far (`L`) arm and leg, then the back and the head, then the near
   (`R`) leg and arm, so the near limbs are in front.
 - Within a row the order is the five slots of `ROW_SLOTS`: backdrop, props behind,
-  actor, props in front, text. Each item runs between `save` and `restore`. Backdrops,
-  props and text have no vocabulary yet, so `props behind` and `text` are empty and the
-  backdrop slot holds the ground line, drawn across the row's visible width at `y = 0`;
-  a backdrop item will draw before it. A free drawing (`row.draw`) goes in the
-  props-in-front slot, in recorded order: with no layering option yet, in front is the
-  one place it cannot be hidden. Its callback starts with ink as both styles and the
-  figure's line width.
+  actor, props in front, text. Each item runs between `save` and `restore`. Backdrops
+  and text have no vocabulary yet, so `text` is empty and the backdrop slot holds the
+  ground line, drawn across the row's visible width at `y = 0`; a backdrop item will
+  draw before it. A free drawing (`row.draw`) goes in the props-in-front slot, in
+  recorded order: with no layering option yet, in front is the one place it cannot be
+  hidden. Its callback starts with ink as both styles and the figure's line width.
+- A prop is drawn while one of its `prop` segments covers the frame, with the context
+  translated to its ground point and the same starting state as a free drawing; its
+  `draw` gets the resolved params and the `Moment` of that segment. The definition is
+  the segment's own when it was passed as one and otherwise the built-in of its name; a
+  name this version lacks, or a parsed timeline's placeholder, draws nothing. Where the
+  ground point is comes from `propPlacement` in `src/draw/prop.ts`, a pure function of
+  the timeline and the frame.
+- With no layering option yet, a prop's slot follows what it is doing: behind the actor
+  while it stands where it was placed or is carried by a far (`L`) hand or foot, in
+  front while a near (`R`) one carries it or it is on a `move`, and after one. So a box
+  to sit on is behind the figure and a ball in the throwing hand in front of it; an
+  option can override this later without a break. Props in front draw before the row's
+  free drawings.
 - A free drawing is called for each of its segments that `frameInSegment` says frame `n`
   falls in, with `t` and the `Moment` of that segment; a parsed timeline's placeholder
   draws nothing.

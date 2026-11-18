@@ -1,20 +1,24 @@
 import { CharadeError } from "../errors.js";
 import { poseAtFrame } from "../rig/compose.js";
+import type { Point } from "../rig/kinematics.js";
+import { builtinProps } from "../scene/builtins.js";
 import { randomSource } from "../timeline/random.js";
 import type { Moment } from "../timeline/segments.js";
 import { frameInSegment, frameSeconds, MICROS_PER_SECOND } from "../timeline/time.js";
 import type { Timeline, TimelineTrack } from "../timeline/timeline.js";
 import type { DrawingContext, ShapeContext } from "./context.js";
-import { drawFigure, type Facing, FIGURE_LINE, INK, PAPER } from "./figure.js";
+import { drawFigure, facingOf, FIGURE_LINE, INK, PAPER } from "./figure.js";
 import { type RowLayout, rowLayout, rowTransform } from "./layout.js";
+import { propPlacement } from "./prop.js";
 
 /** The width of the ground line, in units. */
 const GROUND_LINE = 0.01;
 
 /**
- * The draw order within a row, back to front. Backdrops, props and text have no
- * vocabulary yet, so the drawer fills `backdrop` with the ground line, `propsInFront`
- * with the row's free drawings, and leaves `propsBehind` and `text` empty.
+ * The draw order within a row, back to front. Backdrops and text have no vocabulary
+ * yet, so the drawer fills `backdrop` with the ground line and leaves `text` empty. A
+ * prop is behind the actor unless it is moving or in a near (`R`) hand or foot;
+ * `propsInFront` holds those and then the row's free drawings.
  */
 export const ROW_SLOTS = [
   "backdrop",
@@ -73,6 +77,11 @@ export class FrameItemError extends CharadeError {
 
 type DrawCallback = (ctx: ShapeContext, t: number, moment: Moment) => unknown;
 
+/** The built-in props as a record, which a map typed by its names is not. */
+const BUILTIN_PROPS: Readonly<Record<string, unknown>> = { ...builtinProps };
+
+type PropDraw = (ctx: ShapeContext, params: unknown, moment: Moment) => unknown;
+
 function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
   return typeof value === "object" && value !== null;
 }
@@ -81,9 +90,30 @@ function isDrawCallback(value: unknown): value is DrawCallback {
   return typeof value === "function";
 }
 
-/** The facing an actor's track carries; right unless it says `left`. */
-export function facingOf(track: TimelineTrack): Facing {
-  return "facing" in track && track.facing === "left" ? "left" : "right";
+/**
+ * The `draw` of the prop a segment shows: its definition's when it was passed as one,
+ * the built-in's of its name otherwise. A parsed timeline holds a placeholder where a
+ * passed definition's function was, and a name may be one this version lacks; either
+ * draws nothing.
+ */
+function propDraw(data: Readonly<Record<string, unknown>>): PropDraw | undefined {
+  const { definition, name } = data;
+  const found =
+    definition === null &&
+    typeof name === "string" &&
+    Object.hasOwn(BUILTIN_PROPS, name)
+      ? BUILTIN_PROPS[name]
+      : definition;
+  if (!isRecord(found)) {
+    return undefined;
+  }
+  const draw = found["draw"];
+  return typeof draw === "function"
+    ? (ctx, params, moment) => {
+        // Called on its definition, as a method is.
+        Reflect.apply(draw, found, [ctx, params, moment]);
+      }
+    : undefined;
 }
 
 /** The id of a track's item, as findings name it. */
@@ -179,15 +209,42 @@ export function rowContent(
         drawTrack(ctx, timeline, row, track, frame);
       }),
     );
+  const propsBehind: Painter[] = [];
+  const propsInFront: Painter[] = [];
+  for (const track of tracks) {
+    if (track.kind !== "prop") {
+      continue;
+    }
+    // Asked here rather than in the painter: which slot the prop is in depends on it.
+    let placed: ReturnType<typeof propPlacement>;
+    try {
+      placed = propPlacement(timeline, row, track, frame);
+    } catch (error) {
+      // Thrown from a painter after the actors', so a holder whose own function threw
+      // is named for it first, and a caller that draws only some slots never meets it.
+      propsInFront.push(() => {
+        throw new FrameItemError(row, idOf(row, track), frame, time, error);
+      });
+      continue;
+    }
+    if (placed !== undefined) {
+      const { point } = placed;
+      (placed.front ? propsInFront : propsBehind).push(
+        guarded(track, (ctx) => {
+          drawProp(ctx, timeline, row, track, frame, point);
+        }),
+      );
+    }
+  }
   return {
     backdrop: [
       (ctx) => {
         drawGround(ctx, layout);
       },
     ],
-    propsBehind: [],
+    propsBehind,
     actor: actors,
-    propsInFront: drawings,
+    propsInFront: [...propsInFront, ...drawings],
     text: [],
   };
 }
@@ -199,6 +256,60 @@ function drawGround(ctx: DrawingContext, layout: RowLayout): void {
   ctx.moveTo(-layout.units / 2, 0);
   ctx.lineTo(layout.units / 2, 0);
   ctx.stroke();
+}
+
+/**
+ * Draws a prop with its ground point on `point`, once for each of its `prop` segments
+ * shown at `frame`. Its `draw` starts as a free drawing's does: ink as both styles and
+ * the figure's line width.
+ */
+function drawProp(
+  ctx: DrawingContext,
+  timeline: Timeline,
+  row: number,
+  track: TimelineTrack,
+  frame: number,
+  point: Point,
+): void {
+  const { fps } = timeline;
+  const random = randomSource({
+    seed: timeline.seed,
+    row,
+    kind: track.kind,
+    name: track.name,
+    occurrence: track.occurrence,
+  });
+  const time = frame / fps;
+  for (const { data, start, end } of track.segments) {
+    if (
+      !isRecord(data) ||
+      data["kind"] !== "prop" ||
+      !frameInSegment(frame, start, end, fps)
+    ) {
+      continue;
+    }
+    const draw = propDraw(data);
+    if (draw === undefined) {
+      continue;
+    }
+    const t = time - start / MICROS_PER_SECOND;
+    const duration = end === null ? Infinity : (end - start) / MICROS_PER_SECOND;
+    ctx.save();
+    try {
+      ctx.translate(point.x, point.y);
+      ctx.strokeStyle = INK;
+      ctx.fillStyle = INK;
+      ctx.lineWidth = FIGURE_LINE;
+      draw(ctx, data["params"], {
+        time,
+        duration,
+        progress: end === null ? 0 : t / duration,
+        random,
+      });
+    } finally {
+      ctx.restore();
+    }
+  }
 }
 
 /** Calls a free drawing's function for each of its segments shown at `frame`. */

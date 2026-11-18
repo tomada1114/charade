@@ -222,9 +222,23 @@ export function poseAtFrame(
   track: TimelineTrack,
   frame: number,
 ): Pose {
+  return poseAtInstant(timeline, row, track, frame * MICROS_PER_SECOND);
+}
+
+/**
+ * The actor's pose at `now`, in frame units (`µs × fps`, so frame `n` is `n × 1e6`):
+ * what {@link poseAtFrame} composes, at a time that need not be a frame's, such as the
+ * moment a held prop is let go.
+ */
+export function poseAtInstant(
+  timeline: Timeline,
+  row: number,
+  track: TimelineTrack,
+  now: number,
+): Pose {
   const { fps } = timeline;
   const instant: Instant = {
-    now: frame * MICROS_PER_SECOND,
+    now,
     fps,
     random: randomSource({
       seed: timeline.seed,
@@ -234,7 +248,6 @@ export function poseAtFrame(
       occurrence: track.occurrence,
     }),
   };
-  const { now } = instant;
   const layers = track.segments.flatMap((segment) => layerOf(segment, fps) ?? []);
   const pose: MutablePose = { ...REST_POSE };
 

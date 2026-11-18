@@ -88,6 +88,28 @@ export interface PlaceData {
   readonly y: number;
 }
 
+/** A prop carried by an actor's hand or foot, from the segment's start on. */
+export interface HoldData {
+  readonly kind: "hold";
+  readonly effector: string;
+  /** The key of the holding actor's track in the prop's row. */
+  readonly actor: { readonly name: string; readonly occurrence: number };
+  /** The ground point's offset from the effector, `x` the way the holder faces. */
+  readonly offset: { readonly x: number; readonly y: number };
+}
+
+/**
+ * A prop moving to `x`, `y` over the segment, from where it was at the segment's
+ * start: a straight line at constant speed, lifted by `4 · arc · p · (1 − p)` at
+ * progress `p`, which is a thrown thing's parabola. It stays there afterwards.
+ */
+export interface MoveData {
+  readonly kind: "move";
+  readonly x: number;
+  readonly y: number;
+  readonly arc: number;
+}
+
 /**
  * A prop, backdrop or effect while it is shown: its name, its definition when it was
  * passed as one (`null` for a built-in named by a string), and its resolved

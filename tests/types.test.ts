@@ -23,6 +23,7 @@ import {
   builtinEffects,
   type BuiltinExpressions,
   builtinExpressions,
+  type BuiltinName,
   type BuiltinProps,
   builtinProps,
   type Clip,
@@ -36,10 +37,12 @@ import {
   type ExpressionDefinition,
   type ExpressOptions,
   type FaceChannels,
+  type HoldOptions,
   InvalidDefaultError,
   InvalidDefinitionError,
   type ItemKind,
   type ItemOptions,
+  type MoveOptions,
   type NoParams,
   type ParamArgs,
   type ParamSpec,
@@ -796,28 +799,90 @@ describe("using definitions", () => {
     expect(rejected).toBeTypeOf("function");
   });
 
-  it("takes no built-in name while the maps are empty", () => {
-    expectTypeOf<keyof BuiltinActions>().toEqualTypeOf<never>();
-    expectTypeOf<keyof BuiltinExpressions>().toEqualTypeOf<never>();
-    expectTypeOf<keyof BuiltinProps>().toEqualTypeOf<never>();
+  it("names the built-ins in the maps, and none where a kind has no item yet", () => {
+    expectTypeOf<keyof BuiltinActions>().toEqualTypeOf<"sitDown" | "slump" | "throw">();
+    expectTypeOf<keyof BuiltinExpressions>().toEqualTypeOf<
+      "dejected" | "focused" | "neutral"
+    >();
+    expectTypeOf<keyof BuiltinProps>().toEqualTypeOf<"ball" | "box">();
     expectTypeOf<keyof BuiltinBackdrops>().toEqualTypeOf<never>();
+    expectTypeOf<BuiltinName<BuiltinProps>>().toEqualTypeOf<"ball" | "box">();
+    expectTypeOf<BuiltinName<{ readonly a: 1; readonly 2: 2 }>>().toEqualTypeOf<"a">();
     expectTypeOf<keyof BuiltinEffects>().toEqualTypeOf<never>();
     expectTypeOf(builtinActions).toEqualTypeOf<BuiltinActions>();
     expectTypeOf(builtinExpressions).toEqualTypeOf<BuiltinExpressions>();
     expectTypeOf(builtinProps).toEqualTypeOf<BuiltinProps>();
     expectTypeOf(builtinBackdrops).toEqualTypeOf<BuiltinBackdrops>();
     expectTypeOf(builtinEffects).toEqualTypeOf<BuiltinEffects>();
-    const rejected = (actor: Actor): void => {
-      // @ts-expect-error no built-in action exists yet
-      actor.do("sitDown");
+    expectTypeOf(builtinActions.throw).toExtend<ActionDefinition>();
+    expectTypeOf(builtinExpressions.neutral).toEqualTypeOf<
+      ExpressionDefinition<NoParams>
+    >();
+    expectTypeOf(builtinProps.ball).toExtend<PropDefinition>();
+  });
+
+  it("types a built-in action's parameters and marks by its name", () => {
+    const record = (actor: Actor, row: Row): void => {
+      const ball = row.prop("ball");
+      expectTypeOf(ball).toEqualTypeOf<Prop>();
+      expectTypeOf(actor.do("throw", { ball })).toEqualTypeOf<Span<"release">>();
+      expectTypeOf(
+        actor.do("throw", {
+          ball,
+          to: { x: 1, y: 0.5 },
+          loft: 0.4,
+          bounce: false,
+          mood: "focused",
+          at: 1,
+        }).marks.release,
+      ).toEqualTypeOf<number>();
+      expectTypeOf(actor.do("sitDown")).toEqualTypeOf<Span>();
+      expectTypeOf(
+        actor.do("sitDown", { seat: 0.3, mood: "dejected" }),
+      ).toEqualTypeOf<Span>();
+      expectTypeOf(
+        actor.do("slump", { depth: 0.5, duration: 2 }),
+      ).toEqualTypeOf<Span>();
+      expectTypeOf(actor.express("dejected", { intensity: 0.5 })).toEqualTypeOf<Span>();
+      expectTypeOf(actor.express("neutral")).toEqualTypeOf<Span>();
+      expectTypeOf(row.prop("box", { width: 0.5, at: 1 })).toEqualTypeOf<Prop>();
+    };
+    expect(record).toBeTypeOf("function");
+  });
+
+  it("rejects an unknown key, a missing prop and an unknown name of a built-in", () => {
+    const rejected = (actor: Actor, row: Row): void => {
+      const ball = row.prop("ball");
+      // @ts-expect-error bal is neither a parameter of throw nor an option
+      actor.do("throw", { ball, bal: ball });
+      // @ts-expect-error ball is required
+      actor.do("throw");
+      // @ts-expect-error ball is required, also beside other keys
+      actor.do("throw", { loft: 0.4 });
+      // @ts-expect-error a prop handle is expected, not a name
+      actor.do("throw", { ball: "ball" });
+      // @ts-expect-error loft is a number
+      actor.do("throw", { ball, loft: "high" });
+      // @ts-expect-error slum is not a built-in action
+      actor.do("slum");
+      // @ts-expect-error sitDown has no parameter named height
+      actor.do("sitDown", { height: 0.3 });
+      // @ts-expect-error sad is not a built-in expression
+      actor.do("slump", { mood: "sad" });
+      // @ts-expect-error neutral takes no parameter
+      actor.express("neutral", { intensity: 1 });
+      // @ts-expect-error bal is not a built-in prop
+      row.prop("bal");
+      // @ts-expect-error no built-in backdrop exists yet
+      row.backdrop("plain");
     };
     expect(rejected).toBeTypeOf("function");
   });
 
-  it("takes a mood as an expression definition", () => {
+  it("takes a mood as a built-in expression's name or an expression definition", () => {
     const smug = defineExpression({ name: "smug", description: "", build: () => ({}) });
     expectTypeOf<ActionOptions["mood"]>().toEqualTypeOf<
-      ExpressionDefinition | undefined
+      "dejected" | "focused" | "neutral" | ExpressionDefinition | undefined
     >();
     expectTypeOf(smug).toExtend<NonNullable<ActionOptions["mood"]>>();
   });
@@ -864,6 +929,17 @@ describe("using definitions", () => {
     >();
     expectTypeOf<keyof ItemOptions>().toEqualTypeOf<"at" | "duration">();
     expectTypeOf<keyof PlaceOptions>().toEqualTypeOf<"at">();
+    expectTypeOf<keyof HoldOptions>().toEqualTypeOf<"at" | "offset">();
+    expectTypeOf<keyof MoveOptions>().toEqualTypeOf<"at" | "duration" | "arc">();
+    const moved = (prop: Prop): void => {
+      expectTypeOf(
+        prop.hold("handR", { offset: { x: 0, y: -0.05 } }),
+      ).toEqualTypeOf<Span>();
+      expectTypeOf(prop.move({ x: 1, y: 0 }, { arc: 0.3 })).toEqualTypeOf<Span>();
+      // @ts-expect-error spine is a channel, not a hand or a foot
+      prop.hold("spine");
+    };
+    expect(moved).toBeTypeOf("function");
     expectTypeOf<keyof ActionOptions>().toEqualTypeOf<
       "at" | "duration" | "mood" | "blend" | "mode"
     >();
@@ -877,7 +953,7 @@ describe("using definitions", () => {
     expectTypeOf<Clip<"release">["mark"]>().parameters.toEqualTypeOf<
       [name: "release", at: number]
     >();
-    expectTypeOf<keyof Prop>().toEqualTypeOf<"id" | "place">();
+    expectTypeOf<keyof Prop>().toEqualTypeOf<"id" | "place" | "hold" | "move">();
   });
 });
 
