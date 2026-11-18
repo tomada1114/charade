@@ -175,10 +175,11 @@ stay free of Node-only modules.
 - The command comes first. A usage error is `ERR_CLI_NO_COMMAND`,
   `ERR_CLI_UNKNOWN_COMMAND`, `ERR_CLI_UNKNOWN_FLAG` (the flag's dotted path, named from
   `parseArgs` tokens), `ERR_CLI_MISSING_VALUE`, `ERR_CLI_UNEXPECTED_VALUE`,
-  `ERR_CLI_UNEXPECTED_ARGUMENT`, `ERR_CLI_MISSING_SCENE` or `ERR_CLI_MISSING_FLAG`. A
-  failure under `--json` is `{ version: 1, ok: false, error: { code, message, fix } }`;
-  as text it is `error <code>: <message>` and a `fix:` line on stderr. A command whose
-  body is not built yet answers `ERR_CLI_NOT_IMPLEMENTED`.
+  `ERR_CLI_UNEXPECTED_ARGUMENT`, `ERR_CLI_MISSING_SCENE`, `ERR_CLI_MISSING_FLAG` or, for
+  a name `catalog` does not know, `ERR_CLI_UNKNOWN_ITEM`. A failure under `--json` is
+  `{ version: 1, ok: false, error: { code, message, fix } }`; as text it is
+  `error <code>: <message>` and a `fix:` line on stderr. Every command's body is built,
+  so `ERR_CLI_NOT_IMPLEMENTED` is gone.
 - `sheet` picks twelve evenly spaced frames including the first and the last by default,
   or the times, range or row it is given, labels every cell with its time and frame
   number, and scales the sheet to a width an agent's image input can take. `--ghost`
@@ -237,8 +238,74 @@ stay free of Node-only modules.
 - `catalog` prints every item with its description, parameters, marks and moods, and the
   rig: joints, limits, effectors, face channels and conventions. Sample images are
   written only with `--images`, for all items or the one named.
+- The listing is built in the check layer, `src/check/catalog.ts`: `catalogItem` reads a
+  definition, `describeRig` the rig's constants, and `formatCatalog` writes the text. As
+  text, a short `use:` block says how a scene calls each kind present; then one block
+  per item, `<kind> <name> — <description>`, one line per parameter
+  (`<name>: <type>, default <value> | required, <min>..<max> <unit> — <doc>`, an enum's
+  values in brackets after its type), and for an action `marks:` and
+  `moods that change the body:`, `none` when empty; then `rig`. One line per parameter
+  keeps the listing short enough to read whole, which is what an agent does with it.
+- `--json` is `{ version, ok, items, rig, images }`. An item is
+  `{ kind, name, description, params, marks, moods, sample }`: `params` is the runtime
+  specification as declared, `marks` and `moods` are empty lists for a kind that has
+  none, so every item has one shape, and `sample` says whether there is one to draw.
+  `rig` is `{ joints, root, effectors, face, segments, conventions }`; a joint is
+  `{ name, parent, min, max }` with `null` limits for `pelvis`, since JSON has no
+  infinity, and `conventions` is text by topic (`facing`, `angles`, `space`, `root`,
+  `effectors`, `limits`).
+- `catalog <name>` shows the items of that name and leaves the rig out. A name two kinds
+  share shows both, each with its kind beside it, and `<kind>.<name>` (`prop.ball`)
+  narrows to one: showing both needs no second question, and the qualified spelling is
+  the image's file name. The bare name is tried first, so an item whose own name has a
+  dot stays reachable. A name that matches nothing is `ERR_CLI_UNKNOWN_ITEM`, exit 2,
+  whose fix and, under `--json`, `error.nearest` list the nearest items as
+  `<kind>.<name>`, by the metric of `src/check/nearest.ts`; a `<kind>.` prefix keeps the
+  search within that kind.
+- `--images [dir]` writes into `dir`, `charade-catalog` under the current directory when
+  the flag stands alone (`CATALOG_IMAGES`): built-ins have no scene file to sit beside,
+  and one folder is one thing to delete. The folder and its parents are made when
+  missing, unlike `-o`: nobody has made the default folder before the first run. A file
+  is `<kind>.<name>.png`, the kind because two kinds may share a name; a character of
+  the name outside letters, digits, `_` and `-` becomes `_`, so a name cannot leave the
+  folder. `parseArgs` has no optional value, so an `--images` with nothing or a flag
+  after it is rewritten to `--images=` before parsing; whatever else follows it is the
+  folder, which is why the name is written before the flag.
+- A sample image is the item's `sample(stage)` passed to `scene` (`sampleScene`) and
+  drawn at the sample scene's own size. An action or an effect is a contact sheet of
+  twelve frames spread over the sample, laid out and labelled as `sheet` does: motion
+  does not read from one frame. An expression, a prop or a backdrop is the sample's last
+  frame alone, full size: a face is too small to read in a sheet cell, and the last
+  frame is where a blend into an expression has arrived, the first being the resting
+  face. An item without a sample is listed and gets no image; `images` in the document
+  holds `{ kind, name, path }` for each one written, and the text ends with a
+  `wrote <path>` line for each. A sample that throws is `ERR_DEFINE_SAMPLE_FAILED`
+  (`SampleFailedError`, internal to `src/check/catalog.ts`, carrying `kind`, `item` and
+  the `cause`), exit 2. `catalog` does not check the samples; `check --defs` does.
 - `check` and `catalog` also accept a module of definitions, so a user's own vocabulary
-  goes through the same loop as a built-in.
+  goes through the same loop as a built-in. Both take it as `--defs <module>`: `catalog`
+  has its positional taken by the item's name, and one spelling on both commands is one
+  thing for a skill to teach. It is loaded as a scene file is (`loadDefinitions`).
+- A definitions module's items are its exports: every export, named or default, whose
+  value is what a `define…` function returned (frozen, with a `kind`, a `name`, a
+  `description`, `params` and its `build` or `draw`), listed by kind and then in export
+  order (`definitionsFrom`). An item's module already exports it under its own name, so
+  a file of items is a definitions module with no second list to keep in step. Other
+  exports are passed over and a value exported twice counts once. No definition is
+  `ERR_LOAD_NO_DEFINITIONS`; two of one kind under one name is
+  `ERR_LOAD_DUPLICATE_DEFINITION` (carrying `kind` and `item`).
+- With `--defs`, `catalog` lists the module's items in place of the built-ins, without
+  the rig, and `--images` draws those alone: the loop of adding an item is about that
+  item, and the built-ins are one `catalog` away. A user's item may share a built-in's
+  name, since it is passed as its definition.
+- `check --defs <module>` builds every item's sample and checks it as `check` checks a
+  scene; a scene path beside it is `ERR_CLI_UNEXPECTED_ARGUMENT` and `--at` with it
+  `ERR_CLI_CONFLICTING_FLAGS`. `--json` is `{ version, ok, items, summary }`, an item
+  being `{ kind, name, ok, findings, summary }`: a finding names a row and a target but
+  not an item, so the report keeps each sample's findings under its item rather than in
+  one flat list. `summary` counts all of them and the exit code follows it. As text each
+  item is `<kind> <name>` and its report, then a `total:` line. An item without a sample
+  is the warning `ERR_DEFINE_NO_SAMPLE`, since nothing of it was checked.
 - `render` runs the checks first. Error findings stop it before the first frame;
   warnings are printed and it continues. `frame` and `sheet` never refuse: looking at
   the broken pose is the loop.

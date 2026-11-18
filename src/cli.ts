@@ -8,12 +8,24 @@ import { parseArgs, type ParseArgsOptionsConfig } from "node:util";
 
 import {
   type CheckOptions,
+  type CheckResult,
   checkScene,
   formatReport,
   lastFrameOf,
 } from "./check/check.js";
+import {
+  builtinDefinitions,
+  catalogItem,
+  describeRig,
+  formatCatalog,
+  sampleFrames,
+  sampleImageName,
+  sampleScene,
+  selectItems,
+} from "./check/catalog.js";
 import { describeState, formatState, type StateDescription } from "./check/describe.js";
 import {
+  type CheckReport,
   checkReport,
   COULD_NOT_RUN,
   type ExitCode,
@@ -32,15 +44,22 @@ import { CharadeError, UnknownFlagError } from "./errors.js";
 import { chooseFont, hasText } from "./export/fonts.js";
 import {
   type FileWriter,
+  type FolderMaker,
   type ImageEnvironment,
   type ImageOutput,
+  makeFolder,
   outputBeside,
   writeFrameImage,
   writeGhostImage,
   writeOutput,
   writeSheetImage,
 } from "./export/images.js";
-import { loadScene, SceneFailedError, SceneLoadError } from "./export/loader.js";
+import {
+  loadDefinitions,
+  loadScene,
+  SceneFailedError,
+  SceneLoadError,
+} from "./export/loader.js";
 import { createRasteriser, type Rasteriser } from "./export/raster.js";
 import {
   assertEvenSize,
@@ -54,6 +73,7 @@ import {
   writeVideo,
 } from "./export/video.js";
 import { watchGlobals } from "./export/watch.js";
+import type { Definition } from "./scene/define.js";
 import type { Scene } from "./scene/scene.js";
 
 const NAME = "charade";
@@ -69,6 +89,8 @@ interface Reportable {
   readonly code: string;
   readonly message: string;
   readonly fix: string;
+  /** The valid names nearest to an unknown one, when the failure is an unknown name. */
+  readonly nearest?: readonly string[];
 }
 
 abstract class UsageError extends CharadeError {
@@ -159,7 +181,30 @@ class MissingSceneError extends UsageError {
   constructor(command: string) {
     super(`${command} needs a scene file.`);
     this.command = command;
-    this.fix = `Name the scene file: ${NAME} ${command} scene.ts.`;
+    this.fix =
+      `Name the scene file: ${NAME} ${command} scene.ts.` +
+      (command === "check"
+        ? ` To check the samples of your own definitions, name their module: ${NAME} check --defs items.ts.`
+        : "");
+  }
+}
+
+/** The name given to `catalog` is no item's. */
+class UnknownItemError extends UsageError {
+  readonly code = "ERR_CLI_UNKNOWN_ITEM" as const;
+  readonly fix: string;
+
+  /** The nearest items, each as `<kind>.<name>`, closest first. */
+  readonly nearest: readonly string[];
+
+  constructor(nearest: readonly string[], defs: string | undefined) {
+    super("catalog was given a name that is no item's.");
+    this.nearest = nearest;
+    const all = `${NAME} catalog${defs === undefined ? "" : ` --defs ${defs}`}`;
+    this.fix =
+      nearest.length === 0
+        ? `Run ${all} for the names.`
+        : `Did you mean ${nearest.join(", ")}? Run ${all} for every name.`;
   }
 }
 
@@ -299,21 +344,6 @@ class NoLengthError extends UsageError {
   }
 }
 
-/** The command parsed, but its body is not built yet. */
-class NotImplementedError extends UsageError {
-  readonly code = "ERR_CLI_NOT_IMPLEMENTED" as const;
-  readonly fix: string;
-
-  /** The command. */
-  readonly command: CommandName;
-
-  constructor(command: CommandName) {
-    super(`${command} is not implemented yet.`);
-    this.command = command;
-    this.fix = `Upgrade charade to a release that has ${command}.`;
-  }
-}
-
 function lastSegment(dotted: string): string {
   return dotted.slice(dotted.lastIndexOf(".") + 1);
 }
@@ -386,14 +416,31 @@ export type Invocation =
       readonly json: boolean;
     }
   | {
+      /** `check --defs`: the samples of a definitions module, not a scene. */
+      readonly command: "check-samples";
+      readonly defs: string;
+      readonly strict: boolean;
+      readonly json: boolean;
+    }
+  | {
       readonly command: "catalog";
-      readonly module: string | undefined;
-      readonly images: boolean;
+      /** The item to show, as its name or `<kind>.<name>`. */
+      readonly name: string | undefined;
+      /** A module of the user's definitions to list in place of the built-ins. */
+      readonly defs: string | undefined;
+      /** The folder sample images go to, empty for the default; `undefined` for none. */
+      readonly images: string | undefined;
       readonly json: boolean;
     };
 
 /** A scene command's invocation. */
-export type SceneInvocation = Exclude<Invocation, { readonly command: "catalog" }>;
+export type SceneInvocation = Exclude<
+  Invocation,
+  { readonly command: "catalog" | "check-samples" }
+>;
+
+/** The invocation of a command that reads definitions instead of a scene. */
+export type VocabularyInvocation = Exclude<Invocation, SceneInvocation>;
 
 interface CommandSpec {
   readonly synopsis: string;
@@ -414,6 +461,11 @@ const COMMON_HELP = [
 
 const OUT_OPTION = { out: { type: "string", short: "o" } } as const;
 
+const DEFS_OPTION = { defs: { type: "string" } } as const;
+
+/** Where `catalog --images` writes when the flag names no folder. */
+export const CATALOG_IMAGES = "charade-catalog";
+
 const COMMANDS: Readonly<Record<CommandName, CommandSpec>> = {
   render: {
     synopsis: "render <scene.ts> [options]",
@@ -426,10 +478,19 @@ const COMMANDS: Readonly<Record<CommandName, CommandSpec>> = {
   check: {
     synopsis: "check <scene.ts> [options]",
     summary: "Report the scene's problems, each with how to fix it.",
-    options: { ...COMMON_OPTIONS, strict: { type: "boolean" }, at: { type: "string" } },
+    options: {
+      ...COMMON_OPTIONS,
+      ...DEFS_OPTION,
+      strict: { type: "boolean" },
+      at: { type: "string" },
+    },
     help: [
       ["--strict", "Fail on warnings too."],
       ["--at <time>", "Also describe the state at a time: 1.5, 1.5s or 45f."],
+      [
+        "--defs <module>",
+        "In place of a scene, check the sample of every definition the module exports.",
+      ],
     ],
   },
   frame: {
@@ -466,10 +527,23 @@ const COMMANDS: Readonly<Record<CommandName, CommandSpec>> = {
     ],
   },
   catalog: {
-    synopsis: "catalog [module] [options]",
+    synopsis: "catalog [name] [options]",
     summary: "List the installed vocabulary and the rig, for an agent to read.",
-    options: { ...COMMON_OPTIONS, images: { type: "boolean" } },
-    help: [["--images", "Also write a sample image of every item."]],
+    options: { ...COMMON_OPTIONS, ...DEFS_OPTION, images: { type: "string" } },
+    help: [
+      [
+        "[name]",
+        "Show that item alone: sitDown, or prop.ball when two kinds share the name.",
+      ],
+      [
+        "--images [dir]",
+        `Also write a sample image of each item listed, into dir (${CATALOG_IMAGES}/ by default). Put the name before this flag.`,
+      ],
+      [
+        "--defs <module>",
+        "List the definitions the module exports in place of the built-ins.",
+      ],
+    ],
   },
 };
 
@@ -575,8 +649,25 @@ type Parsed =
   | { readonly kind: "help"; readonly text: string }
   | { readonly kind: "error"; readonly error: Reportable };
 
-function parseCommand(command: CommandName, args: readonly string[]): Parsed {
+/**
+ * `--images` may stand alone, which `parseArgs` has no spelling for: one with no
+ * value after it is rewritten to `--images=`, the empty folder name being the default.
+ */
+function withOptionalImages(args: readonly string[]): string[] {
+  const end = args.indexOf("--");
+  return args.map((arg, index) => {
+    const next = args[index + 1];
+    return arg === "--images" &&
+      (end === -1 || index < end) &&
+      (next === undefined || next.startsWith("-"))
+      ? "--images="
+      : arg;
+  });
+}
+
+function parseCommand(command: CommandName, given: readonly string[]): Parsed {
   const spec = COMMANDS[command];
+  const args = command === "catalog" ? withOptionalImages(given) : given;
   let values: Record<string, string | boolean | (string | boolean)[] | undefined>;
   let positionals: string[];
   try {
@@ -608,13 +699,38 @@ function parseCommand(command: CommandName, args: readonly string[]): Parsed {
       kind: "run",
       invocation: {
         command,
-        module: positionals[0],
-        images: values["images"] === true,
+        name: positionals[0],
+        defs: text("defs"),
+        images: text("images"),
         json,
       },
     };
   }
   const [scene, ...extra] = positionals;
+  const defs = command === "check" ? text("defs") : undefined;
+  if (defs !== undefined) {
+    if (scene !== undefined) {
+      return fail(new UnexpectedArgumentError(command, help));
+    }
+    if (values["at"] !== undefined) {
+      return fail(
+        new ConflictingFlagsError(
+          "check.at",
+          "check.defs",
+          "Leave --at out: a module's samples are several scenes, with no one time line.",
+        ),
+      );
+    }
+    return {
+      kind: "run",
+      invocation: {
+        command: "check-samples",
+        defs,
+        strict: values["strict"] === true,
+        json,
+      },
+    };
+  }
   if (scene === undefined) {
     return fail(new MissingSceneError(command));
   }
@@ -759,10 +875,6 @@ export type CommandOutcome =
       readonly text: string;
     }
   | { readonly kind: "failed"; readonly error: Reportable };
-
-function notImplemented(command: CommandName): CommandOutcome {
-  return { kind: "failed", error: new NotImplementedError(command) };
-}
 
 /**
  * The frame an `--at` value names: a frame as given, seconds as the frame on screen
@@ -1008,7 +1120,7 @@ async function runRender(
 }
 
 /** The failure to report for what a command body threw, or `undefined` to rethrow. */
-function reportableFrom(error: unknown, scene: string): Reportable | undefined {
+function reportableFrom(error: unknown, checked: string): Reportable | undefined {
   if (!(error instanceof CharadeError)) {
     return undefined;
   }
@@ -1024,8 +1136,9 @@ function reportableFrom(error: unknown, scene: string): Reportable | undefined {
     fix:
       fix ??
       (code === "ERR_SCENE_DRAWING_FAILED"
-        ? `Run ${NAME} check ${scene} for where it fails and how to fix it.`
-        : `Fix what the message names, then run ${NAME} check ${scene}.`),
+        ? `Run ${NAME} check ${checked} for where it fails and how to fix it.`
+        : `Fix what the message names, then run ${NAME} check ${checked}.`),
+    ...(error instanceof UnknownItemError ? { nearest: error.nearest } : {}),
   };
 }
 
@@ -1059,11 +1172,158 @@ export async function runSceneCommand(
   }
 }
 
-/** Run `catalog`, which #30 builds. */
-export function runCatalog(
+/** Loads a module of definitions; the real one imports it, a test passes a fake. */
+export type DefinitionsLoader = (
+  file: string,
+  notice: (line: string) => void,
+) => Promise<readonly Definition[]>;
+
+/** What `catalog` and `check --defs` need from this machine. */
+export interface VocabularyEnvironment extends ImageEnvironment {
+  /** Loads the module `--defs` names. */
+  readonly loadDefinitions: DefinitionsLoader;
+  /** Makes the folder sample images go to, and its parents, when they are missing. */
+  readonly mkdir: FolderMaker;
+  /** Receives each notice line, without its newline. */
+  readonly notice: (line: string) => void;
+}
+
+/**
+ * `catalog`: the items, built-in or of the module given, narrowed to a name when one
+ * is given; the rig with the whole built-in listing only; a sample image per item
+ * only with `--images`.
+ */
+async function runCatalog(
   invocation: Extract<Invocation, { command: "catalog" }>,
-): CommandOutcome {
-  return notImplemented(invocation.command);
+  environment: VocabularyEnvironment,
+): Promise<CommandOutcome> {
+  const { name, defs, images } = invocation;
+  let definitions =
+    defs === undefined
+      ? builtinDefinitions()
+      : await environment.loadDefinitions(defs, environment.notice);
+  if (name !== undefined) {
+    const selection = selectItems(definitions, name);
+    if (selection.kind === "none") {
+      throw new UnknownItemError(selection.nearest, defs);
+    }
+    ({ definitions } = selection);
+  }
+  const items = definitions.map(catalogItem);
+  const rig = name === undefined && defs === undefined ? describeRig() : undefined;
+  const written: { kind: string; name: string; path: string }[] = [];
+  if (images !== undefined) {
+    const folder = images === "" ? CATALOG_IMAGES : images;
+    await environment.mkdir(folder);
+    for (const definition of definitions) {
+      const built = sampleScene(definition);
+      if (built === undefined) {
+        continue;
+      }
+      const out = path.join(folder, sampleImageName(definition));
+      const target = output(
+        environment,
+        await textSetup(built, defs ?? folder, environment, true),
+      );
+      const frames = sampleFrames(definition.kind, built);
+      await (frames.length === 1
+        ? writeFrameImage(built, frames[0] ?? 0, out, target)
+        : writeSheetImage(built, frames, undefined, out, target));
+      written.push({ kind: definition.kind, name: definition.name, path: out });
+    }
+  }
+  return {
+    kind: "done",
+    exitCode: 0,
+    document: {
+      version: 1,
+      ok: true,
+      items,
+      ...(rig === undefined ? {} : { rig }),
+      ...(images === undefined ? {} : { images: written }),
+    },
+    text:
+      formatCatalog(items, rig) +
+      (images !== undefined && rig !== undefined ? "\n" : "") +
+      written.map(({ path: file }) => `wrote ${file}\n`).join(""),
+  };
+}
+
+/**
+ * `check --defs`: every definition's sample as a scene, checked as `check` checks
+ * one. An item without a sample is a warning, since nothing of it was checked.
+ */
+async function runCheckSamples(
+  invocation: Extract<Invocation, { command: "check-samples" }>,
+  environment: VocabularyEnvironment,
+): Promise<CommandOutcome> {
+  const { defs, strict } = invocation;
+  const definitions = await environment.loadDefinitions(defs, environment.notice);
+  const reports: (CheckReport & { kind: string; name: string })[] = [];
+  for (const definition of definitions) {
+    const { kind, name } = definition;
+    const built = sampleScene(definition);
+    let result: CheckResult;
+    if (built === undefined) {
+      result = {
+        findings: [
+          {
+            code: "ERR_DEFINE_NO_SAMPLE",
+            severity: "warning",
+            message: `The ${kind} ${name} has no sample, so nothing of it was checked.`,
+            fix: "Give the definition a sample(stage) that shows the item in use.",
+          },
+        ],
+        truncated: false,
+      };
+    } else {
+      const text = await textSetup(built, defs, environment, false);
+      result = checkScene(built, text.check);
+    }
+    const { findings, truncated } = result;
+    reports.push({ kind, name, ...checkReport(findings, { strict, truncated }) });
+  }
+  const all = reports.flatMap((report) => report.findings);
+  const truncated = reports.some((report) => report.summary.truncated);
+  const { version, ok, summary } = checkReport(all, { strict, truncated });
+  return {
+    kind: "done",
+    exitCode: exitCodeFor(all, { strict }),
+    document: {
+      version,
+      ok,
+      items: reports.map((report) => ({
+        kind: report.kind,
+        name: report.name,
+        ok: report.ok,
+        findings: report.findings,
+        summary: report.summary,
+      })),
+      summary,
+    },
+    text:
+      reports
+        .map((report) => `${report.kind} ${report.name}\n${formatReport(report)}\n`)
+        .join("") + `total: ${formatReport({ version, ok, findings: [], summary })}`,
+  };
+}
+
+/** Run a command that reads definitions instead of a scene. */
+export async function runVocabularyCommand(
+  invocation: VocabularyInvocation,
+  environment: VocabularyEnvironment,
+): Promise<CommandOutcome> {
+  try {
+    return await (invocation.command === "catalog"
+      ? runCatalog(invocation, environment)
+      : runCheckSamples(invocation, environment));
+  } catch (error) {
+    const reportable = reportableFrom(error, `--defs ${invocation.defs ?? "items.ts"}`);
+    if (reportable === undefined) {
+      throw error;
+    }
+    return { kind: "failed", error: reportable };
+  }
 }
 
 /** The first Node version whose type stripping is stable. */
@@ -1094,6 +1354,10 @@ export interface CliOptions {
   readonly nodeVersion?: string;
   /** Loads the scene file. */
   readonly load?: SceneLoader;
+  /** Loads the module `--defs` names. */
+  readonly loadDefinitions?: DefinitionsLoader;
+  /** Makes the folder `catalog --images` writes to; `node:fs` by default. */
+  readonly mkdir?: FolderMaker;
   /** Turns drawings into pixels; skia-canvas by default, loaded on first use. */
   readonly raster?: Rasteriser;
   /** Writes an output file; `node:fs` by default. */
@@ -1107,6 +1371,9 @@ export interface CliOptions {
 }
 
 const realLoad: SceneLoader = (file, notice) => loadScene(file, { notice });
+
+const realLoadDefinitions: DefinitionsLoader = (file, notice) =>
+  loadDefinitions(file, { notice });
 
 /**
  * Run the command without coupling its behavior to process globals.
@@ -1134,7 +1401,12 @@ export async function runCli(
       const document = {
         version: 1,
         ok: false,
-        error: { code: error.code, message: error.message, fix: error.fix },
+        error: {
+          code: error.code,
+          message: error.message,
+          fix: error.fix,
+          ...(error.nearest === undefined ? {} : { nearest: error.nearest }),
+        },
       };
       return {
         exitCode: COULD_NOT_RUN,
@@ -1171,12 +1443,19 @@ export async function runCli(
 
   const { invocation } = parsed;
   let outcome: CommandOutcome;
-  if (invocation.command === "catalog") {
-    outcome = runCatalog(invocation);
-  } else {
-    // Installed for the load too: the scene's build function runs inside the import.
-    const previous = installReadWatch(watchGlobals);
-    try {
+  // Installed for the load too: the scene's build function runs inside the import.
+  const previous = installReadWatch(watchGlobals);
+  try {
+    if (invocation.command === "catalog" || invocation.command === "check-samples") {
+      outcome = await runVocabularyCommand(invocation, {
+        raster: options.raster ?? createRasteriser(),
+        write: options.write ?? writeOutput,
+        platform: options.platform ?? process.platform,
+        loadDefinitions: options.loadDefinitions ?? realLoadDefinitions,
+        mkdir: options.mkdir ?? makeFolder,
+        notice,
+      });
+    } else {
       let scene: Scene;
       try {
         scene = await (options.load ?? realLoad)(invocation.scene, notice);
@@ -1193,9 +1472,9 @@ export async function runCli(
         interrupts: options.interrupts ?? processInterrupts,
         notice,
       });
-    } finally {
-      installReadWatch(previous);
     }
+  } finally {
+    installReadWatch(previous);
   }
   if (outcome.kind === "failed") {
     return failed(outcome.error);

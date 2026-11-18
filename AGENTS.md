@@ -112,10 +112,15 @@ layer and the CLI may import any pure layer.
 | timeline   | the data a scene yields, its JSON form, the seeded random source    | pure code only             |
 | rig        | joints, limits, inverse kinematics, pose interpolation              | pure code only             |
 | draw       | frame `n` as drawing calls, and this package's drawing interface    | pure code only             |
-| check      | findings, the recording context, check-image layout                 | pure code only             |
+| check      | findings, the recording context, check-image layout, the catalog    | pure code only             |
 | vocabulary | built-in actions, expressions, props, backdrops, effects, the index | only what the root exports |
 | export     | scene loading, skia-canvas, ffmpeg, files                           | Node builtins and skia     |
 | cli        | argument parsing and exit codes                                     | the export layer           |
+
+The catalog listing — the items read from their definitions, the rig, and the text an
+agent reads — is built in the check layer (`src/check/catalog.ts`): it is plain data
+over the pure layers, like a state description, so a browser page can show it later.
+Only loading a definitions module and writing the sample images are the export layer's.
 
 Pure code imports no `node:` module and no skia-canvas, and reads no clock and no
 unseeded random number, so that a browser page can bundle it later without a change to

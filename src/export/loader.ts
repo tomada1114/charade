@@ -2,7 +2,9 @@ import { statSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-import { CharadeError } from "../errors.js";
+import { ITEM_KINDS } from "../check/catalog.js";
+import { CharadeError, type ItemKind } from "../errors.js";
+import type { Definition } from "../scene/define.js";
 import type { Scene } from "../scene/scene.js";
 import {
   installResolveHook,
@@ -133,6 +135,35 @@ export class NotASceneError extends SceneLoadError {
 
   constructor() {
     super("The file's default export is not a charade scene.");
+  }
+}
+
+/** A definitions module exports no definition. */
+export class NoDefinitionsError extends SceneLoadError {
+  readonly code = "ERR_LOAD_NO_DEFINITIONS" as const;
+  readonly fix =
+    "Export each item the file defines: export const waveAction = defineAction({ ... }).";
+
+  constructor() {
+    super("The file exports no charade definition.");
+  }
+}
+
+/** A definitions module exports two items of one kind under one name. */
+export class DuplicateDefinitionError extends SceneLoadError {
+  readonly code = "ERR_LOAD_DUPLICATE_DEFINITION" as const;
+  readonly fix: string;
+
+  /** The kind both items have. */
+  readonly kind: ItemKind;
+  /** The name both items have. */
+  readonly item: string;
+
+  constructor(kind: ItemKind, item: string) {
+    super(`The file exports two definitions of ${kind} ${item}.`);
+    this.kind = kind;
+    this.item = item;
+    this.fix = `Give one of them another name: a name is unique within a kind.`;
   }
 }
 
@@ -289,6 +320,57 @@ function isScene(value: unknown): value is Scene {
   );
 }
 
+/** Whether `value` has the shape `define…` returns: frozen, with a kind and its method. */
+function isDefinition(value: unknown): value is Definition {
+  if (typeof value !== "object" || value === null || !Object.isFrozen(value)) {
+    return false;
+  }
+  const bag = value as Readonly<Record<string, unknown>>;
+  const kind = ITEM_KINDS.find((known) => known === bag["kind"]);
+  const method = kind === "action" || kind === "expression" ? "build" : "draw";
+  return (
+    kind !== undefined &&
+    typeof bag["name"] === "string" &&
+    typeof bag["description"] === "string" &&
+    typeof bag["params"] === "object" &&
+    bag["params"] !== null &&
+    typeof bag[method] === "function"
+  );
+}
+
+/**
+ * The definitions a module exports: every export, named or default, whose value is
+ * what a `define…` function returned, by kind and then in export order. Other exports
+ * are passed over, and a value exported twice counts once.
+ *
+ * @throws NoDefinitionsError when there is none, and DuplicateDefinitionError when
+ * two of them share a kind and a name.
+ */
+export function definitionsFrom(module: unknown): Definition[] {
+  const found = new Set<Definition>();
+  if (typeof module === "object" && module !== null) {
+    for (const exported of Object.values(module)) {
+      if (isDefinition(exported)) {
+        found.add(exported);
+      }
+    }
+  }
+  if (found.size === 0) {
+    throw new NoDefinitionsError();
+  }
+  const seen = new Set<string>();
+  for (const { kind, name } of found) {
+    const key = `${kind} ${name}`;
+    if (seen.has(key)) {
+      throw new DuplicateDefinitionError(kind, name);
+    }
+    seen.add(key);
+  }
+  return ITEM_KINDS.flatMap((kind) =>
+    [...found].filter((definition) => definition.kind === kind),
+  );
+}
+
 /** How {@link loadScene} reaches Node; each part is replaceable in a test. */
 export interface LoadOptions {
   /** Receives each notice line, without its newline. */
@@ -309,12 +391,8 @@ let installed: InstalledHook | undefined;
 
 const installOnce = (): InstalledHook => (installed ??= installResolveHook());
 
-/**
- * Import a scene file with `charade` mapped to this copy, and return its built scene.
- *
- * @throws A {@link SceneLoadError} for every failure.
- */
-export async function loadScene(file: string, options: LoadOptions): Promise<Scene> {
+/** Import a file with `charade` mapped to this copy, and return its module. */
+async function loadModule(file: string, options: LoadOptions): Promise<unknown> {
   const exists = options.exists ?? isFile;
   const absolute = path.resolve(file);
   if (!exists(absolute)) {
@@ -329,11 +407,31 @@ export async function loadScene(file: string, options: LoadOptions): Promise<Sce
   }
   const hook = (options.install ?? installOnce)();
   const importModule = options.importModule ?? ((url: string) => import(url));
-  let module: unknown;
   try {
-    module = await importModule(pathToFileURL(absolute).href);
+    return await importModule(pathToFileURL(absolute).href);
   } catch (error) {
     throw classifyLoadError(error, { failures: hook.failures, exists });
   }
-  return sceneFrom(module);
+}
+
+/**
+ * Import a scene file with `charade` mapped to this copy, and return its built scene.
+ *
+ * @throws A {@link SceneLoadError} for every failure.
+ */
+export async function loadScene(file: string, options: LoadOptions): Promise<Scene> {
+  return sceneFrom(await loadModule(file, options));
+}
+
+/**
+ * Import a module of definitions as a scene file is imported, and return the
+ * definitions it exports.
+ *
+ * @throws A {@link SceneLoadError} for every failure.
+ */
+export async function loadDefinitions(
+  file: string,
+  options: LoadOptions,
+): Promise<Definition[]> {
+  return definitionsFrom(await loadModule(file, options));
 }

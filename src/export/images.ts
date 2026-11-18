@@ -1,4 +1,4 @@
-import { writeFile } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 import {
@@ -48,6 +48,18 @@ export class OutputWriteError extends CharadeError {
 export const writeOutput: FileWriter = async (file, bytes) => {
   try {
     await writeFile(file, bytes);
+  } catch (error) {
+    throw new OutputWriteError(error);
+  }
+};
+
+/** Makes a folder and its missing parents; a test passes a fake. */
+export type FolderMaker = (folder: string) => Promise<void>;
+
+/** Makes a folder with `node:fs`; one that is already there is left as it is. */
+export const makeFolder: FolderMaker = async (folder) => {
+  try {
+    await mkdir(folder, { recursive: true });
   } catch (error) {
     throw new OutputWriteError(error);
   }
