@@ -96,9 +96,12 @@ recorded sample is written against; changing any of it changes all of them at on
 - An author's channel map is copied when the call is recorded; the scene never freezes
   or keeps an object the author owns, only the functions given at depth 3 and 4.
 - A row shows 2.5 units of height at every row count, with the ground line 0.3 units
-  above its lower edge; the visible width follows from the canvas and the row count. The
-  two numbers are tuned on the first three actions and are contract after the first
-  release.
+  above its lower edge; the visible width follows from the canvas and the row count.
+  Both numbers are final and are contract after the first release. They were settled on
+  the first three actions: the top of the row, 2.2 units up, clears a ball thrown at
+  `throw`'s highest `loft` (its top peaks at 2.0), and the 2.5 units a single square row
+  is wide hold the default throw, which lands 1 unit out and hops to 1.12. A shorter row
+  would clip the first and push the second out of the frame.
 - Rows are stacked top to bottom, each a band of `height / rows` pixels spanning the
   canvas width, so a unit is `height / rows / 2.5` pixels. A row is drawn under
   `setTransform(s, 0, 0, −s, width / 2, groundY)`: the negated `y` scale turns row
@@ -147,8 +150,8 @@ recorded sample is written against; changing any of it changes all of them at on
   smoothstep (`3p² − 2p³`). Anticipation comes before the blend and dips the weight to
   −0.1 and back (`−0.1 · sin²(πp)`); follow-through comes after it and lifts the weight
   to 1.1 and back. A weight outside 0..1 extrapolates, which is the wind-up and the
-  overshoot. The 0.1 is tuned on the first three actions. There is no `ease` option yet;
-  it can be added without a break.
+  overshoot. The 0.1 is final: it is what `sitDown` settles and `slump` sags with. There
+  is no `ease` option yet; it can be added without a break.
 - A pose is held after its call ends, until a later call moves those channels: an ended
   `replace` segment stays as the base, a later end over an earlier one. Returning to
   rest instead would make a seated figure stand up during every `wait`. A `drive` is
@@ -231,8 +234,9 @@ pelvis (root: pelvisX, pelvisY)
   naming its chain; either channel is dropped and the rest of the call is recorded.
   Nearest names are at most three, by edit distance, none when the name is further than
   half its length from every valid one.
-- Joint limits and segment lengths are tuned on the first three actions. After the first
-  release a change to either changes every recorded sample.
+- The joint limits, the face ranges and the segment lengths below are final: the first
+  three actions were looked at and corrected against them by an agent alone, and none of
+  the numbers had to move. A change to any of them changes every recorded sample.
 - Segment lengths, in units of figure height: thigh 0.24, shin 0.24, spine 0.14, chest
   0.14, neck 0.06, head 0.18 (a circle of diameter 0.18 on the neck), upper arm 0.17,
   forearm 0.16, foot 0.08. The column from ankle to head top sums to 1, so a rest figure
@@ -241,7 +245,9 @@ pelvis (root: pelvisX, pelvisY)
 - Joint limits, in radians: spine −0.3..0.9, chest −0.3..0.7, neck −0.7..0.9, shoulder
   −1.0..3.1, elbow 0..2.6, hip −0.5..2.1, knee 0..2.6, ankle −0.6..0.5. `pelvis` has no
   limit: it is the whole body's tilt, which a lie-down or a flip uses in full. A limit
-  is inclusive at both ends and `NaN` is never within it.
+  is inclusive at both ends and `NaN` is never within it. The first three actions, at
+  the ends of their parameters and under every mood, come within 0.15 rad of four of
+  them and cross none: chest 0.67, neck 0.87, shoulder 3.0, hip 1.96.
 - Inverse kinematics with a fixed bend direction cannot bend a knee backwards; a
   directly authored angle can, which is the case the limit check exists for.
 - Inverse kinematics is analytic two-bone, with the knee bending forward and the elbow
@@ -386,13 +392,16 @@ change to the shape raises the version.
   its weight relative to its size at every row count.
 - The head is a circle of the head's diameter, stroked in ink and filled with the
   background, so the face draws in ink on paper; the probe pixel inside the head is
-  therefore taken on its outline or a feature. The face sits a tenth of the head's
-  radius forward of its centre, every feature inside the outline over the channels' full
-  ranges, so it reads as facing: two lens-shaped eyes whose height is `eyeOpen` (flat
-  at 0) with a pupil moved by `gazeX` and `gazeY`, brows raised by `browHeight` and
+  therefore taken on its outline or a feature. The face sits 0.08 of the head's radius
+  forward of its centre, every feature inside the outline over the channels' full
+  ranges, so it reads as facing: two solid oval eyes whose height is `eyeOpen` (a flat
+  line at 0) and which `gazeX` and `gazeY` move whole, brows raised by `browHeight` and
   tilted inner end up by a positive `browTilt`, and a mouth of two quadratic curves: the
   upper bends down at the middle by `mouthCurve` (a smile), the lower drops below it by
-  `mouthOpen`, the corners spread by `mouthWidth`.
+  `mouthOpen`, the corners spread by `mouthWidth`. An eye is solid because an outline
+  with a pupil inside it closes into a blot: at four rows the whole head is 19 px
+  across. The brows rest clear of the eyes and meet them only when lowered, which is
+  what a scowl is.
 - The figure draws the far (`L`) arm and leg, then the back and the head, then the near
   (`R`) leg and arm, so the near limbs are in front.
 - Within a row the order is the five slots of `ROW_SLOTS`: backdrop, props behind,

@@ -22,8 +22,10 @@ export const slumpAction: ActionDefinition<typeof slumpParams, never> = defineAc
     const [breath, fall, settle] = heavy ? [0.35, 0.6, 0.45] : [0.25, 0.4, 0.3];
     const natural = breath + fall + settle;
     const k = (clip.duration ?? natural) / natural;
-    const spine = 0.2 * d;
-    const chest = 0.5 * d;
+    // The lower back gives way backward under a rounded upper back, so the shoulders
+    // stay over the hips; a back that only bends forward reads as a bow.
+    const spine = -0.12 * d;
+    const chest = 0.6 * d;
 
     clip.pose(
       { spine: -0.06, chest: -0.1, neck: -0.12, shoulderL: -0.05, shoulderR: -0.05 },

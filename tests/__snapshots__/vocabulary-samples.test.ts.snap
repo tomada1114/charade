@@ -70,35 +70,31 @@ stroke
 fillStyle "#111111"
 lineWidth 100
 beginPath
-moveTo -324 9235
-quadraticCurveTo -180 9523 -36 9235
-quadraticCurveTo -180 8947 -324 9235
+moveTo -243 9172
+bezierCurveTo -243 9316 -117 9316 -117 9172
+bezierCurveTo -117 9028 -243 9028 -243 9172
 closePath
-stroke
-beginPath
-arc -180 9235 72 0 62832
 fill
-beginPath
-moveTo -45 9460
-lineTo -315 9460
 stroke
 beginPath
-moveTo 216 9235
-quadraticCurveTo 360 9523 504 9235
-quadraticCurveTo 360 8947 216 9235
+moveTo -54 9505
+lineTo -306 9505
+stroke
+beginPath
+moveTo 261 9172
+bezierCurveTo 261 9316 387 9316 387 9172
+bezierCurveTo 387 9028 261 9028 261 9172
 closePath
-stroke
-beginPath
-arc 360 9235 72 0 62832
 fill
-beginPath
-moveTo 225 9460
-lineTo 495 9460
 stroke
 beginPath
-moveTo -180 8740
-quadraticCurveTo 90 8740 360 8740
-quadraticCurveTo 90 8740 -180 8740
+moveTo 198 9505
+lineTo 450 9505
+stroke
+beginPath
+moveTo -198 8740
+quadraticCurveTo 72 8740 342 8740
+quadraticCurveTo 72 8740 -198 8740
 closePath
 fill
 stroke
@@ -188,35 +184,31 @@ stroke
 fillStyle "#111111"
 lineWidth 100
 beginPath
-moveTo -108 9122
-quadraticCurveTo 66 9393 178 9091
-quadraticCurveTo 4 8820 -108 9122
+moveTo -35 9051
+bezierCurveTo -19 9194 106 9180 91 9037
+bezierCurveTo 75 8894 -50 8908 -35 9051
 closePath
-stroke
-beginPath
-arc 35 9107 72 0 62832
 fill
-beginPath
-moveTo 193 9316
-lineTo -75 9345
 stroke
 beginPath
-moveTo 428 9064
-quadraticCurveTo 603 9334 715 9032
-quadraticCurveTo 540 8762 428 9064
+moveTo 189 9361
+lineTo -61 9389
+stroke
+beginPath
+moveTo 466 8996
+bezierCurveTo 482 9139 607 9126 592 8983
+bezierCurveTo 576 8839 451 8853 466 8996
 closePath
-stroke
-beginPath
-arc 572 9048 72 0 62832
 fill
-beginPath
-moveTo 462 9286
-lineTo 730 9257
 stroke
 beginPath
-moveTo -19 8615
-quadraticCurveTo 249 8585 518 8556
-quadraticCurveTo 249 8585 -19 8615
+moveTo 440 9334
+lineTo 690 9307
+stroke
+beginPath
+moveTo -37 8617
+quadraticCurveTo 232 8587 500 8558
+quadraticCurveTo 232 8587 -37 8617
 closePath
 fill
 stroke
@@ -306,35 +298,31 @@ stroke
 fillStyle "#111111"
 lineWidth 100
 beginPath
-moveTo 404 8415
-quadraticCurveTo 657 8614 664 8292
-quadraticCurveTo 411 8093 404 8415
+moveTo 450 8324
+bezierCurveTo 512 8454 626 8400 564 8270
+bezierCurveTo 503 8140 389 8193 450 8324
 closePath
-stroke
-beginPath
-arc 534 8354 72 0 62832
 fill
-beginPath
-moveTo 752 8500
-lineTo 508 8615
 stroke
 beginPath
-moveTo 892 8185
-quadraticCurveTo 1145 8384 1153 8062
-quadraticCurveTo 900 7863 892 8185
+moveTo 763 8544
+lineTo 535 8652
+stroke
+beginPath
+moveTo 906 8109
+bezierCurveTo 967 8239 1081 8185 1020 8055
+bezierCurveTo 958 7925 845 7978 906 8109
 closePath
-stroke
-beginPath
-arc 1022 8123 72 0 62832
 fill
-beginPath
-moveTo 996 8384
-lineTo 1240 8269
 stroke
 beginPath
-moveTo 323 7906
-quadraticCurveTo 567 7791 811 7676
-quadraticCurveTo 567 7791 323 7906
+moveTo 991 8437
+lineTo 1219 8329
+stroke
+beginPath
+moveTo 307 7914
+quadraticCurveTo 551 7799 795 7683
+quadraticCurveTo 551 7799 307 7914
 closePath
 fill
 stroke
@@ -424,35 +412,31 @@ stroke
 fillStyle "#111111"
 lineWidth 100
 beginPath
-moveTo -334 6956
-quadraticCurveTo -53 7113 -96 6794
-quadraticCurveTo -377 6637 -334 6956
+moveTo -303 6859
+bezierCurveTo -221 6978 -117 6907 -199 6788
+bezierCurveTo -280 6669 -384 6740 -303 6859
 closePath
-stroke
-beginPath
-arc -215 6875 72 0 62832
 fill
-beginPath
-moveTo 23 6985
-lineTo -200 7137
 stroke
 beginPath
-moveTo 112 6652
-quadraticCurveTo 393 6808 350 6489
-quadraticCurveTo 68 6333 112 6652
+moveTo 41 7027
+lineTo -167 7169
+stroke
+beginPath
+moveTo 114 6574
+bezierCurveTo 195 6693 299 6622 218 6503
+bezierCurveTo 136 6384 32 6456 114 6574
 closePath
-stroke
-beginPath
-arc 231 6571 72 0 62832
 fill
-beginPath
-moveTo 246 6833
-lineTo 469 6680
 stroke
 beginPath
-moveTo -494 6466
-quadraticCurveTo -271 6314 -48 6162
-quadraticCurveTo -271 6314 -494 6466
+moveTo 249 6885
+lineTo 457 6743
+stroke
+beginPath
+moveTo -509 6477
+quadraticCurveTo -286 6324 -63 6172
+quadraticCurveTo -286 6324 -509 6477
 closePath
 fill
 stroke
@@ -542,35 +526,31 @@ stroke
 fillStyle "#111111"
 lineWidth 100
 beginPath
-moveTo -2131 7195
-quadraticCurveTo -1944 7457 -1847 7150
-quadraticCurveTo -2034 6888 -2131 7195
+moveTo -2061 7120
+bezierCurveTo -2039 7262 -1914 7242 -1937 7100
+bezierCurveTo -1959 6958 -2084 6978 -2061 7120
 closePath
-stroke
-beginPath
-arc -1989 7172 72 0 62832
 fill
-beginPath
-moveTo -1821 7373
-lineTo -2087 7416
 stroke
 beginPath
-moveTo -1598 7110
-quadraticCurveTo -1411 7372 -1314 7065
-quadraticCurveTo -1501 6803 -1598 7110
+moveTo -1822 7419
+lineTo -2071 7459
+stroke
+beginPath
+moveTo -1563 7041
+bezierCurveTo -1541 7183 -1416 7164 -1439 7021
+bezierCurveTo -1462 6879 -1586 6899 -1563 7041
 closePath
-stroke
-beginPath
-arc -1456 7088 72 0 62832
 fill
-beginPath
-moveTo -1554 7331
-lineTo -1287 7289
 stroke
 beginPath
-moveTo -2067 6683
-quadraticCurveTo -1800 6641 -1533 6599
-quadraticCurveTo -1800 6641 -2067 6683
+moveTo -1574 7380
+lineTo -1325 7340
+stroke
+beginPath
+moveTo -2084 6686
+quadraticCurveTo -1818 6644 -1551 6602
+quadraticCurveTo -1818 6644 -2084 6686
 closePath
 fill
 stroke
@@ -660,35 +640,31 @@ stroke
 fillStyle "#111111"
 lineWidth 100
 beginPath
-moveTo -2349 7200
-quadraticCurveTo -2177 7473 -2063 7172
-quadraticCurveTo -2235 6899 -2349 7200
+moveTo -2275 7130
+bezierCurveTo -2261 7273 -2135 7260 -2150 7117
+bezierCurveTo -2164 6974 -2289 6986 -2275 7130
 closePath
-stroke
-beginPath
-arc -2206 7186 72 0 62832
 fill
-beginPath
-moveTo -2049 7396
-lineTo -2318 7423
 stroke
 beginPath
-moveTo -1812 7147
-quadraticCurveTo -1640 7419 -1526 7118
-quadraticCurveTo -1698 6846 -1812 7147
+moveTo -2054 7442
+lineTo -2305 7467
+stroke
+beginPath
+moveTo -1774 7079
+bezierCurveTo -1759 7223 -1634 7210 -1648 7067
+bezierCurveTo -1663 6923 -1788 6936 -1774 7079
 closePath
-stroke
-beginPath
-arc -1669 7132 72 0 62832
 fill
-beginPath
-moveTo -1781 7370
-lineTo -1512 7343
 stroke
 beginPath
-moveTo -2256 6694
-quadraticCurveTo -1987 6667 -1718 6640
-quadraticCurveTo -1987 6667 -2256 6694
+moveTo -1803 7417
+lineTo -1552 7392
+stroke
+beginPath
+moveTo -2273 6695
+quadraticCurveTo -2005 6668 -1736 6641
+quadraticCurveTo -2005 6668 -2273 6695
 closePath
 fill
 stroke
@@ -778,35 +754,31 @@ stroke
 fillStyle "#111111"
 lineWidth 100
 beginPath
-moveTo -2349 7200
-quadraticCurveTo -2177 7473 -2063 7172
-quadraticCurveTo -2235 6899 -2349 7200
+moveTo -2275 7130
+bezierCurveTo -2261 7273 -2135 7260 -2150 7117
+bezierCurveTo -2164 6974 -2289 6986 -2275 7130
 closePath
-stroke
-beginPath
-arc -2206 7186 72 0 62832
 fill
-beginPath
-moveTo -2049 7396
-lineTo -2318 7423
 stroke
 beginPath
-moveTo -1812 7147
-quadraticCurveTo -1640 7419 -1526 7118
-quadraticCurveTo -1698 6846 -1812 7147
+moveTo -2054 7442
+lineTo -2305 7467
+stroke
+beginPath
+moveTo -1774 7079
+bezierCurveTo -1759 7223 -1634 7210 -1648 7067
+bezierCurveTo -1663 6923 -1788 6936 -1774 7079
 closePath
-stroke
-beginPath
-arc -1669 7132 72 0 62832
 fill
-beginPath
-moveTo -1781 7370
-lineTo -1512 7343
 stroke
 beginPath
-moveTo -2256 6694
-quadraticCurveTo -1987 6667 -1718 6640
-quadraticCurveTo -1987 6667 -2256 6694
+moveTo -1803 7417
+lineTo -1552 7392
+stroke
+beginPath
+moveTo -2273 6695
+quadraticCurveTo -2005 6668 -1736 6641
+quadraticCurveTo -2005 6668 -2273 6695
 closePath
 fill
 stroke
@@ -875,35 +847,31 @@ stroke
 fillStyle "#111111"
 lineWidth 100
 beginPath
-moveTo -324 9235
-quadraticCurveTo -180 9523 -36 9235
-quadraticCurveTo -180 8947 -324 9235
+moveTo -243 9172
+bezierCurveTo -243 9316 -117 9316 -117 9172
+bezierCurveTo -117 9028 -243 9028 -243 9172
 closePath
-stroke
-beginPath
-arc -180 9235 72 0 62832
 fill
-beginPath
-moveTo -45 9460
-lineTo -315 9460
 stroke
 beginPath
-moveTo 216 9235
-quadraticCurveTo 360 9523 504 9235
-quadraticCurveTo 360 8947 216 9235
+moveTo -54 9505
+lineTo -306 9505
+stroke
+beginPath
+moveTo 261 9172
+bezierCurveTo 261 9316 387 9316 387 9172
+bezierCurveTo 387 9028 261 9028 261 9172
 closePath
-stroke
-beginPath
-arc 360 9235 72 0 62832
 fill
-beginPath
-moveTo 225 9460
-lineTo 495 9460
 stroke
 beginPath
-moveTo -180 8740
-quadraticCurveTo 90 8740 360 8740
-quadraticCurveTo 90 8740 -180 8740
+moveTo 198 9505
+lineTo 450 9505
+stroke
+beginPath
+moveTo -198 8740
+quadraticCurveTo 72 8740 342 8740
+quadraticCurveTo 72 8740 -198 8740
 closePath
 fill
 stroke
@@ -972,35 +940,31 @@ stroke
 fillStyle "#111111"
 lineWidth 100
 beginPath
-moveTo -458 9216
-quadraticCurveTo -328 9511 -170 9231
-quadraticCurveTo -300 8936 -458 9216
+moveTo -374 9158
+bezierCurveTo -381 9301 -255 9308 -248 9164
+bezierCurveTo -241 9020 -367 9014 -374 9158
 closePath
-stroke
-beginPath
-arc -314 9224 72 0 62832
 fill
-beginPath
-moveTo -190 9455
-lineTo -460 9442
 stroke
 beginPath
-moveTo 81 9243
-quadraticCurveTo 211 9538 369 9257
-quadraticCurveTo 239 8962 81 9243
+moveTo -201 9499
+lineTo -453 9487
+stroke
+beginPath
+moveTo 129 9182
+bezierCurveTo 122 9326 248 9332 255 9188
+bezierCurveTo 262 9045 137 9038 129 9182
 closePath
-stroke
-beginPath
-arc 225 9250 72 0 62832
 fill
-beginPath
-moveTo 79 9468
-lineTo 349 9481
 stroke
 beginPath
-moveTo -290 8729
-quadraticCurveTo -20 8742 250 8756
-quadraticCurveTo -20 8742 -290 8729
+moveTo 50 9512
+lineTo 302 9524
+stroke
+beginPath
+moveTo -308 8728
+quadraticCurveTo -38 8742 232 8755
+quadraticCurveTo -38 8742 -308 8728
 closePath
 fill
 stroke
@@ -1045,9 +1009,9 @@ lineWidth 250
 lineCap "round"
 lineJoin "round"
 beginPath
-moveTo -160 7595
-lineTo -10 5901
-lineTo 153 4310
+moveTo -228 7590
+lineTo -77 5897
+lineTo 86 4305
 stroke
 beginPath
 moveTo 0 4800
@@ -1057,47 +1021,43 @@ lineTo 800 0
 stroke
 beginPath
 moveTo 0 4800
-lineTo -49 6199
-lineTo -160 7595
-lineTo -279 8183
+lineTo -90 6197
+lineTo -228 7590
+lineTo -358 8176
 stroke
 beginPath
-arc -457 9065 900 0 62832
+arc -554 9054 900 0 62832
 fillStyle "#ffffff"
 fill
 stroke
 fillStyle "#111111"
 lineWidth 100
 beginPath
-moveTo -802 9133
-quadraticCurveTo -717 9444 -519 9190
-quadraticCurveTo -603 8879 -802 9133
+moveTo -807 9072
+bezierCurveTo -838 9212 -715 9240 -684 9099
+bezierCurveTo -652 8959 -775 8931 -807 9072
 closePath
-stroke
-beginPath
-arc -660 9162 72 0 62832
 fill
-beginPath
-moveTo -573 9409
-lineTo -837 9356
 stroke
 beginPath
-moveTo -272 9240
-quadraticCurveTo -188 9551 10 9297
-quadraticCurveTo -74 8986 -272 9240
+moveTo -695 9438
+lineTo -941 9383
+stroke
+beginPath
+moveTo -315 9181
+bezierCurveTo -346 9322 -223 9349 -192 9209
+bezierCurveTo -160 9068 -283 9041 -315 9181
 closePath
-stroke
-beginPath
-arc -131 9269 72 0 62832
 fill
-beginPath
-moveTo -308 9462
-lineTo -43 9516
 stroke
 beginPath
-moveTo -562 8677
-quadraticCurveTo -298 8730 -33 8783
-quadraticCurveTo -298 8730 -562 8677
+moveTo -449 9493
+lineTo -203 9548
+stroke
+beginPath
+moveTo -669 8660
+quadraticCurveTo -405 8719 -142 8777
+quadraticCurveTo -405 8719 -669 8660
 closePath
 fill
 stroke
@@ -1109,9 +1069,9 @@ lineTo 0 0
 lineTo 800 0
 stroke
 beginPath
-moveTo -160 7595
-lineTo 13 5904
-lineTo 190 4313
+moveTo -228 7590
+lineTo -55 5899
+lineTo 123 4309
 stroke
 restore
 restore"
@@ -1142,9 +1102,9 @@ lineWidth 250
 lineCap "round"
 lineJoin "round"
 beginPath
-moveTo 917 7393
-lineTo 795 5697
-lineTo 863 4099
+moveTo 362 7504
+lineTo 240 5808
+lineTo 309 4210
 stroke
 beginPath
 moveTo 0 4800
@@ -1154,47 +1114,43 @@ lineTo 800 0
 stroke
 beginPath
 moveTo 0 4800
-lineTo 210 6184
-lineTo 917 7393
-lineTo 1373 7782
+lineTo -132 6194
+lineTo 362 7504
+lineTo 747 7964
 stroke
 beginPath
-arc 2057 8367 900 0 62832
+arc 1323 8655 900 0 62832
 fillStyle "#ffffff"
 fill
 stroke
 fillStyle "#111111"
 lineWidth 100
 beginPath
-moveTo 1950 8701
-quadraticCurveTo 2262 8778 2137 8482
-quadraticCurveTo 1824 8404 1950 8701
+moveTo 1183 8866
+bezierCurveTo 1275 8977 1372 8896 1280 8785
+bezierCurveTo 1187 8675 1091 8756 1183 8866
 closePath
-stroke
-beginPath
-arc 2043 8591 72 0 62832
 fill
-beginPath
-moveTo 2302 8635
-lineTo 2127 8840
 stroke
 beginPath
-moveTo 2300 8290
-quadraticCurveTo 2613 8368 2487 8071
-quadraticCurveTo 2175 7994 2300 8290
+moveTo 1541 9001
+lineTo 1348 9162
+stroke
+beginPath
+moveTo 1570 8543
+bezierCurveTo 1662 8654 1759 8573 1667 8462
+bezierCurveTo 1574 8352 1478 8433 1570 8543
 closePath
-stroke
-beginPath
-arc 2394 8181 72 0 62832
 fill
-beginPath
-moveTo 2477 8429
-lineTo 2653 8224
 stroke
 beginPath
-moveTo 1667 8270
-quadraticCurveTo 1842 8065 2017 7859
-quadraticCurveTo 1842 8065 1667 8270
+moveTo 1735 8839
+lineTo 1928 8678
+stroke
+beginPath
+moveTo 941 8506
+quadraticCurveTo 1148 8333 1355 8160
+quadraticCurveTo 1148 8333 941 8506
 closePath
 fill
 stroke
@@ -1206,9 +1162,9 @@ lineTo 0 0
 lineTo 800 0
 stroke
 beginPath
-moveTo 917 7393
-lineTo 990 5694
-lineTo 1181 4106
+moveTo 362 7504
+lineTo 435 5805
+lineTo 626 4217
 stroke
 restore
 restore"
@@ -1239,9 +1195,9 @@ lineWidth 250
 lineCap "round"
 lineJoin "round"
 beginPath
-moveTo 1067 7314
-lineTo 903 5622
-lineTo 957 4023
+moveTo 448 7464
+lineTo 283 5772
+lineTo 337 4173
 stroke
 beginPath
 moveTo 0 4800
@@ -1251,47 +1207,43 @@ lineTo 800 0
 stroke
 beginPath
 moveTo 0 4800
-lineTo 250 6178
-lineTo 1067 7314
-lineTo 1647 7470
+lineTo -139 6193
+lineTo 448 7464
+lineTo 986 7728
 stroke
 beginPath
-arc 2515 7705 900 0 62832
+arc 1795 8124 900 0 62832
 fillStyle "#ffffff"
 fill
 stroke
 fillStyle "#111111"
 lineWidth 100
 beginPath
-moveTo 2561 8053
-quadraticCurveTo 2877 7989 2636 7775
-quadraticCurveTo 2321 7839 2561 8053
+moveTo 1753 8374
+bezierCurveTo 1882 8437 1937 8324 1808 8261
+bezierCurveTo 1679 8198 1623 8311 1753 8374
 closePath
-stroke
-beginPath
-arc 2599 7914 72 0 62832
 fill
-beginPath
-moveTo 2851 7842
-lineTo 2781 8103
 stroke
 beginPath
-moveTo 2702 7532
-quadraticCurveTo 3018 7468 2777 7254
-quadraticCurveTo 2462 7318 2702 7532
+moveTo 2135 8351
+lineTo 2024 8577
+stroke
+beginPath
+moveTo 1974 7921
+bezierCurveTo 2104 7985 2159 7872 2030 7808
+bezierCurveTo 1900 7745 1845 7858 1974 7921
 closePath
-stroke
-beginPath
-arc 2740 7393 72 0 62832
 fill
-beginPath
-moveTo 2922 7582
-lineTo 2992 7321
 stroke
 beginPath
-moveTo 2121 7785
-quadraticCurveTo 2191 7524 2262 7264
-quadraticCurveTo 2191 7524 2121 7785
+moveTo 2246 8124
+lineTo 2356 7898
+stroke
+beginPath
+moveTo 1384 8144
+quadraticCurveTo 1503 7901 1622 7659
+quadraticCurveTo 1503 7901 1384 8144
 closePath
 fill
 stroke
@@ -1303,9 +1255,9 @@ lineTo 0 0
 lineTo 800 0
 stroke
 beginPath
-moveTo 1067 7314
-lineTo 1125 5615
-lineTo 1318 4027
+moveTo 448 7464
+lineTo 505 5765
+lineTo 698 4177
 stroke
 restore
 restore"
@@ -1336,9 +1288,9 @@ lineWidth 250
 lineCap "round"
 lineJoin "round"
 beginPath
-moveTo 967 7368
-lineTo 831 5674
-lineTo 895 4075
+moveTo 390 7492
+lineTo 254 5797
+lineTo 318 4198
 stroke
 beginPath
 moveTo 0 4800
@@ -1348,47 +1300,43 @@ lineTo 800 0
 stroke
 beginPath
 moveTo 0 4800
-lineTo 223 6182
-lineTo 967 7368
-lineTo 1522 7595
+lineTo -134 6194
+lineTo 390 7492
+lineTo 898 7812
 stroke
 beginPath
-arc 2356 7934 900 0 62832
+arc 1659 8292 900 0 62832
 fillStyle "#ffffff"
 fill
 stroke
 fillStyle "#111111"
 lineWidth 100
 beginPath
-moveTo 2359 8285
-quadraticCurveTo 2680 8260 2467 8018
-quadraticCurveTo 2146 8043 2359 8285
+moveTo 1590 8536
+bezierCurveTo 1712 8613 1779 8506 1657 8429
+bezierCurveTo 1536 8352 1468 8459 1590 8536
 closePath
-stroke
-beginPath
-arc 2413 8152 72 0 62832
 fill
-beginPath
-moveTo 2672 8112
-lineTo 2570 8362
 stroke
 beginPath
-moveTo 2562 7785
-quadraticCurveTo 2883 7760 2671 7518
-quadraticCurveTo 2350 7543 2562 7785
+moveTo 1973 8554
+lineTo 1838 8767
+stroke
+beginPath
+moveTo 1859 8110
+bezierCurveTo 1981 8186 2048 8080 1926 8003
+bezierCurveTo 1805 7926 1737 8033 1859 8110
 closePath
-stroke
-beginPath
-arc 2617 7652 72 0 62832
 fill
-beginPath
-moveTo 2774 7862
-lineTo 2876 7611
 stroke
 beginPath
-moveTo 1955 7965
-quadraticCurveTo 2056 7715 2158 7465
-quadraticCurveTo 2056 7715 1955 7965
+moveTo 2107 8341
+lineTo 2242 8127
+stroke
+beginPath
+moveTo 1249 8267
+quadraticCurveTo 1393 8039 1537 7811
+quadraticCurveTo 1393 8039 1249 8267
 closePath
 fill
 stroke
@@ -1400,9 +1348,9 @@ lineTo 0 0
 lineTo 800 0
 stroke
 beginPath
-moveTo 967 7368
-lineTo 1035 5670
-lineTo 1226 4081
+moveTo 390 7492
+lineTo 458 5793
+lineTo 650 4204
 stroke
 restore
 restore"
@@ -1433,9 +1381,9 @@ lineWidth 250
 lineCap "round"
 lineJoin "round"
 beginPath
-moveTo 967 7368
-lineTo 831 5674
-lineTo 895 4075
+moveTo 390 7492
+lineTo 254 5797
+lineTo 318 4198
 stroke
 beginPath
 moveTo 0 4800
@@ -1445,47 +1393,43 @@ lineTo 800 0
 stroke
 beginPath
 moveTo 0 4800
-lineTo 223 6182
-lineTo 967 7368
-lineTo 1522 7595
+lineTo -134 6194
+lineTo 390 7492
+lineTo 898 7812
 stroke
 beginPath
-arc 2356 7934 900 0 62832
+arc 1659 8292 900 0 62832
 fillStyle "#ffffff"
 fill
 stroke
 fillStyle "#111111"
 lineWidth 100
 beginPath
-moveTo 2359 8285
-quadraticCurveTo 2680 8260 2467 8018
-quadraticCurveTo 2146 8043 2359 8285
+moveTo 1590 8536
+bezierCurveTo 1712 8613 1779 8506 1657 8429
+bezierCurveTo 1536 8352 1468 8459 1590 8536
 closePath
-stroke
-beginPath
-arc 2413 8152 72 0 62832
 fill
-beginPath
-moveTo 2672 8112
-lineTo 2570 8362
 stroke
 beginPath
-moveTo 2562 7785
-quadraticCurveTo 2883 7760 2671 7518
-quadraticCurveTo 2350 7543 2562 7785
+moveTo 1973 8554
+lineTo 1838 8767
+stroke
+beginPath
+moveTo 1859 8110
+bezierCurveTo 1981 8186 2048 8080 1926 8003
+bezierCurveTo 1805 7926 1737 8033 1859 8110
 closePath
-stroke
-beginPath
-arc 2617 7652 72 0 62832
 fill
-beginPath
-moveTo 2774 7862
-lineTo 2876 7611
 stroke
 beginPath
-moveTo 1955 7965
-quadraticCurveTo 2056 7715 2158 7465
-quadraticCurveTo 2056 7715 1955 7965
+moveTo 2107 8341
+lineTo 2242 8127
+stroke
+beginPath
+moveTo 1249 8267
+quadraticCurveTo 1393 8039 1537 7811
+quadraticCurveTo 1393 8039 1249 8267
 closePath
 fill
 stroke
@@ -1497,9 +1441,9 @@ lineTo 0 0
 lineTo 800 0
 stroke
 beginPath
-moveTo 967 7368
-lineTo 1035 5670
-lineTo 1226 4081
+moveTo 390 7492
+lineTo 458 5793
+lineTo 650 4204
 stroke
 restore
 restore"
@@ -1554,35 +1498,31 @@ stroke
 fillStyle "#111111"
 lineWidth 100
 beginPath
-moveTo -324 9235
-quadraticCurveTo -180 9523 -36 9235
-quadraticCurveTo -180 8947 -324 9235
+moveTo -243 9172
+bezierCurveTo -243 9316 -117 9316 -117 9172
+bezierCurveTo -117 9028 -243 9028 -243 9172
 closePath
-stroke
-beginPath
-arc -180 9235 72 0 62832
 fill
-beginPath
-moveTo -45 9460
-lineTo -315 9460
 stroke
 beginPath
-moveTo 216 9235
-quadraticCurveTo 360 9523 504 9235
-quadraticCurveTo 360 8947 216 9235
+moveTo -54 9505
+lineTo -306 9505
+stroke
+beginPath
+moveTo 261 9172
+bezierCurveTo 261 9316 387 9316 387 9172
+bezierCurveTo 387 9028 261 9028 261 9172
 closePath
-stroke
-beginPath
-arc 360 9235 72 0 62832
 fill
-beginPath
-moveTo 225 9460
-lineTo 495 9460
 stroke
 beginPath
-moveTo -180 8740
-quadraticCurveTo 90 8740 360 8740
-quadraticCurveTo 90 8740 -180 8740
+moveTo 198 9505
+lineTo 450 9505
+stroke
+beginPath
+moveTo -198 8740
+quadraticCurveTo 72 8740 342 8740
+quadraticCurveTo 72 8740 -198 8740
 closePath
 fill
 stroke
@@ -1669,35 +1609,31 @@ stroke
 fillStyle "#111111"
 lineWidth 100
 beginPath
-moveTo -1462 9125
-quadraticCurveTo -1297 9402 -1175 9104
-quadraticCurveTo -1340 8827 -1462 9125
+moveTo -1386 9056
+bezierCurveTo -1375 9200 -1249 9191 -1260 9047
+bezierCurveTo -1271 8903 -1396 8913 -1386 9056
 closePath
-stroke
-beginPath
-arc -1318 9114 72 0 62832
 fill
-beginPath
-moveTo -1167 9329
-lineTo -1436 9349
 stroke
 beginPath
-moveTo -923 9085
-quadraticCurveTo -758 9362 -636 9064
-quadraticCurveTo -801 8787 -923 9085
+moveTo -1173 9374
+lineTo -1424 9393
+stroke
+beginPath
+moveTo -883 9019
+bezierCurveTo -872 9163 -747 9153 -757 9010
+bezierCurveTo -768 8866 -894 8875 -883 9019
 closePath
-stroke
-beginPath
-arc -780 9075 72 0 62832
 fill
-beginPath
-moveTo -898 9309
-lineTo -628 9289
 stroke
 beginPath
-moveTo -1355 8621
-quadraticCurveTo -1086 8601 -816 8581
-quadraticCurveTo -1086 8601 -1355 8621
+moveTo -921 9356
+lineTo -670 9337
+stroke
+beginPath
+moveTo -1373 8622
+quadraticCurveTo -1104 8602 -834 8582
+quadraticCurveTo -1104 8602 -1373 8622
 closePath
 fill
 stroke
@@ -1784,35 +1720,31 @@ stroke
 fillStyle "#111111"
 lineWidth 100
 beginPath
-moveTo 1914 8874
-quadraticCurveTo 2145 9098 2186 8779
-quadraticCurveTo 1955 8554 1914 8874
+moveTo 1970 8788
+bezierCurveTo 2017 8924 2136 8882 2089 8746
+bezierCurveTo 2041 8610 1922 8652 1970 8788
 closePath
-stroke
-beginPath
-arc 2050 8826 72 0 62832
 fill
-beginPath
-moveTo 2252 8994
-lineTo 1997 9083
 stroke
 beginPath
-moveTo 2424 8695
-quadraticCurveTo 2655 8919 2696 8600
-quadraticCurveTo 2464 8376 2424 8695
+moveTo 2258 9039
+lineTo 2021 9123
+stroke
+beginPath
+moveTo 2445 8621
+bezierCurveTo 2493 8757 2612 8715 2564 8579
+bezierCurveTo 2517 8443 2398 8485 2445 8621
 closePath
-stroke
-beginPath
-arc 2560 8648 72 0 62832
 fill
-beginPath
-moveTo 2507 8905
-lineTo 2762 8815
 stroke
 beginPath
-moveTo 1886 8359
-quadraticCurveTo 2141 8270 2396 8180
-quadraticCurveTo 2141 8270 1886 8359
+moveTo 2496 8956
+lineTo 2734 8873
+stroke
+beginPath
+moveTo 1869 8365
+quadraticCurveTo 2124 8276 2379 8186
+quadraticCurveTo 2124 8276 1869 8365
 closePath
 fill
 stroke
@@ -1831,7 +1763,7 @@ stroke
 restore
 save
 save
-translate 2616 9742
+translate 4668 7382
 strokeStyle "#111111"
 fillStyle "#111111"
 lineWidth 250
@@ -1899,35 +1831,31 @@ stroke
 fillStyle "#111111"
 lineWidth 100
 beginPath
-moveTo 2850 8586
-quadraticCurveTo 3094 8796 3116 8474
-quadraticCurveTo 2872 8265 2850 8586
+moveTo 2900 8496
+bezierCurveTo 2956 8629 3072 8581 3017 8448
+bezierCurveTo 2961 8315 2845 8364 2900 8496
 closePath
-stroke
-beginPath
-arc 2983 8530 72 0 62832
 fill
-beginPath
-moveTo 3194 8685
-lineTo 2945 8790
 stroke
 beginPath
-moveTo 3348 8377
-quadraticCurveTo 3592 8587 3614 8266
-quadraticCurveTo 3370 8056 3348 8377
+moveTo 3203 8730
+lineTo 2971 8828
+stroke
+beginPath
+moveTo 3365 8302
+bezierCurveTo 3421 8434 3537 8386 3481 8253
+bezierCurveTo 3426 8120 3310 8169 3365 8302
 closePath
-stroke
-beginPath
-arc 3481 8321 72 0 62832
 fill
-beginPath
-moveTo 3443 8581
-lineTo 3692 8477
 stroke
 beginPath
-moveTo 2792 8074
-quadraticCurveTo 3041 7969 3290 7865
-quadraticCurveTo 3041 7969 2792 8074
+moveTo 3436 8633
+lineTo 3668 8536
+stroke
+beginPath
+moveTo 2775 8081
+quadraticCurveTo 3024 7976 3273 7872
+quadraticCurveTo 3024 7976 2775 8081
 closePath
 fill
 stroke
@@ -1946,7 +1874,7 @@ stroke
 restore
 save
 save
-translate 8432 3525
+translate 8363 4658
 strokeStyle "#111111"
 fillStyle "#111111"
 lineWidth 250
@@ -2014,35 +1942,31 @@ stroke
 fillStyle "#111111"
 lineWidth 100
 beginPath
-moveTo 305 9184
-quadraticCurveTo 470 9460 592 9161
-quadraticCurveTo 426 8885 305 9184
+moveTo 381 9115
+bezierCurveTo 392 9258 517 9248 506 9105
+bezierCurveTo 495 8961 369 8971 381 9115
 closePath
-stroke
-beginPath
-arc 448 9173 72 0 62832
 fill
-beginPath
-moveTo 600 9386
-lineTo 331 9407
 stroke
 beginPath
-moveTo 843 9142
-quadraticCurveTo 1009 9418 1130 9120
-quadraticCurveTo 964 8844 843 9142
+moveTo 595 9432
+lineTo 343 9451
+stroke
+beginPath
+moveTo 883 9076
+bezierCurveTo 894 9219 1020 9210 1009 9066
+bezierCurveTo 998 8922 872 8932 883 9076
 closePath
-stroke
-beginPath
-arc 987 9131 72 0 62832
 fill
-beginPath
-moveTo 869 9366
-lineTo 1139 9345
 stroke
 beginPath
-moveTo 410 8679
-quadraticCurveTo 679 8658 948 8637
-quadraticCurveTo 679 8658 410 8679
+moveTo 846 9413
+lineTo 1097 9393
+stroke
+beginPath
+moveTo 392 8680
+quadraticCurveTo 661 8660 931 8639
+quadraticCurveTo 661 8660 392 8680
 closePath
 fill
 stroke
@@ -2061,7 +1985,7 @@ stroke
 restore
 save
 save
-translate 11200 0
+translate 11003 330
 strokeStyle "#111111"
 fillStyle "#111111"
 lineWidth 250
@@ -2129,35 +2053,31 @@ stroke
 fillStyle "#111111"
 lineWidth 100
 beginPath
-moveTo -324 9235
-quadraticCurveTo -180 9523 -36 9235
-quadraticCurveTo -180 8947 -324 9235
+moveTo -243 9172
+bezierCurveTo -243 9316 -117 9316 -117 9172
+bezierCurveTo -117 9028 -243 9028 -243 9172
 closePath
-stroke
-beginPath
-arc -180 9235 72 0 62832
 fill
-beginPath
-moveTo -45 9460
-lineTo -315 9460
 stroke
 beginPath
-moveTo 216 9235
-quadraticCurveTo 360 9523 504 9235
-quadraticCurveTo 360 8947 216 9235
+moveTo -54 9505
+lineTo -306 9505
+stroke
+beginPath
+moveTo 261 9172
+bezierCurveTo 261 9316 387 9316 387 9172
+bezierCurveTo 387 9028 261 9028 261 9172
 closePath
-stroke
-beginPath
-arc 360 9235 72 0 62832
 fill
-beginPath
-moveTo 225 9460
-lineTo 495 9460
 stroke
 beginPath
-moveTo -180 8740
-quadraticCurveTo 90 8740 360 8740
-quadraticCurveTo 90 8740 -180 8740
+moveTo 198 9505
+lineTo 450 9505
+stroke
+beginPath
+moveTo -198 8740
+quadraticCurveTo 72 8740 342 8740
+quadraticCurveTo 72 8740 -198 8740
 closePath
 fill
 stroke
@@ -2244,35 +2164,31 @@ stroke
 fillStyle "#111111"
 lineWidth 100
 beginPath
-moveTo -324 9235
-quadraticCurveTo -180 9523 -36 9235
-quadraticCurveTo -180 8947 -324 9235
+moveTo -243 9172
+bezierCurveTo -243 9316 -117 9316 -117 9172
+bezierCurveTo -117 9028 -243 9028 -243 9172
 closePath
-stroke
-beginPath
-arc -180 9235 72 0 62832
 fill
-beginPath
-moveTo -45 9460
-lineTo -315 9460
 stroke
 beginPath
-moveTo 216 9235
-quadraticCurveTo 360 9523 504 9235
-quadraticCurveTo 360 8947 216 9235
+moveTo -54 9505
+lineTo -306 9505
+stroke
+beginPath
+moveTo 261 9172
+bezierCurveTo 261 9316 387 9316 387 9172
+bezierCurveTo 387 9028 261 9028 261 9172
 closePath
-stroke
-beginPath
-arc 360 9235 72 0 62832
 fill
-beginPath
-moveTo 225 9460
-lineTo 495 9460
 stroke
 beginPath
-moveTo -180 8740
-quadraticCurveTo 90 8740 360 8740
-quadraticCurveTo 90 8740 -180 8740
+moveTo 198 9505
+lineTo 450 9505
+stroke
+beginPath
+moveTo -198 8740
+quadraticCurveTo 72 8740 342 8740
+quadraticCurveTo 72 8740 -198 8740
 closePath
 fill
 stroke
@@ -2359,35 +2275,31 @@ stroke
 fillStyle "#111111"
 lineWidth 100
 beginPath
-moveTo -324 9235
-quadraticCurveTo -180 9523 -36 9235
-quadraticCurveTo -180 8947 -324 9235
+moveTo -243 9172
+bezierCurveTo -243 9316 -117 9316 -117 9172
+bezierCurveTo -117 9028 -243 9028 -243 9172
 closePath
-stroke
-beginPath
-arc -180 9235 72 0 62832
 fill
-beginPath
-moveTo -45 9460
-lineTo -315 9460
 stroke
 beginPath
-moveTo 216 9235
-quadraticCurveTo 360 9523 504 9235
-quadraticCurveTo 360 8947 216 9235
+moveTo -54 9505
+lineTo -306 9505
+stroke
+beginPath
+moveTo 261 9172
+bezierCurveTo 261 9316 387 9316 387 9172
+bezierCurveTo 387 9028 261 9028 261 9172
 closePath
-stroke
-beginPath
-arc 360 9235 72 0 62832
 fill
-beginPath
-moveTo 225 9460
-lineTo 495 9460
 stroke
 beginPath
-moveTo -180 8740
-quadraticCurveTo 90 8740 360 8740
-quadraticCurveTo 90 8740 -180 8740
+moveTo 198 9505
+lineTo 450 9505
+stroke
+beginPath
+moveTo -198 8740
+quadraticCurveTo 72 8740 342 8740
+quadraticCurveTo 72 8740 -198 8740
 closePath
 fill
 stroke
@@ -2456,35 +2368,31 @@ stroke
 fillStyle "#111111"
 lineWidth 100
 beginPath
-moveTo -324 9235
-quadraticCurveTo -180 9523 -36 9235
-quadraticCurveTo -180 8947 -324 9235
+moveTo -243 9172
+bezierCurveTo -243 9316 -117 9316 -117 9172
+bezierCurveTo -117 9028 -243 9028 -243 9172
 closePath
-stroke
-beginPath
-arc -180 9235 72 0 62832
 fill
-beginPath
-moveTo -45 9460
-lineTo -315 9460
 stroke
 beginPath
-moveTo 216 9235
-quadraticCurveTo 360 9523 504 9235
-quadraticCurveTo 360 8947 216 9235
+moveTo -54 9505
+lineTo -306 9505
+stroke
+beginPath
+moveTo 261 9172
+bezierCurveTo 261 9316 387 9316 387 9172
+bezierCurveTo 387 9028 261 9028 261 9172
 closePath
-stroke
-beginPath
-arc 360 9235 72 0 62832
 fill
-beginPath
-moveTo 225 9460
-lineTo 495 9460
 stroke
 beginPath
-moveTo -180 8740
-quadraticCurveTo 90 8740 360 8740
-quadraticCurveTo 90 8740 -180 8740
+moveTo 198 9505
+lineTo 450 9505
+stroke
+beginPath
+moveTo -198 8740
+quadraticCurveTo 72 8740 342 8740
+quadraticCurveTo 72 8740 -198 8740
 closePath
 fill
 stroke
@@ -2553,35 +2461,31 @@ stroke
 fillStyle "#111111"
 lineWidth 100
 beginPath
-moveTo -324 9235
-quadraticCurveTo -180 9523 -36 9235
-quadraticCurveTo -180 8947 -324 9235
+moveTo -243 9172
+bezierCurveTo -243 9316 -117 9316 -117 9172
+bezierCurveTo -117 9028 -243 9028 -243 9172
 closePath
-stroke
-beginPath
-arc -180 9235 72 0 62832
 fill
-beginPath
-moveTo -45 9460
-lineTo -315 9460
 stroke
 beginPath
-moveTo 216 9235
-quadraticCurveTo 360 9523 504 9235
-quadraticCurveTo 360 8947 216 9235
+moveTo -54 9505
+lineTo -306 9505
+stroke
+beginPath
+moveTo 261 9172
+bezierCurveTo 261 9316 387 9316 387 9172
+bezierCurveTo 387 9028 261 9028 261 9172
 closePath
-stroke
-beginPath
-arc 360 9235 72 0 62832
 fill
-beginPath
-moveTo 225 9460
-lineTo 495 9460
 stroke
 beginPath
-moveTo -180 8740
-quadraticCurveTo 90 8740 360 8740
-quadraticCurveTo 90 8740 -180 8740
+moveTo 198 9505
+lineTo 450 9505
+stroke
+beginPath
+moveTo -198 8740
+quadraticCurveTo 72 8740 342 8740
+quadraticCurveTo 72 8740 -198 8740
 closePath
 fill
 stroke

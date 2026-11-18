@@ -50,6 +50,7 @@ const NEGATE_X: Readonly<Record<string, readonly number[]>> = {
   moveTo: [0],
   lineTo: [0],
   quadraticCurveTo: [0, 2],
+  bezierCurveTo: [0, 2, 4],
   arc: [0],
 };
 
@@ -447,19 +448,23 @@ describe("the figure's strokes", () => {
     expect(widths).toContain(100);
   });
 
-  it("never gives an arc a negative radius when eyeOpen overshoots below 0", () => {
+  it("never turns an eye over when eyeOpen overshoots below 0", () => {
     const blink = scene({ duration: 1 }, (stage) => {
       stage.actor().pose({ eyeOpen: 0 }, { followThrough: 0.2 });
     });
     const frames = Array.from({ length: 31 }, (_, n) => actorLog(blink.timeline, n));
-    const radii = frames
+    // Each eye is two curves, the upper lid first: its control points are never below
+    // the corner it ends on.
+    const lids = frames
       .flat()
-      .filter((entry) => entry.call === "arc")
-      .map((entry) => entry.args[2]);
-    expect(radii.length).toBeGreaterThan(0);
-    for (const radius of radii) {
-      expect(radius).toBeGreaterThanOrEqual(0);
+      .filter((entry) => entry.call === "bezierCurveTo")
+      .filter((_, index) => index % 2 === 0);
+    expect(lids.length).toBe(62);
+    for (const { args } of lids) {
+      expect(Number(args[1])).toBeGreaterThanOrEqual(Number(args[5]));
     }
+    // Closed at the end: the lid lies flat on the line between the corners.
+    expect(lids.at(-1)?.args[1]).toBe(lids.at(-1)?.args[5]);
   });
 });
 
