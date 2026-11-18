@@ -48,12 +48,32 @@ export class InvalidCanvasSizeError extends CharadeError {
   }
 }
 
+/** One picture of a composite: its own canvas, placed with its top left at `x`, `y`. */
+export interface Part {
+  readonly x: number;
+  readonly y: number;
+  readonly width: number;
+  readonly height: number;
+  readonly draw: Drawing;
+}
+
 /** Turns a drawing into pixels on a fresh, opaque, CPU-rendered canvas. */
 export interface Rasteriser {
   /** The picture as PNG bytes. */
   png(width: number, height: number, draw: Drawing): Promise<Buffer>;
   /** The picture as unpremultiplied RGBA, `width × height × 4` bytes, alpha 255. */
   rgba(width: number, height: number, draw: Drawing): Promise<Buffer>;
+  /**
+   * Several pictures on one canvas, as PNG bytes: each part is drawn on a canvas of
+   * its own size, so a drawing that resets its context or sets an absolute transform
+   * stays inside its part, then `over` is drawn on top of them all.
+   */
+  composite(
+    width: number,
+    height: number,
+    parts: readonly Part[],
+    over: Drawing,
+  ): Promise<Buffer>;
 }
 
 const importSkia: SkiaLoader = () => import("skia-canvas");
@@ -72,12 +92,7 @@ export function createRasteriser(load: SkiaLoader = importSkia): Rasteriser {
       throw new SkiaUnavailableError(error);
     }));
 
-  const render = async (
-    width: number,
-    height: number,
-    draw: Drawing,
-    encode: (canvas: Canvas) => Promise<Buffer>,
-  ): Promise<Buffer> => {
+  const sized = (width: number, height: number): void => {
     for (const [path, value] of [
       ["width", width],
       ["height", height],
@@ -86,6 +101,15 @@ export function createRasteriser(load: SkiaLoader = importSkia): Rasteriser {
         throw new InvalidCanvasSizeError(path);
       }
     }
+  };
+
+  const render = async (
+    width: number,
+    height: number,
+    draw: Drawing,
+    encode: (canvas: Canvas) => Promise<Buffer>,
+  ): Promise<Buffer> => {
+    sized(width, height);
     const { Canvas: SkiaCanvas } = await loaded();
     // skia-canvas renders on the GPU by default where it can; the same scene has to
     // give the same bytes whether or not a GPU initialised.
@@ -93,6 +117,36 @@ export function createRasteriser(load: SkiaLoader = importSkia): Rasteriser {
     try {
       draw(canvas.getContext("2d"));
       return await encode(canvas);
+    } finally {
+      canvas.dispose();
+    }
+  };
+
+  const composite = async (
+    width: number,
+    height: number,
+    parts: readonly Part[],
+    over: Drawing,
+  ): Promise<Buffer> => {
+    sized(width, height);
+    for (const part of parts) {
+      sized(part.width, part.height);
+    }
+    const { Canvas: SkiaCanvas } = await loaded();
+    const canvas = new SkiaCanvas(width, height, { gpu: false });
+    try {
+      const ctx = canvas.getContext("2d");
+      for (const part of parts) {
+        const picture = new SkiaCanvas(part.width, part.height, { gpu: false });
+        try {
+          part.draw(picture.getContext("2d"));
+          ctx.drawImage(picture, part.x, part.y);
+        } finally {
+          picture.dispose();
+        }
+      }
+      over(ctx);
+      return await canvas.toBuffer("png", { matte: PAPER });
     } finally {
       canvas.dispose();
     }
@@ -107,5 +161,6 @@ export function createRasteriser(load: SkiaLoader = importSkia): Rasteriser {
       render(width, height, draw, (canvas) =>
         canvas.toBuffer("raw", { matte: PAPER, colorType: "rgba" }),
       ),
+    composite,
   };
 }

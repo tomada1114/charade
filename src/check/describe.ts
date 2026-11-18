@@ -50,7 +50,7 @@ export interface StateDescription {
 }
 
 /** Three decimals: what an author can act on, and the same text on every machine. */
-function round(value: number): number {
+export function round(value: number): number {
   return Math.round(value * 1000) / 1000 + 0;
 }
 

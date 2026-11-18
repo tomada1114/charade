@@ -111,6 +111,98 @@ describe("rasterising", () => {
   });
 });
 
+describe("compositing", () => {
+  it("draws each part on a canvas of its own and the overlay on top", async () => {
+    const sizes: (readonly [number | undefined, number | undefined])[] = [];
+    const { Canvas } = await import("skia-canvas");
+    const raster = createRasteriser(() =>
+      Promise.resolve({
+        Canvas: class extends Canvas {
+          constructor(width?: number, height?: number, opts?: { gpu?: boolean }) {
+            super(width, height, opts);
+            sizes.push([width, height]);
+            expect(this.gpu).toBe(false);
+          }
+        },
+      }),
+    );
+    const order: string[] = [];
+    const part = (name: string, x: number) => ({
+      x,
+      y: 1,
+      width: 3,
+      height: 2,
+      draw: (ctx: DrawingContext): void => {
+        order.push(name);
+        // A frame drawing resets its context; that must not reach the other parts.
+        ctx.reset();
+        ctx.fillStyle = "#111111";
+        ctx.fillRect(0, 0, 3, 2);
+      },
+    });
+
+    const png = await raster.composite(10, 4, [part("a", 1), part("b", 6)], () => {
+      order.push("over");
+    });
+    const again = await raster.composite(10, 4, [part("a", 1), part("b", 6)], nothing);
+
+    expect([...png.subarray(0, 8)]).toEqual(PNG_SIGNATURE);
+    expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([10, 4]);
+    expect(png.equals(again)).toBe(true);
+    expect(order).toEqual(["a", "b", "over", "a", "b"]);
+    expect(sizes.slice(0, 3)).toEqual([
+      [10, 4],
+      [3, 2],
+      [3, 2],
+    ]);
+  });
+
+  it("differs from the bare paper once a part is drawn", async () => {
+    const raster = createRasteriser();
+    const blank = await raster.composite(4, 4, [], nothing);
+    const inked = await raster.composite(
+      4,
+      4,
+      [
+        {
+          x: 0,
+          y: 0,
+          width: 2,
+          height: 2,
+          draw: (ctx) => {
+            ctx.fillStyle = "#111111";
+            ctx.fillRect(0, 0, 2, 2);
+          },
+        },
+      ],
+      nothing,
+    );
+    expect(blank.equals(inked)).toBe(false);
+  });
+
+  it.each([
+    ["the sheet", 0, 2],
+    ["a part", 4, 0],
+  ] as const)(
+    "rejects a bad size for %s before loading skia-canvas",
+    async (_, width, part) => {
+      let loads = 0;
+      const raster = createRasteriser(() => {
+        loads += 1;
+        return import("skia-canvas");
+      });
+      const failure = raster.composite(
+        width,
+        4,
+        [{ x: 0, y: 0, width: 2, height: part, draw: nothing }],
+        nothing,
+      );
+      await expect(failure).rejects.toMatchObject({ code: "ERR_RENDER_INVALID_SIZE" });
+      expect(loads).toBe(0);
+    },
+  );
+});
+
 describe("a missing native binary", () => {
   const missing = Object.assign(new Error("Cannot find module '@skia-canvas/test'"), {
     code: "MODULE_NOT_FOUND",

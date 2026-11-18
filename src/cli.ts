@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 import { parseArgs, type ParseArgsOptionsConfig } from "node:util";
 
 import { checkScene, formatReport, lastFrameOf } from "./check/check.js";
-import { describeState, formatState } from "./check/describe.js";
+import { describeState, formatState, type StateDescription } from "./check/describe.js";
 import {
   checkReport,
   COULD_NOT_RUN,
@@ -15,8 +15,25 @@ import {
   exitCodeFor,
 } from "./check/findings.js";
 import { installReadWatch } from "./check/reads.js";
+import {
+  findActor,
+  GHOSTS,
+  MAX_SHEET_FRAMES,
+  SHEET_CELLS,
+  spreadFrames,
+} from "./check/sheet.js";
 import { CharadeError, UnknownFlagError } from "./errors.js";
+import {
+  type FileWriter,
+  type ImageEnvironment,
+  outputBeside,
+  writeFrameImage,
+  writeGhostImage,
+  writeOutput,
+  writeSheetImage,
+} from "./export/images.js";
 import { loadScene, SceneFailedError, SceneLoadError } from "./export/loader.js";
+import { createRasteriser, type Rasteriser } from "./export/raster.js";
 import { watchGlobals } from "./export/watch.js";
 import type { Scene } from "./scene/scene.js";
 
@@ -175,6 +192,94 @@ class AtPastEndError extends UsageError {
   }
 }
 
+/** Two flags that cannot be given together. */
+class ConflictingFlagsError extends UsageError {
+  readonly code = "ERR_CLI_CONFLICTING_FLAGS" as const;
+  readonly fix: string;
+
+  /** The dotted path of the flag that was rejected, such as `sheet.times`. */
+  readonly path: string;
+  /** The dotted path of the flag it cannot be combined with. */
+  readonly other: string;
+
+  constructor(path: string, other: string, fix: string) {
+    super(`Flags ${path} and ${other} cannot be combined.`);
+    this.path = path;
+    this.other = other;
+    this.fix = fix;
+  }
+}
+
+/** `--times` names more frames than one image can show. */
+class TooManyTimesError extends UsageError {
+  readonly code = "ERR_CLI_TOO_MANY_TIMES" as const;
+  readonly fix = `Name at most ${String(MAX_SHEET_FRAMES)} times, or write a second sheet with -o for the rest.`;
+
+  /** The most times one image takes. */
+  readonly limit = MAX_SHEET_FRAMES;
+
+  constructor() {
+    super("Flag sheet.times names too many times for one image.");
+  }
+}
+
+/** `--row` is not a row of the scene. */
+class InvalidRowError extends UsageError {
+  readonly code = "ERR_CLI_INVALID_ROW" as const;
+  readonly fix: string;
+
+  /** How many rows the scene has, when the scene was loaded. */
+  readonly rows: number | undefined;
+
+  constructor(rows: number | undefined) {
+    super("Flag sheet.row is not a row of the scene.");
+    this.rows = rows;
+    this.fix =
+      rows === undefined
+        ? "Give a row index in digits; row 0 is the top."
+        : `Give a row index from 0 to ${String(rows - 1)}; row 0 is the top.`;
+  }
+}
+
+/** `--from` names a frame after `--to`. */
+class InvalidRangeError extends UsageError {
+  readonly code = "ERR_CLI_INVALID_RANGE" as const;
+  readonly fix = "Give --from a time at or before --to.";
+
+  constructor() {
+    super("Flag sheet.from is after sheet.to.");
+  }
+}
+
+/** `--ghost` names no actor, or a name more than one actor has. */
+class UnknownActorError extends UsageError {
+  readonly code = "ERR_CLI_UNKNOWN_ACTOR" as const;
+  readonly fix: string;
+
+  /** The ids of the scene's actors. */
+  readonly actors: readonly string[];
+
+  constructor(actors: readonly string[]) {
+    super("Flag sheet.ghost does not name one actor of the scene.");
+    this.actors = actors;
+    this.fix =
+      actors.length === 0
+        ? "The scene has no actor to draw as ghosts."
+        : `Give an actor's id, or its name when only one actor has it: ${actors.join(", ")}.`;
+  }
+}
+
+/** The scene has no countable length, so there are no frames to spread a sheet over. */
+class NoLengthError extends UsageError {
+  readonly code = "ERR_CLI_NO_LENGTH" as const;
+  readonly fix =
+    "Give the scene a duration, or name the frames to draw with --times, as in --times 0,1.5,45f.";
+
+  constructor() {
+    super("The scene has no length to pick frames from.");
+  }
+}
+
 /** The command parsed, but its body is not built yet. */
 class NotImplementedError extends UsageError {
   readonly code = "ERR_CLI_NOT_IMPLEMENTED" as const;
@@ -255,6 +360,10 @@ export type Invocation =
       readonly scene: string;
       readonly out: string | undefined;
       readonly ghost: string | undefined;
+      readonly times: readonly At[] | undefined;
+      readonly from: At | undefined;
+      readonly to: At | undefined;
+      readonly row: number | undefined;
       readonly json: boolean;
     }
   | {
@@ -316,9 +425,24 @@ const COMMANDS: Readonly<Record<CommandName, CommandSpec>> = {
   sheet: {
     synopsis: "sheet <scene.ts> [options]",
     summary: "Write a contact sheet PNG of frames across the scene.",
-    options: { ...COMMON_OPTIONS, ...OUT_OPTION, ghost: { type: "string" } },
+    options: {
+      ...COMMON_OPTIONS,
+      ...OUT_OPTION,
+      ghost: { type: "string" },
+      times: { type: "string" },
+      from: { type: "string" },
+      to: { type: "string" },
+      row: { type: "string" },
+    },
     help: [
-      ["--ghost <actor>", "Overlay one actor's motion on a single image instead."],
+      ["--times <list>", "Draw these frames instead of twelve: 0,1.5,45f."],
+      ["--from <time>", "Spread the frames from this time on: 1.5, 1.5s or 45f."],
+      ["--to <time>", "Spread the frames up to this time."],
+      ["--row <index>", "Draw one row of the scene alone; row 0 is the top."],
+      [
+        "--ghost <actor>",
+        "Overlay one actor's motion on a single image instead: its id or name.",
+      ],
       ["-o, --out <path>", "Where to write the PNG; next to the scene by default."],
     ],
   },
@@ -478,16 +602,33 @@ function parseCommand(command: CommandName, args: readonly string[]): Parsed {
   if (extra.length > 0) {
     return fail(new UnexpectedArgumentError(command, help));
   }
-  const atText = text("at");
-  let at: At | undefined;
+  const time = (name: string): At | undefined => {
+    const given = text(name);
+    return given === undefined ? undefined : parseAt(given, `${command}.${name}`);
+  };
   try {
-    at = atText === undefined ? undefined : parseAt(atText, `${command}.at`);
+    return parseSceneCommand(command, scene, json, text, time, values);
   } catch (error) {
-    if (error instanceof InvalidAtError) {
+    if (error instanceof UsageError) {
       return fail(error);
     }
     throw error;
   }
+}
+
+const ROW = /^\d+$/;
+
+/** @throws UsageError for a flag value that cannot be read. */
+function parseSceneCommand(
+  command: Exclude<CommandName, "catalog">,
+  scene: string,
+  json: boolean,
+  text: (name: string) => string | undefined,
+  time: (name: string) => At | undefined,
+  values: Readonly<Record<string, unknown>>,
+): Parsed {
+  const fail = (error: Reportable): Parsed => ({ kind: "error", error });
+  const at = time("at");
   switch (command) {
     case "render":
       return { kind: "run", invocation: { command, scene, out: text("out"), json } };
@@ -506,11 +647,50 @@ function parseCommand(command: CommandName, args: readonly string[]): Parsed {
         kind: "run",
         invocation: { command, scene, at, out: text("out"), json },
       };
-    case "sheet":
+    case "sheet": {
+      const ghost = text("ghost");
+      const from = time("from");
+      const to = time("to");
+      const times = text("times")
+        ?.split(",")
+        .map((entry) => parseAt(entry.trim(), "sheet.times"));
+      const rowText = text("row");
+      const row = rowText === undefined ? undefined : Number(rowText);
+      if (rowText !== undefined && !(ROW.test(rowText) && Number.isSafeInteger(row))) {
+        throw new InvalidRowError(undefined);
+      }
+      if (times !== undefined && (from ?? to) !== undefined) {
+        throw new ConflictingFlagsError(
+          "sheet.times",
+          from === undefined ? "sheet.to" : "sheet.from",
+          "Name the frames with --times, or spread them with --from and --to, not both.",
+        );
+      }
+      if (ghost !== undefined && row !== undefined) {
+        throw new ConflictingFlagsError(
+          "sheet.row",
+          "sheet.ghost",
+          "Leave --row out: a ghost image always shows the actor's own row.",
+        );
+      }
+      if (times !== undefined && times.length > MAX_SHEET_FRAMES) {
+        throw new TooManyTimesError();
+      }
       return {
         kind: "run",
-        invocation: { command, scene, out: text("out"), ghost: text("ghost"), json },
+        invocation: {
+          command,
+          scene,
+          out: text("out"),
+          ghost,
+          times,
+          from,
+          to,
+          row,
+          json,
+        },
       };
+    }
   }
 }
 
@@ -582,6 +762,26 @@ export function frameAt(at: At, fps: number): number | undefined {
   return Number.isSafeInteger(frame * 1_000_000) ? frame : undefined;
 }
 
+/**
+ * The frame an `--at` style value names in `scene`.
+ *
+ * @throws InvalidAtError for a number too large to compare, and AtPastEndError for a
+ * frame after the scene's last one.
+ */
+function frameIn(scene: Scene, at: At, path: string): number {
+  const { fps } = scene.timeline;
+  const frame = frameAt(at, fps);
+  if (frame === undefined) {
+    throw new InvalidAtError(path);
+  }
+  // A scene without a length has no last frame to be past; its finding says so.
+  const lastFrame = lastFrameOf(scene.timeline);
+  if (lastFrame !== undefined && frame > lastFrame) {
+    throw new AtPastEndError(path, lastFrame, fps);
+  }
+  return frame;
+}
+
 function runCheck(
   scene: Scene,
   invocation: Extract<Invocation, { command: "check" }>,
@@ -598,17 +798,7 @@ function runCheck(
       text: formatReport(report),
     };
   }
-  const { fps } = scene.timeline;
-  const frame = frameAt(at, fps);
-  if (frame === undefined) {
-    return { kind: "failed", error: new InvalidAtError("check.at") };
-  }
-  // A scene without a length has no last frame to be past; its finding says so.
-  const lastFrame = lastFrameOf(scene.timeline);
-  if (lastFrame !== undefined && frame > lastFrame) {
-    return { kind: "failed", error: new AtPastEndError("check.at", lastFrame, fps) };
-  }
-  const state = describeState(scene, frame);
+  const state = describeState(scene, frameIn(scene, at, "check.at"));
   return {
     kind: "done",
     exitCode,
@@ -618,17 +808,147 @@ function runCheck(
 }
 
 /**
- * Run a scene command on an already-built scene. `render`, `frame` and `sheet` are
- * stubs that their own issues replace.
+ * What `frame` and `sheet` report: the paths written, the state of each frame drawn,
+ * and the count of the scene's findings. They draw whatever the findings are, so the
+ * exit code is 0.
  */
-export function runSceneCommand(
+function imagesOutcome(
+  scene: Scene,
+  paths: readonly string[],
+  states: readonly StateDescription[],
+): CommandOutcome {
+  const { findings, truncated } = checkScene(scene);
+  const { summary } = checkReport(findings, { strict: false, truncated });
+  return {
+    kind: "done",
+    exitCode: 0,
+    document: { version: 1, ok: true, paths, states, summary },
+    text:
+      paths.map((file) => `wrote ${file}\n`).join("") +
+      states.map((state) => `${formatState(state)}\n`).join("") +
+      formatReport({ version: 1, ok: true, findings: [], summary }),
+  };
+}
+
+async function runFrame(
+  scene: Scene,
+  invocation: Extract<Invocation, { command: "frame" }>,
+  environment: ImageEnvironment,
+): Promise<CommandOutcome> {
+  const frame = frameIn(scene, invocation.at, "frame.at");
+  const out =
+    invocation.out ?? outputBeside(invocation.scene, `frame-${String(frame)}`);
+  await writeFrameImage(scene, frame, out, environment);
+  return imagesOutcome(scene, [out], [describeState(scene, frame)]);
+}
+
+/** The frames a sheet or a ghost image draws, in order, each once. */
+function sheetFrames(
+  scene: Scene,
+  invocation: Extract<Invocation, { command: "sheet" }>,
+  count: number,
+): number[] {
+  const { times, from, to } = invocation;
+  if (times !== undefined) {
+    const frames = times.map((at) => frameIn(scene, at, "sheet.times"));
+    return [...new Set(frames)].sort((a, b) => a - b);
+  }
+  const lastFrame = lastFrameOf(scene.timeline);
+  const first = from === undefined ? 0 : frameIn(scene, from, "sheet.from");
+  const last = to === undefined ? lastFrame : frameIn(scene, to, "sheet.to");
+  if (last === undefined) {
+    throw new NoLengthError();
+  }
+  if (first > last) {
+    throw new InvalidRangeError();
+  }
+  return spreadFrames(first, last, count);
+}
+
+async function runSheet(
+  scene: Scene,
+  invocation: Extract<Invocation, { command: "sheet" }>,
+  environment: ImageEnvironment,
+): Promise<CommandOutcome> {
+  const { ghost } = invocation;
+  let { row } = invocation;
+  let out: string;
+  let frames: number[];
+  if (ghost === undefined) {
+    if (row !== undefined && row >= scene.timeline.rows.length) {
+      throw new InvalidRowError(scene.timeline.rows.length);
+    }
+    frames = sheetFrames(scene, invocation, SHEET_CELLS);
+    out = invocation.out ?? outputBeside(invocation.scene, "sheet");
+    await writeSheetImage(scene, frames, row, out, environment);
+  } else {
+    const actor = findActor(scene.timeline, ghost);
+    if (actor.kind === "none") {
+      throw new UnknownActorError(actor.ids);
+    }
+    frames = sheetFrames(scene, invocation, GHOSTS);
+    out = invocation.out ?? outputBeside(invocation.scene, "ghost");
+    await writeGhostImage(scene, actor.row, actor.track, frames, out, environment);
+    ({ row } = actor);
+  }
+  const states = frames.map((frame) => {
+    const state = describeState(scene, frame);
+    return row === undefined
+      ? state
+      : { ...state, rows: state.rows.filter((shown) => shown.row === row) };
+  });
+  return imagesOutcome(scene, [out], states);
+}
+
+/** The failure to report for what a command body threw, or `undefined` to rethrow. */
+function reportableFrom(error: unknown, scene: string): Reportable | undefined {
+  if (!(error instanceof CharadeError)) {
+    return undefined;
+  }
+  const code = errorCode(error);
+  if (code === undefined) {
+    return undefined;
+  }
+  const fix = "fix" in error && typeof error.fix === "string" ? error.fix : undefined;
+  return {
+    code,
+    message: error.message,
+    // A drawing that threw has no fix of its own; `check` names the function and why.
+    fix:
+      fix ??
+      (code === "ERR_SCENE_DRAWING_FAILED"
+        ? `Run ${NAME} check ${scene} for where it fails and how to fix it.`
+        : `Fix what the message names, then run ${NAME} check ${scene}.`),
+  };
+}
+
+/**
+ * Run a scene command on an already-built scene. `render` is a stub that its own
+ * issue replaces.
+ */
+export async function runSceneCommand(
   scene: Scene,
   invocation: SceneInvocation,
-): CommandOutcome {
-  if (invocation.command === "check") {
-    return runCheck(scene, invocation);
+  environment: ImageEnvironment,
+): Promise<CommandOutcome> {
+  try {
+    switch (invocation.command) {
+      case "check":
+        return runCheck(scene, invocation);
+      case "frame":
+        return await runFrame(scene, invocation, environment);
+      case "sheet":
+        return await runSheet(scene, invocation, environment);
+      case "render":
+        return notImplemented(invocation.command);
+    }
+  } catch (error) {
+    const reportable = reportableFrom(error, invocation.scene);
+    if (reportable === undefined) {
+      throw error;
+    }
+    return { kind: "failed", error: reportable };
   }
-  return notImplemented(invocation.command);
 }
 
 /** Run `catalog`, which #30 builds. */
@@ -666,6 +986,10 @@ export interface CliOptions {
   readonly nodeVersion?: string;
   /** Loads the scene file. */
   readonly load?: SceneLoader;
+  /** Turns drawings into pixels; skia-canvas by default, loaded on first use. */
+  readonly raster?: Rasteriser;
+  /** Writes an output file; `node:fs` by default. */
+  readonly write?: FileWriter;
 }
 
 const realLoad: SceneLoader = (file, notice) => loadScene(file, { notice });
@@ -747,7 +1071,10 @@ export async function runCli(
           error instanceof SceneLoadError ? error : new SceneFailedError(error),
         );
       }
-      outcome = runSceneCommand(scene, invocation);
+      outcome = await runSceneCommand(scene, invocation, {
+        raster: options.raster ?? createRasteriser(),
+        write: options.write ?? writeOutput,
+      });
     } finally {
       installReadWatch(previous);
     }

@@ -233,24 +233,17 @@ describe("--json (R2)", () => {
 });
 
 describe("commands", () => {
-  it.each([
-    { command: "render", argv: ["render", "s.ts", "-o", "out.mp4"] },
-    { command: "frame", argv: ["frame", "s.ts", "--at", "45f", "--out", "f.png"] },
-    { command: "sheet", argv: ["sheet", "s.ts", "--ghost", "ada"] },
-  ])(
-    "passes the built scene to $command, which is not implemented yet",
-    async ({ command, argv }) => {
-      const { options, files } = fakeLoader();
-      const result = await runCli([...argv, "--json"], options);
-      expect(files).toEqual(["s.ts"]);
-      expect(result.exitCode).toBe(2);
-      expect(parseOne(result.stdout)).toMatchObject({
-        ok: false,
-        error: { code: "ERR_CLI_NOT_IMPLEMENTED" },
-      });
-      expect(result.stdout).toContain(command);
-    },
-  );
+  it("passes the built scene to render, which is not implemented yet", async () => {
+    const { options, files } = fakeLoader();
+    const result = await runCli(["render", "s.ts", "-o", "out.mp4", "--json"], options);
+    expect(files).toEqual(["s.ts"]);
+    expect(result.exitCode).toBe(2);
+    expect(parseOne(result.stdout)).toMatchObject({
+      ok: false,
+      error: { code: "ERR_CLI_NOT_IMPLEMENTED" },
+    });
+    expect(result.stdout).toContain("render");
+  });
 
   it("runs catalog without loading a scene", async () => {
     const result = await runCli(["catalog", "--images"], quiet);

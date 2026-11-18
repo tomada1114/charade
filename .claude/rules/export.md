@@ -121,6 +121,57 @@ stay free of Node-only modules.
   or the times, range or row it is given, labels every cell with its time and frame
   number, and scales the sheet to a width an agent's image input can take. `--ghost`
   draws one actor's motion overlaid on a single image instead.
+- A check image is named `<scene>.<what>.png` beside the scene: `sit.frame-45.png`,
+  `sit.sheet.png`, `sit.ghost.png` (`outputBeside` in `src/export/images.ts`). A frame's
+  name carries its frame number, not its time: `1.5`, `1.5s` and `45f` then write one
+  file, and a time would put a second dot in the name. The path printed is the scene's
+  path as given with that name, so an agent can open it from where it ran the command.
+- Evenly spaced means frame `i` of `n + 1` is `first + i × span / n` rounded to the
+  nearest frame, a half up, in integers (`spreadFrames` in `src/check/sheet.ts`): 121
+  frames give 0, 11, 22, 33, 44, 55, 65, 76, 87, 98, 109, 120. Rounding to nearest keeps
+  the gaps within one frame of each other; flooring would bunch the error at the end. A
+  span with fewer frames than cells gives every frame once, never a repeated cell.
+- `sheet` selects with `--times <list>` (comma-separated `--at` values, drawn in time
+  order, each once), `--from <time>` and `--to <time>` (twelve frames spread over that
+  range, either end defaulting to the scene's), and `--row <index>` (each cell holds
+  that row alone, at its own aspect ratio, so the figures are larger). All times go
+  through `parseAt` and `frameAt`, so there is one spelling of a time. `--times` with
+  `--from` or `--to`, and `--row` with `--ghost`, are `ERR_CLI_CONFLICTING_FLAGS`; more
+  than 48 times is `ERR_CLI_TOO_MANY_TIMES`, since a cell would be too small to read; a
+  row the scene lacks is `ERR_CLI_INVALID_ROW`, `--from` after `--to` is
+  `ERR_CLI_INVALID_RANGE`, and a scene with no length and no `--times` is
+  `ERR_CLI_NO_LENGTH`.
+- A sheet is 1568 px wide, four cells to a row with 8 px between and a 24 px label strip
+  under each cell (`sheetLayout`): 1568 px is the long edge an agent's image input keeps
+  without scaling down again, and four columns leave a 16:9 cell 382 px wide, enough to
+  read a pose. Fewer than four frames use as many columns as frames. When the sheet
+  would be taller than 1568 px the cells shrink until it is not. A cell is drawn at the
+  cell's size from the timeline, not scaled down from a full frame, so lines keep their
+  weight relative to the figure; each cell is its own canvas, since `drawFrame` resets
+  its context and sets absolute transforms (`Rasteriser.composite`).
+- A cell's label is `<seconds> s  frame <n>`, the time to three decimals as the state
+  description prints it, in `16px sans-serif`: a generic family, so no font file is
+  committed and none has to be installed, and a fixed size in sheet pixels so it reads
+  the same whatever the scene's size. Each cell has a 1 px outline, since a cell is
+  paper on paper.
+- `--ghost <actor>` takes the actor's id as findings and the state description print it
+  (`row0/actor/actor/0`), or its bare name when exactly one actor has it; anything else
+  is `ERR_CLI_UNKNOWN_ACTOR`, whose fix lists the ids. The flag keeps its value rather
+  than defaulting to the only actor, so the command reads the same once a scene has two.
+  The image is the actor's row alone, 1568 px wide, with eight ghosts spread over the
+  scene (or over `--from`/`--to`, or at `--times`): eight still read apart when the
+  actor crosses the row and are few enough to tell apart where it stays put. Opacity
+  runs from 0.15 for the earliest to 1 for the last, so the direction of time reads from
+  a still. The row's backdrop is drawn once, at the last ghost's frame; its other items
+  are left out, having no single time to be drawn at. One legend line beneath names the
+  actor and the frames.
+- `frame` and `sheet` print `wrote <path>`, then the state description of each frame
+  drawn, then the count of the scene's findings as `check` prints it; they exit 0
+  whatever that count is. `--json` is `{ version, ok, paths, states, summary }`. With
+  `--row` or `--ghost` a description holds the row drawn alone. A function that throws
+  at a frame being drawn cannot be drawn around: the command fails with
+  `ERR_SCENE_DRAWING_FAILED`, exit 2, and its fix line points at `check`. A file that
+  cannot be written is `ERR_RENDER_WRITE_FAILED`; a missing folder is not created.
 - `catalog` prints every item with its description, parameters, marks and moods, and the
   rig: joints, limits, effectors, face channels and conventions. Sample images are
   written only with `--images`, for all items or the one named.
