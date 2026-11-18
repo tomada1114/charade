@@ -359,6 +359,57 @@ describe("clock and random reads", () => {
     );
   });
 
+  it("leaves the reads of the actor an effect is on to that actor", () => {
+    const built = scene({ duration: 1 }, (stage) => {
+      const hero = stage.actor();
+      hero.drive(() => ({ spine: Date.now() * 0 }), { duration: 1 });
+      stage.effect(
+        defineEffect({
+          name: "still",
+          description: "Reads nothing.",
+          draw(ctx) {
+            ctx.rect(0, 0, 1, 1);
+          },
+        }),
+        { on: hero },
+      );
+    });
+    const { findings } = checkScene(built);
+    expect(findings.map(({ code, target }) => [code, target])).toEqual([
+      ["ERR_CHECK_CLOCK_READ", "row0/actor/actor/0"],
+    ]);
+  });
+
+  it("names the effect too when the actor it is on cannot be posed", () => {
+    const built = scene({ duration: 1 }, (stage) => {
+      const hero = stage.actor();
+      hero.drive(
+        (t) => {
+          if (t > 0.5) {
+            throw new Error("no");
+          }
+          return { spine: 0 };
+        },
+        { duration: 1 },
+      );
+      stage.effect(
+        defineEffect({
+          name: "still",
+          description: "Draws one marker.",
+          draw(ctx) {
+            ctx.rect(0, 0, 1, 1);
+          },
+        }),
+        { on: hero },
+      );
+    });
+    const { findings } = checkScene(built);
+    expect(findings.map(({ code, target }) => [code, target])).toEqual([
+      ["ERR_SCENE_DRAWING_FAILED", "row0/actor/actor/0"],
+      ["ERR_SCENE_DRAWING_FAILED", "row0/effect/still/0"],
+    ]);
+  });
+
   it("reports a prop whose drawing reads unseeded randomness or the clock, naming it", () => {
     const built = scene({ duration: 1 }, (stage) => {
       stage.prop(

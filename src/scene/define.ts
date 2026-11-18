@@ -11,6 +11,7 @@ import {
   type Param,
   PARAM_TYPES,
   type ParamSpec,
+  EFFECT_RESERVED_PARAM,
   RESERVED_PARAMS,
   type ResolvedParams,
 } from "./params.js";
@@ -313,7 +314,10 @@ function checkParam(kind: ItemKind, key: string, raw: unknown): Param {
   const path = `params.${key}`;
   const invalid = (member: string): InvalidDefinitionError =>
     new InvalidDefinitionError(kind, `${path}.${member}`);
-  if (RESERVED_PARAMS.some((name) => name === key)) {
+  if (
+    RESERVED_PARAMS.some((name) => name === key) ||
+    (kind === "effect" && key === EFFECT_RESERVED_PARAM)
+  ) {
     throw new ReservedParameterError(kind, path);
   }
   if (!isRecord(raw)) {
@@ -589,9 +593,13 @@ export function defineBackdrop<const P extends ParamSpec = NoParams>(
 /**
  * Define an effect.
  *
+ * @remarks
+ * An effect draws around its origin, which a scene puts on a point or on an actor
+ * with `row.effect`'s `on` option; a parameter may not be named `on` for that reason.
+ *
  * @param definition - The effect's name, description, parameters and `draw`.
  * @returns The definition, checked and frozen.
- * @throws `ReservedParameterError` when a parameter's name is taken.
+ * @throws `ReservedParameterError` when a parameter's name is taken, `on` included.
  * @throws `InvalidDefaultError` when a default is not a value its parameter allows.
  * @throws `InvalidDefinitionError` when a member is missing or has the wrong shape.
  *

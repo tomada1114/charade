@@ -204,3 +204,6 @@ export const PARAM_TYPES = [
 
 /** Options and timing share one bag with the parameters, so these names are taken. */
 export const RESERVED_PARAMS = ["at", "duration", "mood", "blend", "mode"] as const;
+
+/** `row.effect` takes `on` in that bag as well, so an effect's parameter may not be it. */
+export const EFFECT_RESERVED_PARAM = "on";

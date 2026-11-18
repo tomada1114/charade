@@ -1,6 +1,6 @@
 import { facingOf } from "../draw/figure.js";
 import { drawItem, drawTrack, idOf } from "../draw/frame.js";
-import { propPlacement } from "../draw/prop.js";
+import { effectPlacement, propPlacement } from "../draw/prop.js";
 import { type RowLayout, rowLayout, rowView } from "../draw/layout.js";
 import {
   isTextTrack,
@@ -449,10 +449,30 @@ function violationsAt(
         watched(() => {
           drawTrack(new RecordingContext(), timeline, layout, track, frame);
         });
-      } else if (track.kind === "backdrop" || track.kind === "effect") {
+      } else if (track.kind === "backdrop") {
         watched(() => {
           drawItem(new RecordingContext(), timeline, layout, track, frame);
         });
+      } else if (track.kind === "effect") {
+        // An effect on an actor composes that actor's pose, as a held prop does its
+        // holder's: those reads are the actor's.
+        const placed = watched(
+          () => effectPlacement(timeline, row, track, frame),
+          false,
+        );
+        if (placed !== undefined) {
+          watched(() => {
+            drawItem(
+              new RecordingContext(),
+              timeline,
+              layout,
+              track,
+              frame,
+              placed.point,
+              placed.mirrored,
+            );
+          });
+        }
       } else if (track.kind === "prop") {
         // A held prop composes its holder's pose, which calls the holder's functions.
         // Their reads are the holder's, which its own track already reports.

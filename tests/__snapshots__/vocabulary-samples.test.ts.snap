@@ -4869,6 +4869,3393 @@ restore
 restore"
 `;
 
+exports[`the samples > draws the effect impact as recorded > frame 0 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 10800000
+clip
+setTransform 4320000 0 0 -4320000 5400000 9504000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -12500 0
+lineTo 12500 0
+stroke
+restore
+save
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineCap "round"
+lineJoin "round"
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 6200
+lineTo 0 7600
+lineTo 0 8200
+stroke
+beginPath
+arc 0 9100 900 0 62832
+fillStyle "#ffffff"
+fill
+stroke
+fillStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -243 9172
+bezierCurveTo -243 9316 -117 9316 -117 9172
+bezierCurveTo -117 9028 -243 9028 -243 9172
+closePath
+fill
+stroke
+beginPath
+moveTo -54 9505
+lineTo -306 9505
+stroke
+beginPath
+moveTo 261 9172
+bezierCurveTo 261 9316 387 9316 387 9172
+bezierCurveTo 387 9028 261 9028 261 9172
+closePath
+fill
+stroke
+beginPath
+moveTo 198 9505
+lineTo 450 9505
+stroke
+beginPath
+moveTo -198 8740
+quadraticCurveTo 72 8740 342 8740
+quadraticCurveTo 72 8740 -198 8740
+closePath
+fill
+stroke
+lineWidth 250
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+restore
+save
+save
+translate 0 3800
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+beginPath
+arc 0 600 600 0 62832
+fillStyle "#e4572e"
+fill
+lineWidth 150
+stroke
+beginPath
+arc -540 600 660 -9000 9000
+lineWidth 80
+stroke
+restore
+restore
+save
+restore
+restore"
+`;
+
+exports[`the samples > draws the effect impact as recorded > frame 9 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 10800000
+clip
+setTransform 4320000 0 0 -4320000 5400000 9504000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -12500 0
+lineTo 12500 0
+stroke
+restore
+save
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineCap "round"
+lineJoin "round"
+beginPath
+moveTo -1260 7471
+lineTo 406 7132
+lineTo 2006 7108
+stroke
+beginPath
+moveTo -444 4800
+lineTo 1060 2930
+lineTo 530 589
+lineTo 1311 413
+stroke
+beginPath
+moveTo -444 4800
+lineTo -753 6166
+lineTo -1260 7471
+lineTo -1215 8069
+stroke
+beginPath
+arc -1149 8967 900 0 62832
+fillStyle "#ffffff"
+fill
+stroke
+fillStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -1386 9056
+bezierCurveTo -1375 9200 -1249 9191 -1260 9047
+bezierCurveTo -1271 8903 -1396 8913 -1386 9056
+closePath
+fill
+stroke
+beginPath
+moveTo -1173 9374
+lineTo -1424 9393
+stroke
+beginPath
+moveTo -883 9019
+bezierCurveTo -872 9163 -747 9153 -757 9010
+bezierCurveTo -768 8866 -894 8875 -883 9019
+closePath
+fill
+stroke
+beginPath
+moveTo -921 9356
+lineTo -670 9337
+stroke
+beginPath
+moveTo -1373 8622
+quadraticCurveTo -1104 8602 -834 8582
+quadraticCurveTo -1104 8602 -1373 8622
+closePath
+fill
+stroke
+lineWidth 250
+beginPath
+moveTo -444 4800
+lineTo -223 2410
+lineTo -2 20
+lineTo 798 23
+stroke
+beginPath
+moveTo -1260 7471
+lineTo -373 8921
+lineTo -1123 10334
+stroke
+restore
+save
+save
+translate -1123 9834
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+beginPath
+arc 0 600 600 0 62832
+fillStyle "#e4572e"
+fill
+lineWidth 150
+stroke
+beginPath
+arc -540 600 660 -9000 9000
+lineWidth 80
+stroke
+restore
+restore
+save
+restore
+restore"
+`;
+
+exports[`the samples > draws the effect impact as recorded > frame 19 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 10800000
+clip
+setTransform 4320000 0 0 -4320000 5400000 9504000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -12500 0
+lineTo 12500 0
+stroke
+restore
+save
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineCap "round"
+lineJoin "round"
+beginPath
+moveTo 1679 7224
+lineTo 891 5717
+lineTo 711 4127
+stroke
+beginPath
+moveTo 823 4563
+lineTo 1784 2364
+lineTo 2200 0
+lineTo 2974 201
+stroke
+beginPath
+moveTo 823 4563
+lineTo 1174 5918
+lineTo 1679 7224
+lineTo 1878 7790
+stroke
+beginPath
+arc 2175 8639 900 0 62832
+fillStyle "#ffffff"
+fill
+stroke
+fillStyle "#111111"
+lineWidth 100
+beginPath
+moveTo 1970 8788
+bezierCurveTo 2017 8924 2136 8882 2089 8746
+bezierCurveTo 2041 8610 1922 8652 1970 8788
+closePath
+fill
+stroke
+beginPath
+moveTo 2258 9039
+lineTo 2021 9123
+stroke
+beginPath
+moveTo 2445 8621
+bezierCurveTo 2493 8757 2612 8715 2564 8579
+bezierCurveTo 2517 8443 2398 8485 2445 8621
+closePath
+fill
+stroke
+beginPath
+moveTo 2496 8956
+lineTo 2734 8873
+stroke
+beginPath
+moveTo 1869 8365
+quadraticCurveTo 2124 8276 2379 8186
+quadraticCurveTo 2124 8276 1869 8365
+closePath
+fill
+stroke
+lineWidth 250
+beginPath
+moveTo 823 4563
+lineTo 1480 2254
+lineTo -7 370
+lineTo 682 -38
+stroke
+beginPath
+moveTo 1679 7224
+lineTo 3268 6620
+lineTo 4846 6887
+stroke
+restore
+save
+save
+translate 4668 7382
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+beginPath
+arc 0 600 600 0 62832
+fillStyle "#e4572e"
+fill
+lineWidth 150
+stroke
+beginPath
+arc -540 600 660 -9000 9000
+lineWidth 80
+stroke
+restore
+restore
+save
+restore
+restore"
+`;
+
+exports[`the samples > draws the effect impact as recorded > frame 28 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 10800000
+clip
+setTransform 4320000 0 0 -4320000 5400000 9504000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -12500 0
+lineTo 12500 0
+stroke
+restore
+save
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineCap "round"
+lineJoin "round"
+beginPath
+moveTo 2517 6953
+lineTo 1009 6169
+lineTo -16 4939
+stroke
+beginPath
+moveTo 1191 4502
+lineTo 2332 2391
+lineTo 2183 -4
+lineTo 2983 26
+stroke
+beginPath
+moveTo 1191 4502
+lineTo 1732 5794
+lineTo 2517 6953
+lineTo 2749 7506
+stroke
+beginPath
+arc 3097 8336 900 0 62832
+fillStyle "#ffffff"
+fill
+stroke
+fillStyle "#111111"
+lineWidth 100
+beginPath
+moveTo 2900 8496
+bezierCurveTo 2956 8629 3072 8581 3017 8448
+bezierCurveTo 2961 8315 2845 8364 2900 8496
+closePath
+fill
+stroke
+beginPath
+moveTo 3203 8730
+lineTo 2971 8828
+stroke
+beginPath
+moveTo 3365 8302
+bezierCurveTo 3421 8434 3537 8386 3481 8253
+bezierCurveTo 3426 8120 3310 8169 3365 8302
+closePath
+fill
+stroke
+beginPath
+moveTo 3436 8633
+lineTo 3668 8536
+stroke
+beginPath
+moveTo 2775 8081
+quadraticCurveTo 3024 7976 3273 7872
+quadraticCurveTo 3024 7976 2775 8081
+closePath
+fill
+stroke
+lineWidth 250
+beginPath
+moveTo 1191 4502
+lineTo 1725 2163
+lineTo 0 495
+lineTo 658 41
+stroke
+beginPath
+moveTo 2517 6953
+lineTo 3470 5545
+lineTo 4717 4542
+stroke
+restore
+save
+save
+translate 8363 4658
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+beginPath
+arc 0 600 600 0 62832
+fillStyle "#e4572e"
+fill
+lineWidth 150
+stroke
+beginPath
+arc -540 600 660 -9000 9000
+lineWidth 80
+stroke
+restore
+restore
+save
+restore
+restore"
+`;
+
+exports[`the samples > draws the effect impact as recorded > frame 37 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 10800000
+clip
+setTransform 4320000 0 0 -4320000 5400000 9504000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -12500 0
+lineTo 12500 0
+stroke
+restore
+save
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineCap "round"
+lineJoin "round"
+beginPath
+moveTo 502 7529
+lineTo 143 5867
+lineTo -72 4281
+stroke
+beginPath
+moveTo 232 4742
+lineTo 604 2371
+lineTo 406 -21
+lineTo 1204 -71
+stroke
+beginPath
+moveTo 232 4742
+lineTo 340 6138
+lineTo 502 7529
+lineTo 548 8127
+stroke
+beginPath
+arc 617 9024 900 0 62832
+fillStyle "#ffffff"
+fill
+stroke
+fillStyle "#111111"
+lineWidth 100
+beginPath
+moveTo 381 9115
+bezierCurveTo 392 9258 517 9248 506 9105
+bezierCurveTo 495 8961 369 8971 381 9115
+closePath
+fill
+stroke
+beginPath
+moveTo 595 9432
+lineTo 343 9451
+stroke
+beginPath
+moveTo 883 9076
+bezierCurveTo 894 9219 1020 9210 1009 9066
+bezierCurveTo 998 8922 872 8932 883 9076
+closePath
+fill
+stroke
+beginPath
+moveTo 846 9413
+lineTo 1097 9393
+stroke
+beginPath
+moveTo 392 8680
+quadraticCurveTo 661 8660 931 8639
+quadraticCurveTo 661 8660 392 8680
+closePath
+fill
+stroke
+lineWidth 250
+beginPath
+moveTo 232 4742
+lineTo 621 2374
+lineTo -2 56
+lineTo 778 -122
+stroke
+beginPath
+moveTo 502 7529
+lineTo 698 5840
+lineTo 975 4264
+stroke
+restore
+save
+save
+translate 10000 0
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+beginPath
+arc 0 600 600 0 62832
+fillStyle "#e4572e"
+fill
+lineWidth 150
+stroke
+beginPath
+arc -540 600 660 -9000 9000
+lineWidth 80
+stroke
+restore
+restore
+save
+save
+translate 10000 600
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+globalAlpha 10000
+lineJoin "miter"
+lineCap "round"
+lineWidth 120
+fillStyle "#ffd84d"
+beginPath
+lineTo 1019 746
+lineTo 316 593
+lineTo 60 1470
+lineTo -267 617
+lineTo -1140 988
+lineTo -648 176
+lineTo -1269 -236
+lineTo -542 -397
+lineTo -661 -1240
+lineTo -28 -671
+lineTo 548 -1268
+lineTo 508 -440
+lineTo 1389 -377
+lineTo 661 123
+closePath
+fill
+stroke
+lineWidth 111
+beginPath
+moveTo 913 1712
+lineTo 1214 2278
+moveTo -770 1781
+lineTo -940 2176
+moveTo -1872 509
+lineTo -2505 681
+moveTo -1565 -1147
+lineTo -1887 -1382
+moveTo -79 -1939
+lineTo -96 -2342
+moveTo 1466 -1271
+lineTo 1746 -1513
+moveTo 1908 354
+lineTo 2524 468
+stroke
+restore
+restore
+restore"
+`;
+
+exports[`the samples > draws the effect impact as recorded > frame 47 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 10800000
+clip
+setTransform 4320000 0 0 -4320000 5400000 9504000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -12500 0
+lineTo 12500 0
+stroke
+restore
+save
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineCap "round"
+lineJoin "round"
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 6200
+lineTo 0 7600
+lineTo 0 8200
+stroke
+beginPath
+arc 0 9100 900 0 62832
+fillStyle "#ffffff"
+fill
+stroke
+fillStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -243 9172
+bezierCurveTo -243 9316 -117 9316 -117 9172
+bezierCurveTo -117 9028 -243 9028 -243 9172
+closePath
+fill
+stroke
+beginPath
+moveTo -54 9505
+lineTo -306 9505
+stroke
+beginPath
+moveTo 261 9172
+bezierCurveTo 261 9316 387 9316 387 9172
+bezierCurveTo 387 9028 261 9028 261 9172
+closePath
+fill
+stroke
+beginPath
+moveTo 198 9505
+lineTo 450 9505
+stroke
+beginPath
+moveTo -198 8740
+quadraticCurveTo 72 8740 342 8740
+quadraticCurveTo 72 8740 -198 8740
+closePath
+fill
+stroke
+lineWidth 250
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+restore
+save
+save
+translate 10000 0
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+beginPath
+arc 0 600 600 0 62832
+fillStyle "#e4572e"
+fill
+lineWidth 150
+stroke
+beginPath
+arc -540 600 660 -9000 9000
+lineWidth 80
+stroke
+restore
+restore
+save
+restore
+restore"
+`;
+
+exports[`the samples > draws the effect impact as recorded > frame 56 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 10800000
+clip
+setTransform 4320000 0 0 -4320000 5400000 9504000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -12500 0
+lineTo 12500 0
+stroke
+restore
+save
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineCap "round"
+lineJoin "round"
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 6200
+lineTo 0 7600
+lineTo 0 8200
+stroke
+beginPath
+arc 0 9100 900 0 62832
+fillStyle "#ffffff"
+fill
+stroke
+fillStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -243 9172
+bezierCurveTo -243 9316 -117 9316 -117 9172
+bezierCurveTo -117 9028 -243 9028 -243 9172
+closePath
+fill
+stroke
+beginPath
+moveTo -54 9505
+lineTo -306 9505
+stroke
+beginPath
+moveTo 261 9172
+bezierCurveTo 261 9316 387 9316 387 9172
+bezierCurveTo 387 9028 261 9028 261 9172
+closePath
+fill
+stroke
+beginPath
+moveTo 198 9505
+lineTo 450 9505
+stroke
+beginPath
+moveTo -198 8740
+quadraticCurveTo 72 8740 342 8740
+quadraticCurveTo 72 8740 -198 8740
+closePath
+fill
+stroke
+lineWidth 250
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+restore
+save
+save
+translate 10000 0
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+beginPath
+arc 0 600 600 0 62832
+fillStyle "#e4572e"
+fill
+lineWidth 150
+stroke
+beginPath
+arc -540 600 660 -9000 9000
+lineWidth 80
+stroke
+restore
+restore
+save
+restore
+restore"
+`;
+
+exports[`the samples > draws the effect sparkle as recorded > frame 0 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 10800000
+clip
+setTransform 4320000 0 0 -4320000 5400000 9504000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -12500 0
+lineTo 12500 0
+stroke
+restore
+save
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineCap "round"
+lineJoin "round"
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 6200
+lineTo 0 7600
+lineTo 0 8200
+stroke
+beginPath
+arc 0 9100 900 0 62832
+fillStyle "#ffffff"
+fill
+stroke
+fillStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -243 9172
+bezierCurveTo -243 9316 -117 9316 -117 9172
+bezierCurveTo -117 9028 -243 9028 -243 9172
+closePath
+fill
+stroke
+beginPath
+moveTo -54 9505
+lineTo -306 9505
+stroke
+beginPath
+moveTo 261 9172
+bezierCurveTo 261 9316 387 9316 387 9172
+bezierCurveTo 387 9028 261 9028 261 9172
+closePath
+fill
+stroke
+beginPath
+moveTo 198 9505
+lineTo 450 9505
+stroke
+beginPath
+moveTo -198 8740
+quadraticCurveTo 72 8740 342 8740
+quadraticCurveTo 72 8740 -198 8740
+closePath
+fill
+stroke
+lineWidth 250
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+restore
+save
+save
+translate 0 9100
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+fillStyle "#ffd84d"
+lineWidth 70
+lineJoin "round"
+beginPath
+moveTo 2299 1725
+quadraticCurveTo 2299 1725 2299 1725
+quadraticCurveTo 2299 1725 2299 1725
+quadraticCurveTo 2299 1725 2299 1725
+quadraticCurveTo 2299 1725 2299 1725
+fill
+stroke
+restore
+restore
+restore"
+`;
+
+exports[`the samples > draws the effect sparkle as recorded > frame 10 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 10800000
+clip
+setTransform 4320000 0 0 -4320000 5400000 9504000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -12500 0
+lineTo 12500 0
+stroke
+restore
+save
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineCap "round"
+lineJoin "round"
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 6200
+lineTo 0 7600
+lineTo 0 8200
+stroke
+beginPath
+arc 0 9100 900 0 62832
+fillStyle "#ffffff"
+fill
+stroke
+fillStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -243 9172
+bezierCurveTo -243 9294 -117 9294 -117 9172
+bezierCurveTo -117 9050 -243 9050 -243 9172
+closePath
+fill
+stroke
+beginPath
+moveTo -54 9559
+lineTo -306 9559
+stroke
+beginPath
+moveTo 261 9172
+bezierCurveTo 261 9294 387 9294 387 9172
+bezierCurveTo 387 9050 261 9050 261 9172
+closePath
+fill
+stroke
+beginPath
+moveTo 198 9559
+lineTo 450 9559
+stroke
+beginPath
+moveTo -279 8740
+quadraticCurveTo 72 8470 423 8740
+quadraticCurveTo 72 8290 -279 8740
+closePath
+fill
+stroke
+lineWidth 250
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+restore
+save
+save
+translate 0 9100
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+fillStyle "#ffd84d"
+lineWidth 70
+lineJoin "round"
+beginPath
+moveTo 2299 2193
+quadraticCurveTo 2299 1725 2767 1725
+quadraticCurveTo 2299 1725 2299 1258
+quadraticCurveTo 2299 1725 1831 1725
+quadraticCurveTo 2299 1725 2299 2193
+fill
+stroke
+beginPath
+moveTo 1487 -1189
+quadraticCurveTo 1487 -1428 1725 -1428
+quadraticCurveTo 1487 -1428 1487 -1666
+quadraticCurveTo 1487 -1428 1248 -1428
+quadraticCurveTo 1487 -1428 1487 -1189
+fill
+stroke
+restore
+restore
+restore"
+`;
+
+exports[`the samples > draws the effect sparkle as recorded > frame 20 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 10800000
+clip
+setTransform 4320000 0 0 -4320000 5400000 9504000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -12500 0
+lineTo 12500 0
+stroke
+restore
+save
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineCap "round"
+lineJoin "round"
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 6200
+lineTo 0 7600
+lineTo 0 8200
+stroke
+beginPath
+arc 0 9100 900 0 62832
+fillStyle "#ffffff"
+fill
+stroke
+fillStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -243 9172
+bezierCurveTo -243 9294 -117 9294 -117 9172
+bezierCurveTo -117 9050 -243 9050 -243 9172
+closePath
+fill
+stroke
+beginPath
+moveTo -54 9559
+lineTo -306 9559
+stroke
+beginPath
+moveTo 261 9172
+bezierCurveTo 261 9294 387 9294 387 9172
+bezierCurveTo 387 9050 261 9050 261 9172
+closePath
+fill
+stroke
+beginPath
+moveTo 198 9559
+lineTo 450 9559
+stroke
+beginPath
+moveTo -279 8740
+quadraticCurveTo 72 8470 423 8740
+quadraticCurveTo 72 8290 -279 8740
+closePath
+fill
+stroke
+lineWidth 250
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+restore
+save
+save
+translate 0 9100
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+fillStyle "#ffd84d"
+lineWidth 70
+lineJoin "round"
+beginPath
+moveTo 2299 1968
+quadraticCurveTo 2299 1725 2541 1725
+quadraticCurveTo 2299 1725 2299 1483
+quadraticCurveTo 2299 1725 2057 1725
+quadraticCurveTo 2299 1725 2299 1968
+fill
+stroke
+beginPath
+moveTo -1411 2164
+quadraticCurveTo -1411 2000 -1247 2000
+quadraticCurveTo -1411 2000 -1411 1836
+quadraticCurveTo -1411 2000 -1574 2000
+quadraticCurveTo -1411 2000 -1411 2164
+fill
+stroke
+beginPath
+moveTo -2238 -1181
+quadraticCurveTo -2238 -1778 -1640 -1778
+quadraticCurveTo -2238 -1778 -2238 -2375
+quadraticCurveTo -2238 -1778 -2835 -1778
+quadraticCurveTo -2238 -1778 -2238 -1181
+fill
+stroke
+beginPath
+moveTo 1487 -967
+quadraticCurveTo 1487 -1428 1947 -1428
+quadraticCurveTo 1487 -1428 1487 -1888
+quadraticCurveTo 1487 -1428 1026 -1428
+quadraticCurveTo 1487 -1428 1487 -967
+fill
+stroke
+restore
+restore
+restore"
+`;
+
+exports[`the samples > draws the effect sparkle as recorded > frame 30 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 10800000
+clip
+setTransform 4320000 0 0 -4320000 5400000 9504000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -12500 0
+lineTo 12500 0
+stroke
+restore
+save
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineCap "round"
+lineJoin "round"
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 6200
+lineTo 0 7600
+lineTo 0 8200
+stroke
+beginPath
+arc 0 9100 900 0 62832
+fillStyle "#ffffff"
+fill
+stroke
+fillStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -243 9172
+bezierCurveTo -243 9294 -117 9294 -117 9172
+bezierCurveTo -117 9050 -243 9050 -243 9172
+closePath
+fill
+stroke
+beginPath
+moveTo -54 9559
+lineTo -306 9559
+stroke
+beginPath
+moveTo 261 9172
+bezierCurveTo 261 9294 387 9294 387 9172
+bezierCurveTo 387 9050 261 9050 261 9172
+closePath
+fill
+stroke
+beginPath
+moveTo 198 9559
+lineTo 450 9559
+stroke
+beginPath
+moveTo -279 8740
+quadraticCurveTo 72 8470 423 8740
+quadraticCurveTo 72 8290 -279 8740
+closePath
+fill
+stroke
+lineWidth 250
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+restore
+save
+save
+translate 0 9100
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+fillStyle "#ffd84d"
+lineWidth 70
+lineJoin "round"
+beginPath
+moveTo 1564 1570
+quadraticCurveTo 1564 1112 2023 1112
+quadraticCurveTo 1564 1112 1564 653
+quadraticCurveTo 1564 1112 1106 1112
+quadraticCurveTo 1564 1112 1564 1570
+fill
+stroke
+beginPath
+moveTo -1411 2633
+quadraticCurveTo -1411 2000 -778 2000
+quadraticCurveTo -1411 2000 -1411 1368
+quadraticCurveTo -1411 2000 -2043 2000
+quadraticCurveTo -1411 2000 -1411 2633
+fill
+stroke
+beginPath
+moveTo -2238 -1290
+quadraticCurveTo -2238 -1778 -1750 -1778
+quadraticCurveTo -2238 -1778 -2238 -2266
+quadraticCurveTo -2238 -1778 -2725 -1778
+quadraticCurveTo -2238 -1778 -2238 -1290
+fill
+stroke
+beginPath
+moveTo 964 -1735
+quadraticCurveTo 964 -1735 964 -1735
+quadraticCurveTo 964 -1735 964 -1735
+quadraticCurveTo 964 -1735 964 -1735
+quadraticCurveTo 964 -1735 964 -1735
+fill
+stroke
+restore
+restore
+restore"
+`;
+
+exports[`the samples > draws the effect sparkle as recorded > frame 40 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 10800000
+clip
+setTransform 4320000 0 0 -4320000 5400000 9504000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -12500 0
+lineTo 12500 0
+stroke
+restore
+save
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineCap "round"
+lineJoin "round"
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 6200
+lineTo 0 7600
+lineTo 0 8200
+stroke
+beginPath
+arc 0 9100 900 0 62832
+fillStyle "#ffffff"
+fill
+stroke
+fillStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -243 9172
+bezierCurveTo -243 9294 -117 9294 -117 9172
+bezierCurveTo -117 9050 -243 9050 -243 9172
+closePath
+fill
+stroke
+beginPath
+moveTo -54 9559
+lineTo -306 9559
+stroke
+beginPath
+moveTo 261 9172
+bezierCurveTo 261 9294 387 9294 387 9172
+bezierCurveTo 387 9050 261 9050 261 9172
+closePath
+fill
+stroke
+beginPath
+moveTo 198 9559
+lineTo 450 9559
+stroke
+beginPath
+moveTo -279 8740
+quadraticCurveTo 72 8470 423 8740
+quadraticCurveTo 72 8290 -279 8740
+closePath
+fill
+stroke
+lineWidth 250
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+restore
+save
+save
+translate 0 9100
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+fillStyle "#ffd84d"
+lineWidth 70
+lineJoin "round"
+beginPath
+moveTo 1564 1673
+quadraticCurveTo 1564 1112 2126 1112
+quadraticCurveTo 1564 1112 1564 550
+quadraticCurveTo 1564 1112 1002 1112
+quadraticCurveTo 1564 1112 1564 1673
+fill
+stroke
+beginPath
+moveTo -1411 2164
+quadraticCurveTo -1411 2000 -1247 2000
+quadraticCurveTo -1411 2000 -1411 1836
+quadraticCurveTo -1411 2000 -1574 2000
+quadraticCurveTo -1411 2000 -1411 2164
+fill
+stroke
+beginPath
+moveTo -1677 -645
+quadraticCurveTo -1677 -888 -1434 -888
+quadraticCurveTo -1677 -888 -1677 -1131
+quadraticCurveTo -1677 -888 -1920 -888
+quadraticCurveTo -1677 -888 -1677 -645
+fill
+stroke
+beginPath
+moveTo 964 -1205
+quadraticCurveTo 964 -1735 1494 -1735
+quadraticCurveTo 964 -1735 964 -2266
+quadraticCurveTo 964 -1735 434 -1735
+quadraticCurveTo 964 -1735 964 -1205
+fill
+stroke
+restore
+restore
+restore"
+`;
+
+exports[`the samples > draws the effect sparkle as recorded > frame 50 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 10800000
+clip
+setTransform 4320000 0 0 -4320000 5400000 9504000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -12500 0
+lineTo 12500 0
+stroke
+restore
+save
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineCap "round"
+lineJoin "round"
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 6200
+lineTo 0 7600
+lineTo 0 8200
+stroke
+beginPath
+arc 0 9100 900 0 62832
+fillStyle "#ffffff"
+fill
+stroke
+fillStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -243 9172
+bezierCurveTo -243 9294 -117 9294 -117 9172
+bezierCurveTo -117 9050 -243 9050 -243 9172
+closePath
+fill
+stroke
+beginPath
+moveTo -54 9559
+lineTo -306 9559
+stroke
+beginPath
+moveTo 261 9172
+bezierCurveTo 261 9294 387 9294 387 9172
+bezierCurveTo 387 9050 261 9050 261 9172
+closePath
+fill
+stroke
+beginPath
+moveTo 198 9559
+lineTo 450 9559
+stroke
+beginPath
+moveTo -279 8740
+quadraticCurveTo 72 8470 423 8740
+quadraticCurveTo 72 8290 -279 8740
+closePath
+fill
+stroke
+lineWidth 250
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+restore
+save
+save
+translate 0 9100
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+fillStyle "#ffd84d"
+lineWidth 70
+lineJoin "round"
+beginPath
+moveTo 2049 2202
+quadraticCurveTo 2049 2037 2214 2037
+quadraticCurveTo 2049 2037 2049 1873
+quadraticCurveTo 2049 2037 1885 2037
+quadraticCurveTo 2049 2037 2049 2202
+fill
+stroke
+beginPath
+moveTo -2341 1162
+quadraticCurveTo -2341 726 -1906 726
+quadraticCurveTo -2341 726 -2341 291
+quadraticCurveTo -2341 726 -2777 726
+quadraticCurveTo -2341 726 -2341 1162
+fill
+stroke
+beginPath
+moveTo -1677 -418
+quadraticCurveTo -1677 -888 -1207 -888
+quadraticCurveTo -1677 -888 -1677 -1358
+quadraticCurveTo -1677 -888 -2147 -888
+quadraticCurveTo -1677 -888 -1677 -418
+fill
+stroke
+beginPath
+moveTo 964 -1461
+quadraticCurveTo 964 -1735 1238 -1735
+quadraticCurveTo 964 -1735 964 -2010
+quadraticCurveTo 964 -1735 689 -1735
+quadraticCurveTo 964 -1735 964 -1461
+fill
+stroke
+restore
+restore
+restore"
+`;
+
+exports[`the samples > draws the effect sparkle as recorded > frame 60 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 10800000
+clip
+setTransform 4320000 0 0 -4320000 5400000 9504000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -12500 0
+lineTo 12500 0
+stroke
+restore
+save
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineCap "round"
+lineJoin "round"
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 6200
+lineTo 0 7600
+lineTo 0 8200
+stroke
+beginPath
+arc 0 9100 900 0 62832
+fillStyle "#ffffff"
+fill
+stroke
+fillStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -243 9172
+bezierCurveTo -243 9294 -117 9294 -117 9172
+bezierCurveTo -117 9050 -243 9050 -243 9172
+closePath
+fill
+stroke
+beginPath
+moveTo -54 9559
+lineTo -306 9559
+stroke
+beginPath
+moveTo 261 9172
+bezierCurveTo 261 9294 387 9294 387 9172
+bezierCurveTo 387 9050 261 9050 261 9172
+closePath
+fill
+stroke
+beginPath
+moveTo 198 9559
+lineTo 450 9559
+stroke
+beginPath
+moveTo -279 8740
+quadraticCurveTo 72 8470 423 8740
+quadraticCurveTo 72 8290 -279 8740
+closePath
+fill
+stroke
+lineWidth 250
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+restore
+save
+restore
+restore"
+`;
+
+exports[`the samples > draws the effect speedLines as recorded > frame 0 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 10800000
+clip
+setTransform 4320000 0 0 -4320000 5400000 9504000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -12500 0
+lineTo 12500 0
+stroke
+restore
+save
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineCap "round"
+lineJoin "round"
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 6200
+lineTo 0 7600
+lineTo 0 8200
+stroke
+beginPath
+arc 0 9100 900 0 62832
+fillStyle "#ffffff"
+fill
+stroke
+fillStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -243 9172
+bezierCurveTo -243 9316 -117 9316 -117 9172
+bezierCurveTo -117 9028 -243 9028 -243 9172
+closePath
+fill
+stroke
+beginPath
+moveTo -54 9505
+lineTo -306 9505
+stroke
+beginPath
+moveTo 261 9172
+bezierCurveTo 261 9316 387 9316 387 9172
+bezierCurveTo 387 9028 261 9028 261 9172
+closePath
+fill
+stroke
+beginPath
+moveTo 198 9505
+lineTo 450 9505
+stroke
+beginPath
+moveTo -198 8740
+quadraticCurveTo 72 8740 342 8740
+quadraticCurveTo 72 8740 -198 8740
+closePath
+fill
+stroke
+lineWidth 250
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+restore
+save
+restore
+restore"
+`;
+
+exports[`the samples > draws the effect speedLines as recorded > frame 10 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 10800000
+clip
+setTransform 4320000 0 0 -4320000 5400000 9504000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -12500 0
+lineTo 12500 0
+stroke
+restore
+save
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineCap "round"
+lineJoin "round"
+beginPath
+moveTo 1090 6979
+lineTo 2186 5679
+lineTo 3479 6620
+stroke
+beginPath
+moveTo 0 4400
+lineTo -1355 2419
+lineTo -3494 1331
+lineTo -3131 618
+stroke
+beginPath
+moveTo 0 4400
+lineTo 545 5689
+lineTo 1090 6979
+lineTo 1150 7576
+stroke
+beginPath
+arc 1240 8471 900 0 62832
+fillStyle "#ffffff"
+fill
+stroke
+fillStyle "#111111"
+lineWidth 100
+beginPath
+moveTo 1006 8567
+bezierCurveTo 1020 8711 1145 8698 1131 8555
+bezierCurveTo 1117 8412 991 8424 1006 8567
+closePath
+fill
+stroke
+beginPath
+moveTo 1227 8880
+lineTo 976 8905
+stroke
+beginPath
+moveTo 1507 8517
+bezierCurveTo 1521 8660 1647 8648 1632 8504
+bezierCurveTo 1618 8361 1493 8374 1507 8517
+closePath
+fill
+stroke
+beginPath
+moveTo 1478 8855
+lineTo 1728 8830
+stroke
+beginPath
+moveTo 1007 8133
+quadraticCurveTo 1276 8106 1544 8079
+quadraticCurveTo 1276 8106 1007 8133
+closePath
+fill
+stroke
+lineWidth 250
+beginPath
+moveTo 0 4400
+lineTo 1880 2908
+lineTo 525 927
+lineTo 1185 476
+stroke
+beginPath
+moveTo 1090 6979
+lineTo -494 6363
+lineTo -176 4795
+stroke
+restore
+save
+save
+translate 0 5600
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+strokeStyle "#111111"
+lineCap "round"
+lineWidth 160
+beginPath
+moveTo -2477 -2390
+lineTo -3908 -2390
+stroke
+restore
+restore
+restore"
+`;
+
+exports[`the samples > draws the effect speedLines as recorded > frame 20 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 10800000
+clip
+setTransform 4320000 0 0 -4320000 5400000 9504000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -12500 0
+lineTo 12500 0
+stroke
+restore
+save
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineCap "round"
+lineJoin "round"
+beginPath
+moveTo 1090 6979
+lineTo 2186 5679
+lineTo 3479 6620
+stroke
+beginPath
+moveTo 0 4400
+lineTo -1355 2419
+lineTo -3494 1331
+lineTo -3131 618
+stroke
+beginPath
+moveTo 0 4400
+lineTo 545 5689
+lineTo 1090 6979
+lineTo 1150 7576
+stroke
+beginPath
+arc 1240 8471 900 0 62832
+fillStyle "#ffffff"
+fill
+stroke
+fillStyle "#111111"
+lineWidth 100
+beginPath
+moveTo 1006 8567
+bezierCurveTo 1020 8711 1145 8698 1131 8555
+bezierCurveTo 1117 8412 991 8424 1006 8567
+closePath
+fill
+stroke
+beginPath
+moveTo 1227 8880
+lineTo 976 8905
+stroke
+beginPath
+moveTo 1507 8517
+bezierCurveTo 1521 8660 1647 8648 1632 8504
+bezierCurveTo 1618 8361 1493 8374 1507 8517
+closePath
+fill
+stroke
+beginPath
+moveTo 1478 8855
+lineTo 1728 8830
+stroke
+beginPath
+moveTo 1007 8133
+quadraticCurveTo 1276 8106 1544 8079
+quadraticCurveTo 1276 8106 1007 8133
+closePath
+fill
+stroke
+lineWidth 250
+beginPath
+moveTo 0 4400
+lineTo 1880 2908
+lineTo 525 927
+lineTo 1185 476
+stroke
+beginPath
+moveTo 1090 6979
+lineTo -494 6363
+lineTo -176 4795
+stroke
+restore
+save
+save
+translate 0 5600
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+strokeStyle "#111111"
+lineCap "round"
+lineWidth 161
+beginPath
+moveTo -2253 -2510
+lineTo -2532 -2510
+stroke
+lineWidth 140
+beginPath
+moveTo -3256 -1205
+lineTo -5905 -1205
+stroke
+lineWidth 158
+beginPath
+moveTo -2555 -156
+lineTo -4271 -156
+stroke
+lineWidth 147
+beginPath
+moveTo -3789 1213
+lineTo -5536 1213
+stroke
+lineWidth 125
+beginPath
+moveTo -2892 2598
+lineTo -5560 2598
+stroke
+restore
+restore
+restore"
+`;
+
+exports[`the samples > draws the effect speedLines as recorded > frame 30 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 10800000
+clip
+setTransform 4320000 0 0 -4320000 5400000 9504000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -12500 0
+lineTo 12500 0
+stroke
+restore
+save
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineCap "round"
+lineJoin "round"
+beginPath
+moveTo 1090 6979
+lineTo 2186 5679
+lineTo 3479 6620
+stroke
+beginPath
+moveTo 0 4400
+lineTo -1355 2419
+lineTo -3494 1331
+lineTo -3131 618
+stroke
+beginPath
+moveTo 0 4400
+lineTo 545 5689
+lineTo 1090 6979
+lineTo 1150 7576
+stroke
+beginPath
+arc 1240 8471 900 0 62832
+fillStyle "#ffffff"
+fill
+stroke
+fillStyle "#111111"
+lineWidth 100
+beginPath
+moveTo 1006 8567
+bezierCurveTo 1020 8711 1145 8698 1131 8555
+bezierCurveTo 1117 8412 991 8424 1006 8567
+closePath
+fill
+stroke
+beginPath
+moveTo 1227 8880
+lineTo 976 8905
+stroke
+beginPath
+moveTo 1507 8517
+bezierCurveTo 1521 8660 1647 8648 1632 8504
+bezierCurveTo 1618 8361 1493 8374 1507 8517
+closePath
+fill
+stroke
+beginPath
+moveTo 1478 8855
+lineTo 1728 8830
+stroke
+beginPath
+moveTo 1007 8133
+quadraticCurveTo 1276 8106 1544 8079
+quadraticCurveTo 1276 8106 1007 8133
+closePath
+fill
+stroke
+lineWidth 250
+beginPath
+moveTo 0 4400
+lineTo 1880 2908
+lineTo 525 927
+lineTo 1185 476
+stroke
+beginPath
+moveTo 1090 6979
+lineTo -494 6363
+lineTo -176 4795
+stroke
+restore
+save
+save
+translate 0 5600
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+strokeStyle "#111111"
+lineCap "round"
+lineWidth 161
+beginPath
+moveTo -4920 -2510
+lineTo -5754 -2510
+stroke
+lineWidth 133
+beginPath
+moveTo -3136 -1186
+lineTo -5974 -1186
+stroke
+lineWidth 155
+beginPath
+moveTo -2529 273
+lineTo -4193 273
+stroke
+lineWidth 160
+beginPath
+moveTo -4143 1511
+lineTo -7273 1511
+stroke
+lineWidth 156
+beginPath
+moveTo -2755 2310
+lineTo -5127 2310
+stroke
+restore
+restore
+restore"
+`;
+
+exports[`the samples > draws the effect speedLines as recorded > frame 40 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 10800000
+clip
+setTransform 4320000 0 0 -4320000 5400000 9504000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -12500 0
+lineTo 12500 0
+stroke
+restore
+save
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineCap "round"
+lineJoin "round"
+beginPath
+moveTo 1090 6979
+lineTo 2186 5679
+lineTo 3479 6620
+stroke
+beginPath
+moveTo 0 4400
+lineTo -1355 2419
+lineTo -3494 1331
+lineTo -3131 618
+stroke
+beginPath
+moveTo 0 4400
+lineTo 545 5689
+lineTo 1090 6979
+lineTo 1150 7576
+stroke
+beginPath
+arc 1240 8471 900 0 62832
+fillStyle "#ffffff"
+fill
+stroke
+fillStyle "#111111"
+lineWidth 100
+beginPath
+moveTo 1006 8567
+bezierCurveTo 1020 8711 1145 8698 1131 8555
+bezierCurveTo 1117 8412 991 8424 1006 8567
+closePath
+fill
+stroke
+beginPath
+moveTo 1227 8880
+lineTo 976 8905
+stroke
+beginPath
+moveTo 1507 8517
+bezierCurveTo 1521 8660 1647 8648 1632 8504
+bezierCurveTo 1618 8361 1493 8374 1507 8517
+closePath
+fill
+stroke
+beginPath
+moveTo 1478 8855
+lineTo 1728 8830
+stroke
+beginPath
+moveTo 1007 8133
+quadraticCurveTo 1276 8106 1544 8079
+quadraticCurveTo 1276 8106 1007 8133
+closePath
+fill
+stroke
+lineWidth 250
+beginPath
+moveTo 0 4400
+lineTo 1880 2908
+lineTo 525 927
+lineTo 1185 476
+stroke
+beginPath
+moveTo 1090 6979
+lineTo -494 6363
+lineTo -176 4795
+stroke
+restore
+save
+save
+translate 0 5600
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+strokeStyle "#111111"
+lineCap "round"
+lineWidth 126
+beginPath
+moveTo -4542 -2493
+lineTo -6318 -2493
+stroke
+lineWidth 162
+beginPath
+moveTo -3020 -905
+lineTo -5911 -905
+stroke
+lineWidth 171
+beginPath
+moveTo -2332 169
+lineTo -3017 169
+stroke
+lineWidth 150
+beginPath
+moveTo -3397 1545
+lineTo -5957 1545
+stroke
+lineWidth 153
+beginPath
+moveTo -2774 2012
+lineTo -5428 2012
+stroke
+restore
+restore
+restore"
+`;
+
+exports[`the samples > draws the effect speedLines as recorded > frame 50 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 10800000
+clip
+setTransform 4320000 0 0 -4320000 5400000 9504000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -12500 0
+lineTo 12500 0
+stroke
+restore
+save
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineCap "round"
+lineJoin "round"
+beginPath
+moveTo 1090 6979
+lineTo 2186 5679
+lineTo 3479 6620
+stroke
+beginPath
+moveTo 0 4400
+lineTo -1355 2419
+lineTo -3494 1331
+lineTo -3131 618
+stroke
+beginPath
+moveTo 0 4400
+lineTo 545 5689
+lineTo 1090 6979
+lineTo 1150 7576
+stroke
+beginPath
+arc 1240 8471 900 0 62832
+fillStyle "#ffffff"
+fill
+stroke
+fillStyle "#111111"
+lineWidth 100
+beginPath
+moveTo 1006 8567
+bezierCurveTo 1020 8711 1145 8698 1131 8555
+bezierCurveTo 1117 8412 991 8424 1006 8567
+closePath
+fill
+stroke
+beginPath
+moveTo 1227 8880
+lineTo 976 8905
+stroke
+beginPath
+moveTo 1507 8517
+bezierCurveTo 1521 8660 1647 8648 1632 8504
+bezierCurveTo 1618 8361 1493 8374 1507 8517
+closePath
+fill
+stroke
+beginPath
+moveTo 1478 8855
+lineTo 1728 8830
+stroke
+beginPath
+moveTo 1007 8133
+quadraticCurveTo 1276 8106 1544 8079
+quadraticCurveTo 1276 8106 1007 8133
+closePath
+fill
+stroke
+lineWidth 250
+beginPath
+moveTo 0 4400
+lineTo 1880 2908
+lineTo 525 927
+lineTo 1185 476
+stroke
+beginPath
+moveTo 1090 6979
+lineTo -494 6363
+lineTo -176 4795
+stroke
+restore
+save
+save
+translate 0 5600
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+strokeStyle "#111111"
+lineCap "round"
+lineWidth 124
+beginPath
+moveTo -4269 -2731
+lineTo -6854 -2731
+stroke
+lineWidth 110
+beginPath
+moveTo -2925 -1201
+lineTo -5815 -1201
+stroke
+lineWidth 171
+beginPath
+moveTo -4068 169
+lineTo -4104 169
+stroke
+lineWidth 128
+beginPath
+moveTo -3456 1052
+lineTo -6808 1052
+stroke
+lineWidth 143
+beginPath
+moveTo -2501 2536
+lineTo -3980 2536
+stroke
+restore
+restore
+restore"
+`;
+
+exports[`the samples > draws the effect speedLines as recorded > frame 60 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 10800000
+clip
+setTransform 4320000 0 0 -4320000 5400000 9504000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -12500 0
+lineTo 12500 0
+stroke
+restore
+save
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineCap "round"
+lineJoin "round"
+beginPath
+moveTo 1090 6979
+lineTo 2186 5679
+lineTo 3479 6620
+stroke
+beginPath
+moveTo 0 4400
+lineTo -1355 2419
+lineTo -3494 1331
+lineTo -3131 618
+stroke
+beginPath
+moveTo 0 4400
+lineTo 545 5689
+lineTo 1090 6979
+lineTo 1150 7576
+stroke
+beginPath
+arc 1240 8471 900 0 62832
+fillStyle "#ffffff"
+fill
+stroke
+fillStyle "#111111"
+lineWidth 100
+beginPath
+moveTo 1006 8567
+bezierCurveTo 1020 8711 1145 8698 1131 8555
+bezierCurveTo 1117 8412 991 8424 1006 8567
+closePath
+fill
+stroke
+beginPath
+moveTo 1227 8880
+lineTo 976 8905
+stroke
+beginPath
+moveTo 1507 8517
+bezierCurveTo 1521 8660 1647 8648 1632 8504
+bezierCurveTo 1618 8361 1493 8374 1507 8517
+closePath
+fill
+stroke
+beginPath
+moveTo 1478 8855
+lineTo 1728 8830
+stroke
+beginPath
+moveTo 1007 8133
+quadraticCurveTo 1276 8106 1544 8079
+quadraticCurveTo 1276 8106 1007 8133
+closePath
+fill
+stroke
+lineWidth 250
+beginPath
+moveTo 0 4400
+lineTo 1880 2908
+lineTo 525 927
+lineTo 1185 476
+stroke
+beginPath
+moveTo 1090 6979
+lineTo -494 6363
+lineTo -176 4795
+stroke
+restore
+save
+restore
+restore"
+`;
+
+exports[`the samples > draws the effect sweat as recorded > frame 0 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 10800000
+clip
+setTransform 4320000 0 0 -4320000 5400000 9504000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -12500 0
+lineTo 12500 0
+stroke
+restore
+save
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineCap "round"
+lineJoin "round"
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 6200
+lineTo 0 7600
+lineTo 0 8200
+stroke
+beginPath
+arc 0 9100 900 0 62832
+fillStyle "#ffffff"
+fill
+stroke
+fillStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -243 9172
+bezierCurveTo -243 9316 -117 9316 -117 9172
+bezierCurveTo -117 9028 -243 9028 -243 9172
+closePath
+fill
+stroke
+beginPath
+moveTo -54 9505
+lineTo -306 9505
+stroke
+beginPath
+moveTo 261 9172
+bezierCurveTo 261 9316 387 9316 387 9172
+bezierCurveTo 387 9028 261 9028 261 9172
+closePath
+fill
+stroke
+beginPath
+moveTo 198 9505
+lineTo 450 9505
+stroke
+beginPath
+moveTo -198 8740
+quadraticCurveTo 72 8740 342 8740
+quadraticCurveTo 72 8740 -198 8740
+closePath
+fill
+stroke
+lineWidth 250
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+restore
+save
+save
+translate 0 9100
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+fillStyle "#8fd0f5"
+lineWidth 80
+lineJoin "round"
+save
+translate -289 1113
+rotate 18246
+beginPath
+moveTo 0 0
+arc 0 0 0 21000 -21000 true
+closePath
+fill
+stroke
+restore
+restore
+restore
+restore"
+`;
+
+exports[`the samples > draws the effect sweat as recorded > frame 11 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 10800000
+clip
+setTransform 4320000 0 0 -4320000 5400000 9504000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -12500 0
+lineTo 12500 0
+stroke
+restore
+save
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineCap "round"
+lineJoin "round"
+beginPath
+moveTo -143 7596
+lineTo -56 5898
+lineTo 26 4300
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 4800
+lineTo -39 6199
+lineTo -143 7596
+lineTo -221 8191
+stroke
+beginPath
+arc -337 9083 900 0 62832
+fillStyle "#ffffff"
+fill
+stroke
+fillStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -581 9070
+bezierCurveTo -591 9147 -466 9163 -456 9086
+bezierCurveTo -446 9010 -571 8993 -581 9070
+closePath
+fill
+stroke
+beginPath
+moveTo -448 9513
+lineTo -684 9376
+stroke
+beginPath
+moveTo -81 9135
+bezierCurveTo -91 9212 34 9228 44 9152
+bezierCurveTo 54 9075 -71 9059 -81 9135
+closePath
+fill
+stroke
+beginPath
+moveTo -198 9546
+lineTo 65 9474
+stroke
+beginPath
+moveTo -437 8707
+quadraticCurveTo -242 8909 -1 8764
+quadraticCurveTo -242 8909 -437 8707
+closePath
+fill
+stroke
+lineWidth 250
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo -143 7596
+lineTo -56 5898
+lineTo 26 4300
+stroke
+restore
+save
+save
+translate -337 9083
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+fillStyle "#8fd0f5"
+lineWidth 80
+lineJoin "round"
+save
+translate -500 1665
+rotate -26232
+beginPath
+moveTo -400 0
+arc 80 0 187 21000 -21000 true
+closePath
+fill
+stroke
+restore
+save
+translate -1569 935
+rotate 27489
+beginPath
+moveTo -371 0
+arc 74 0 173 21000 -21000 true
+closePath
+fill
+stroke
+restore
+restore
+restore
+restore"
+`;
+
+exports[`the samples > draws the effect sweat as recorded > frame 22 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 10800000
+clip
+setTransform 4320000 0 0 -4320000 5400000 9504000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -12500 0
+lineTo 12500 0
+stroke
+restore
+save
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineCap "round"
+lineJoin "round"
+beginPath
+moveTo -127 7596
+lineTo -12 5900
+lineTo 139 4307
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 4800
+lineTo -103 6196
+lineTo -127 7596
+lineTo -192 8192
+stroke
+beginPath
+arc -290 9087 900 0 62832
+fillStyle "#ffffff"
+fill
+stroke
+fillStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -534 9075
+bezierCurveTo -541 9146 -416 9160 -408 9089
+bezierCurveTo -400 9017 -526 9003 -534 9075
+closePath
+fill
+stroke
+beginPath
+moveTo -392 9522
+lineTo -631 9382
+stroke
+beginPath
+moveTo -33 9130
+bezierCurveTo -40 9201 85 9215 93 9144
+bezierCurveTo 101 9072 -25 9058 -33 9130
+closePath
+fill
+stroke
+beginPath
+moveTo -142 9550
+lineTo 121 9464
+stroke
+beginPath
+moveTo -394 8714
+quadraticCurveTo -200 8925 35 8761
+quadraticCurveTo -200 8925 -394 8714
+closePath
+fill
+stroke
+lineWidth 250
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo -127 7596
+lineTo 33 5904
+lineTo 213 4314
+stroke
+restore
+save
+save
+translate -290 9087
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+fillStyle "#8fd0f5"
+lineWidth 80
+lineJoin "round"
+save
+translate -345 1667
+rotate 18020
+beginPath
+moveTo -376 0
+arc 75 0 176 21000 -21000 true
+closePath
+fill
+stroke
+restore
+save
+translate -1336 1484
+rotate 29931
+beginPath
+moveTo -470 0
+arc 94 0 219 21000 -21000 true
+closePath
+fill
+stroke
+restore
+save
+translate -2204 836
+rotate -18241
+beginPath
+moveTo -137 0
+arc 27 0 64 21000 -21000 true
+closePath
+fill
+stroke
+restore
+restore
+restore
+restore"
+`;
+
+exports[`the samples > draws the effect sweat as recorded > frame 33 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 10800000
+clip
+setTransform 4320000 0 0 -4320000 5400000 9504000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -12500 0
+lineTo 12500 0
+stroke
+restore
+save
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineCap "round"
+lineJoin "round"
+beginPath
+moveTo 465 7440
+lineTo 335 5745
+lineTo 402 4146
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 4800
+lineTo -166 6190
+lineTo 465 7440
+lineTo 992 7727
+stroke
+beginPath
+arc 1782 8158 900 0 62832
+fillStyle "#ffffff"
+fill
+stroke
+fillStyle "#111111"
+lineWidth 100
+beginPath
+moveTo 1678 8378
+bezierCurveTo 1741 8413 1802 8302 1738 8268
+bezierCurveTo 1675 8233 1615 8344 1678 8378
+closePath
+fill
+stroke
+beginPath
+moveTo 2146 8418
+lineTo 1925 8585
+stroke
+beginPath
+moveTo 1919 7936
+bezierCurveTo 1983 7970 2043 7860 1980 7825
+bezierCurveTo 1916 7791 1856 7901 1919 7936
+closePath
+fill
+stroke
+beginPath
+moveTo 2266 8197
+lineTo 2287 7921
+stroke
+beginPath
+moveTo 1397 8112
+quadraticCurveTo 1666 8013 1604 7733
+quadraticCurveTo 1666 8013 1397 8112
+closePath
+fill
+stroke
+lineWidth 250
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 465 7440
+lineTo 535 5741
+lineTo 726 4153
+stroke
+restore
+save
+save
+translate 1782 8158
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+fillStyle "#8fd0f5"
+lineWidth 80
+lineJoin "round"
+save
+translate -516 2055
+rotate -17142
+beginPath
+moveTo -209 0
+arc 42 0 98 21000 -21000 true
+closePath
+fill
+stroke
+restore
+save
+translate -832 1309
+rotate 21902
+beginPath
+moveTo -458 0
+arc 92 0 214 21000 -21000 true
+closePath
+fill
+stroke
+restore
+save
+translate -1716 725
+rotate -29174
+beginPath
+moveTo -455 0
+arc 91 0 212 21000 -21000 true
+closePath
+fill
+stroke
+restore
+restore
+restore
+restore"
+`;
+
+exports[`the samples > draws the effect sweat as recorded > frame 44 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 10800000
+clip
+setTransform 4320000 0 0 -4320000 5400000 9504000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -12500 0
+lineTo 12500 0
+stroke
+restore
+save
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineCap "round"
+lineJoin "round"
+beginPath
+moveTo 524 7403
+lineTo 368 5711
+lineTo 424 4112
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 4800
+lineTo -173 6189
+lineTo 524 7403
+lineTo 1114 7515
+stroke
+beginPath
+arc 1998 7683 900 0 62832
+fillStyle "#ffffff"
+fill
+stroke
+fillStyle "#111111"
+lineWidth 100
+beginPath
+moveTo 1967 7925
+bezierCurveTo 2037 7938 2061 7814 1990 7801
+bezierCurveTo 1919 7787 1896 7911 1967 7925
+closePath
+fill
+stroke
+beginPath
+moveTo 2424 7819
+lineTo 2265 8045
+stroke
+beginPath
+moveTo 2061 7429
+bezierCurveTo 2131 7443 2155 7319 2084 7306
+bezierCurveTo 2013 7292 1990 7416 2061 7429
+closePath
+fill
+stroke
+beginPath
+moveTo 2471 7571
+lineTo 2406 7303
+stroke
+beginPath
+moveTo 1617 7757
+quadraticCurveTo 1843 7580 1698 7333
+quadraticCurveTo 1843 7580 1617 7757
+closePath
+fill
+stroke
+lineWidth 250
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 524 7403
+lineTo 584 5704
+lineTo 777 4116
+stroke
+restore
+save
+save
+translate 1998 7683
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+fillStyle "#8fd0f5"
+lineWidth 80
+lineJoin "round"
+save
+translate -502 1711
+rotate 20886
+beginPath
+moveTo -486 0
+arc 97 0 227 21000 -21000 true
+closePath
+fill
+stroke
+restore
+save
+translate -1300 1651
+rotate -20823
+beginPath
+moveTo -339 0
+arc 68 0 158 21000 -21000 true
+closePath
+fill
+stroke
+restore
+save
+translate -1288 667
+rotate 27131
+beginPath
+moveTo -367 0
+arc 73 0 171 21000 -21000 true
+closePath
+fill
+stroke
+restore
+restore
+restore
+restore"
+`;
+
+exports[`the samples > draws the effect sweat as recorded > frame 55 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 10800000
+clip
+setTransform 4320000 0 0 -4320000 5400000 9504000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -12500 0
+lineTo 12500 0
+stroke
+restore
+save
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineCap "round"
+lineJoin "round"
+beginPath
+moveTo 479 7432
+lineTo 343 5737
+lineTo 407 4138
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 4800
+lineTo -168 6190
+lineTo 479 7432
+lineTo 1050 7615
+stroke
+beginPath
+arc 1907 7890 900 0 62832
+fillStyle "#ffffff"
+fill
+stroke
+fillStyle "#111111"
+lineWidth 100
+beginPath
+moveTo 1846 8126
+bezierCurveTo 1915 8148 1954 8028 1885 8006
+bezierCurveTo 1816 7984 1778 8104 1846 8126
+closePath
+fill
+stroke
+beginPath
+moveTo 2313 8078
+lineTo 2128 8283
+stroke
+beginPath
+moveTo 2001 7646
+bezierCurveTo 2069 7668 2108 7548 2039 7526
+bezierCurveTo 1971 7504 1932 7624 2001 7646
+closePath
+fill
+stroke
+beginPath
+moveTo 2390 7838
+lineTo 2359 7563
+stroke
+beginPath
+moveTo 1520 7917
+quadraticCurveTo 1766 7770 1652 7506
+quadraticCurveTo 1766 7770 1520 7917
+closePath
+fill
+stroke
+lineWidth 250
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 479 7432
+lineTo 547 5733
+lineTo 738 4145
+stroke
+restore
+save
+save
+translate 1907 7890
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+fillStyle "#8fd0f5"
+lineWidth 80
+lineJoin "round"
+save
+translate -435 1175
+rotate 19405
+beginPath
+moveTo -184 0
+arc 37 0 86 21000 -21000 true
+closePath
+fill
+stroke
+restore
+save
+translate -1032 1608
+rotate 23441
+beginPath
+moveTo -371 0
+arc 74 0 173 21000 -21000 true
+closePath
+fill
+stroke
+restore
+save
+translate -2204 792
+rotate -24138
+beginPath
+moveTo -459 0
+arc 92 0 214 21000 -21000 true
+closePath
+fill
+stroke
+restore
+restore
+restore
+restore"
+`;
+
+exports[`the samples > draws the effect sweat as recorded > frame 66 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 10800000
+clip
+setTransform 4320000 0 0 -4320000 5400000 9504000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -12500 0
+lineTo 12500 0
+stroke
+restore
+save
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineCap "round"
+lineJoin "round"
+beginPath
+moveTo 479 7432
+lineTo 343 5737
+lineTo 407 4138
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 4800
+lineTo -168 6190
+lineTo 479 7432
+lineTo 1050 7615
+stroke
+beginPath
+arc 1907 7890 900 0 62832
+fillStyle "#ffffff"
+fill
+stroke
+fillStyle "#111111"
+lineWidth 100
+beginPath
+moveTo 1846 8126
+bezierCurveTo 1915 8148 1954 8028 1885 8006
+bezierCurveTo 1816 7984 1778 8104 1846 8126
+closePath
+fill
+stroke
+beginPath
+moveTo 2313 8078
+lineTo 2128 8283
+stroke
+beginPath
+moveTo 2001 7646
+bezierCurveTo 2069 7668 2108 7548 2039 7526
+bezierCurveTo 1971 7504 1932 7624 2001 7646
+closePath
+fill
+stroke
+beginPath
+moveTo 2390 7838
+lineTo 2359 7563
+stroke
+beginPath
+moveTo 1520 7917
+quadraticCurveTo 1766 7770 1652 7506
+quadraticCurveTo 1766 7770 1520 7917
+closePath
+fill
+stroke
+lineWidth 250
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 479 7432
+lineTo 547 5733
+lineTo 738 4145
+stroke
+restore
+save
+restore
+restore"
+`;
+
 exports[`the samples > draws the expression angry as recorded > frame 30 1`] = `
 "reset
 fillStyle "#ffffff"

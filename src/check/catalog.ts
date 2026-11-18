@@ -259,7 +259,8 @@ const USE: Readonly<Record<ItemKind, string>> = {
   expression: 'actor.express("name", { …, at, duration, blend, mode })',
   prop: 'stage.prop("name", { …, at, duration }) — returns a handle with place, hold and move',
   backdrop: 'stage.backdrop("name", { …, at, duration })',
-  effect: 'stage.effect("name", { …, at, duration })',
+  effect:
+    'stage.effect("name", { …, at, duration, on }) — on is where its origin is: a point { x, y }, an actor (the centre of its head, followed every frame), or { actor, part, offset } with part one of head, pelvis, handL, handR, footL, footR; without it, the row\'s origin',
 };
 
 const range = (min: number | null, max: number | null): string =>

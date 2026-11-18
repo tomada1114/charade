@@ -76,11 +76,12 @@ recorded sample is written against; changing any of it changes all of them at on
   `PoseOptions`, `ReachOptions`, `DriveOptions` and `DrawOptions`. The vocabulary calls
   add `Actor.do` and `Actor.express`, `Row.prop`, `Row.backdrop` and `Row.effect`, the
   handles `Clip` (what an action's `build` records on) and `Prop`, and the option types
-  `ActionOptions`, `ExpressOptions`, `ItemOptions`, `PlaceOptions`, `HoldOptions` and
-  `MoveOptions`; `.claude/rules/vocabulary.md` holds how they behave. Handles are
-  interfaces an author is handed and never implements, so a later issue adds a method as
-  a minor change. `row.actor` and `row.draw` take an options bag rather than a
-  positional name, so placement and layering can be added the same way.
+  `ActionOptions`, `ExpressOptions`, `ItemOptions`, `EffectOptions` (with `EffectAnchor`
+  and `AnchorPart`), `PlaceOptions`, `HoldOptions` and `MoveOptions`;
+  `.claude/rules/vocabulary.md` holds how they behave. Handles are interfaces an author
+  is handed and never implements, so a later issue adds a method as a minor change.
+  `row.actor` and `row.draw` take an options bag rather than a positional name, so
+  placement and layering can be added the same way.
 - An id is `row<i>` for a row and `row<i>/<kind>/<name>/<occurrence>` for an item; an
   actor's default name is `actor`, a drawing's is `draw` and a label's is `label`. An
   actor's speech bubbles are one item of kind `bubble`, named after the actor.
@@ -211,16 +212,17 @@ recorded sample is written against; changing any of it changes all of them at on
 - A drawing function — a depth 4 callback, or the `draw` of a prop, backdrop or effect —
   gets a `DrawMoment`: a `Moment` plus `view`, a `RowView` (`left`, `right`, `bottom`,
   `top`) giving the row's visible area in the coordinates the function draws in. For a
-  free drawing, a backdrop and an effect that is the row's own (`∓units / 2`, −0.3,
-  2.2); for a prop it is shifted by the prop's ground point, since its context is. The
-  width is the one thing about a row an item cannot know, and a backdrop has to reach
-  both edges at every canvas shape and row count. It is a field of the moment, not a
-  parameter or a method of the context: every drawing function already receives the
-  moment, a parameter would be a reserved name in every definition's bag, and the
-  drawing interface holds only standard Canvas 2D members. It is a separate type because
-  a `drive` has no layout to read: a pose is composed from the timeline alone, which
-  does not hold the canvas size. A function typed against `Moment` is still accepted
-  where a `DrawMoment` is handed over. `rowView` in `src/draw/layout.ts` builds it.
+  free drawing and a backdrop that is the row's own (`∓units / 2`, −0.3, 2.2); for a
+  prop or an effect it is shifted by the item's ground point or origin, since its
+  context is, and mirrored with an effect that is drawn mirrored. The width is the one
+  thing about a row an item cannot know, and a backdrop has to reach both edges at every
+  canvas shape and row count. It is a field of the moment, not a parameter or a method
+  of the context: every drawing function already receives the moment, a parameter would
+  be a reserved name in every definition's bag, and the drawing interface holds only
+  standard Canvas 2D members. It is a separate type because a `drive` has no layout to
+  read: a pose is composed from the timeline alone, which does not hold the canvas size.
+  A function typed against `Moment` is still accepted where a `DrawMoment` is handed
+  over. `rowView` in `src/draw/layout.ts` builds it.
 
 ## The rig
 
@@ -364,10 +366,11 @@ change to the shape raises the version.
   arrives, `x`, `y`, and its `arc`), `label` (text, `x`, `y`, `size`, `align`, and
   `width` or `null`), `say` (text, the speaking actor's track `name` and `occurrence`,
   `size`, `width`), or `prop`, `backdrop` and `effect` (name, definition or `null`,
-  resolved params). An action records its clip's calls on the actor's track as ordinary
-  segments, and an expression records a `pose`. These live in
-  `src/timeline/segments.ts`. Nothing is released yet, so this shape is still JSON
-  version 1.
+  resolved params; an effect also `on`, which is `null`, a point `x`, `y`, or the
+  actor's track `name` and `occurrence` with the `part` and the `offset`). An action
+  records its clip's calls on the actor's track as ordinary segments, and an expression
+  records a `pose`. These live in `src/timeline/segments.ts`. Nothing is released yet,
+  so this shape is still JSON version 1.
 
 ## The drawing interface
 
@@ -477,13 +480,27 @@ change to the shape raises the version.
   resolved params and the `DrawMoment` of that segment. The definition is the segment's
   own when it was passed as one and otherwise the built-in of its name from the map of
   the track's kind; a name that map lacks, or a parsed timeline's placeholder, draws
-  nothing. A backdrop's and an effect's ground point is the row's origin: neither has a
-  placement call yet. A prop's comes from `propPlacement` in `src/draw/prop.ts`, a pure
-  function of the timeline and the frame. A `draw` that throws is wrapped in
-  `FrameItemError` like a free drawing's, and `check` calls a prop's, backdrop's and
-  effect's `draw` at every frame on a recording context, as it does a free drawing's, so
-  a clock or random read or a failure is a finding named after the item; a held prop's
-  holder's reads stay the holder's.
+  nothing. A backdrop's ground point is the row's origin: it has no placement. A prop's
+  comes from `propPlacement` and an effect's from `effectPlacement`, both in
+  `src/draw/prop.ts` and both a pure function of the timeline and the frame. A `draw`
+  that throws is wrapped in `FrameItemError` like a free drawing's, and `check` calls a
+  prop's, backdrop's and effect's `draw` at every frame on a recording context, as it
+  does a free drawing's, so a clock or random read or a failure is a finding named after
+  the item; a held prop's holder's reads stay the holder's, and so do those of the actor
+  an effect is on.
+- An effect's origin is where its segment's `on` says: a point of the row, or a part of
+  an actor of the row, composed from the timeline at that frame as a held prop's hand
+  is, so the effect follows the part through every action without a frame depending on
+  another. The part is one of the six points a state description prints, the head being
+  its centre and a foot its ankle point, moved by the offset with `x` the way the actor
+  faces. The context is translated there and not turned: a droplet falls down however
+  the head tilts. On an actor facing left it is also flipped left to right about the
+  origin, `scale(−1, 1)`, with the `view` it is handed: an effect on a figure is part of
+  that figure's picture, and an item never branches on facing. A point is not mirrored.
+  Without `on`, or when it names an actor or part the row lacks (a hand-built timeline),
+  the origin is the row's. Several shown segments on one track share the place of the
+  last recorded; `row.effect` records one segment a track. An effect off the frame is
+  not a finding of its own: the actor it is on already is one.
 - A prop's slot follows what it is doing: behind the actor while it stands where it was
   placed or is carried by a far (`L`) hand or foot, in front while a near (`R`) one
   carries it or it is on a `move`, and after one. So a box to sit on is behind the

@@ -94,6 +94,13 @@ export default scene({ rows: 2 }, (stage) => {
   puts it in front, as for a desk the figure sits at. An action that uses a prop takes
   the handle as a parameter; if it starts with the prop in a hand, `hold` it there from
   the start.
+- A backdrop is `row.backdrop(name, params)` and fills its row. An effect is
+  `row.effect(name, { …params, at, duration, on })`: an accent drawn in front of the
+  actor, around the place `on` names. `on: actor` is the centre of that actor's head,
+  followed every frame; `on: { actor, part, offset }` is its `head`, `pelvis`, `handL`,
+  `handR`, `footL` or `footR`; `on: { x, y }` is a point of the row. Each effect's
+  description says which it wants. Time one against an action with the span the action
+  returned, as in `{ at: thrown.marks.release, duration: 0.4 }`.
 - Erasable TypeScript only: no `enum`, no parameter properties, no `namespace`. Loops,
   functions and arithmetic are fine. A helper file is imported with its `.ts` extension.
 - If the folder has a `package.json` without `"type": "module"`, name the scene

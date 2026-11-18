@@ -192,7 +192,10 @@ recorded sample is how an unintended change in appearance fails a test.
   it is shown, since its drawing has no extent the check can read: where it was placed,
   on the effector that holds it, or along its move. A held prop composes its holder's
   pose, so a holder whose function throws at a frame is a failure of the prop as well. A
-  free drawing is not measured.
+  free drawing is not measured. Nor is an effect: it is drawn around a point or a part
+  of an actor, and the actor is measured already. An effect on an actor composes that
+  actor's pose as a held prop does its holder's, so the actor's clock and random reads
+  stay the actor's and its failure is the effect's as well.
 - An actor over text is a warning, not an error. Text is the top slot, so what is hidden
   is part of the figure, which a hand passing behind a label does on purpose; an error
   would stop `render` on a question of looks; and a warning can be raised to an error

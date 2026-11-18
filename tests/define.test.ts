@@ -20,6 +20,7 @@ import {
 } from "../src/index.js";
 import type { Vocabulary } from "../src/scene/builtins.js";
 import { buildScene } from "../src/scene/scene.js";
+import { serializeTimeline } from "../src/timeline/json.js";
 
 const noop = (): void => undefined;
 
@@ -333,6 +334,23 @@ describe("defineAction", () => {
         draw: noop,
       });
     expect(define).toThrow(InvalidDefinitionError);
+  });
+
+  it("keeps on from an effect's parameters, and from no other kind's", () => {
+    const params = { on: { type: "boolean", default: true, doc: "d" } } as const;
+    const define = (): unknown =>
+      defineEffect({ name: "x", description: "", params, draw: noop });
+    expect(define).toThrow(ReservedParameterError);
+    expect(define).toThrow(
+      expect.objectContaining({
+        code: "ERR_DEFINE_RESERVED_PARAMETER",
+        kind: "effect",
+        path: "params.on",
+      }),
+    );
+    expect(
+      defineProp({ name: "lamp", description: "", params, draw: noop }).params,
+    ).toEqual(params);
   });
 
   it("rejects a drawn item without draw", () => {
@@ -900,8 +918,8 @@ describe("a.do with a name", () => {
     expect(segments(built)[0]).toMatchObject({ data: { kind: "wait" } });
   });
 
-  it("says there are no built-in effects yet while none exist", () => {
-    const built = scene({ duration: 1 }, (stage) => {
+  it("says a kind has no built-in yet while its map is empty", () => {
+    const built = withNames((stage) => {
       loose(stage)["effect"]?.("sweat");
     });
     const finding = only(built, "ERR_SCENE_UNKNOWN_EFFECT");
@@ -1116,6 +1134,158 @@ describe("row.prop, row.backdrop and row.effect", () => {
     });
     expect(built.findings).toEqual([]);
     expect(built.timeline.rows[1]?.tracks).toHaveLength(3);
+  });
+
+  describe("an effect's on", () => {
+    function effectData(built: Scene, row = 0): unknown {
+      return built.timeline.rows[row]?.tracks.find((track) => track.kind === "effect")
+        ?.segments[0]?.data;
+    }
+
+    it("records no place for an effect that is given none", () => {
+      const built = scene({ duration: 1 }, (stage) => {
+        stage.effect(sweatEffect);
+      });
+      expect(effectData(built)).toEqual({
+        kind: "effect",
+        name: "sweat",
+        definition: sweatEffect,
+        params: {},
+        on: null,
+      });
+    });
+
+    it("records a point, an actor as its head, and a part with its offset", () => {
+      const built = scene({ duration: 1, rows: 3 }, (stage) => {
+        stage.row(0).effect(sweatEffect, { on: { x: 0.5, y: -0 } });
+        const hero = stage.row(1).actor({ name: "hero" });
+        stage.row(1).effect(sweatEffect, { on: hero });
+        const other = stage.row(2).actor();
+        stage.row(2).effect(sweatEffect, {
+          on: { actor: other, part: "footL", offset: { x: 0.1, y: 0.2 } },
+        });
+      });
+      expect(built.findings).toEqual([]);
+      expect(effectData(built, 0)).toMatchObject({ on: { x: 0.5, y: 0 } });
+      expect(effectData(built, 1)).toMatchObject({
+        on: {
+          actor: { name: "hero", occurrence: 0 },
+          part: "head",
+          offset: { x: 0, y: 0 },
+        },
+      });
+      expect(effectData(built, 2)).toMatchObject({
+        on: {
+          actor: { name: "actor", occurrence: 0 },
+          part: "footL",
+          offset: { x: 0.1, y: 0.2 },
+        },
+      });
+    });
+
+    it("serialises a place as data", () => {
+      const built = scene({ duration: 1 }, (stage) => {
+        stage.effect(sweatEffect, { on: { actor: stage.actor(), part: "handR" } });
+      });
+      expect(serializeTimeline(built.timeline)).toContain(
+        '"on":{"actor":{"name":"actor","occurrence":0},"offset":{"x":0,"y":0},"part":"handR"}',
+      );
+    });
+
+    it.each([
+      ["a number", 3],
+      ["null", null],
+      ["a point of strings", { x: "0", y: "1" }],
+      ["an actor that is not a handle", { actor: { id: "row0/actor/actor/0" } }],
+    ])("reports %s and uses the row's origin", (_label, on) => {
+      const built = scene({ duration: 1 }, (stage) => {
+        stage.actor();
+        loose(stage)["effect"]?.(sweatEffect, { on });
+      });
+      expect(only(built, "ERR_SCENE_INVALID_VALUE")).toMatchObject({
+        row: 0,
+        target: "row0/effect/sweat/0",
+      });
+      expect(effectData(built)).toMatchObject({ on: null });
+    });
+
+    it.each([
+      ["an infinite y", { x: 0, y: Infinity }],
+      ["a NaN x", { x: Number.NaN, y: 1 }],
+    ])(
+      "reports a point with %s as out of range and uses the row's origin",
+      (_label, on) => {
+        const built = scene({ duration: 1 }, (stage) => {
+          stage.actor();
+          loose(stage)["effect"]?.(sweatEffect, { on });
+        });
+        expect(only(built, "ERR_SCENE_OUT_OF_RANGE")).toMatchObject({
+          row: 0,
+          target: "row0/effect/sweat/0",
+        });
+        expect(effectData(built)).toMatchObject({ on: null });
+      },
+    );
+
+    it("reports an actor of another row and uses the row's origin", () => {
+      const built = scene({ duration: 1, rows: 2 }, (stage) => {
+        const above = stage.row(0).actor();
+        stage.row(1).effect(sweatEffect, { on: above });
+        stage.row(1).effect(sweatEffect, { on: { actor: above, part: "handR" } });
+      });
+      expect(codes(built)).toEqual(["ERR_SCENE_NO_ACTOR", "ERR_SCENE_NO_ACTOR"]);
+      expect(effectData(built, 1)).toMatchObject({ on: null });
+    });
+
+    it("reports a part that is not one, nearest head, and uses the head", () => {
+      const built = scene({ duration: 1 }, (stage) => {
+        loose(stage)["effect"]?.(sweatEffect, {
+          on: { actor: stage.actor(), part: "hexd" },
+        });
+      });
+      expect(only(built, "ERR_SCENE_INVALID_VALUE").nearest).toEqual(["head"]);
+      expect(effectData(built)).toMatchObject({ on: { part: "head" } });
+    });
+
+    it("reports a part that is not a string without a nearest name", () => {
+      const built = scene({ duration: 1 }, (stage) => {
+        loose(stage)["effect"]?.(sweatEffect, {
+          on: { actor: stage.actor(), part: 1 },
+        });
+      });
+      expect(only(built, "ERR_SCENE_INVALID_VALUE").nearest).toEqual([]);
+    });
+
+    it("reports an offset that is not a point and uses none", () => {
+      const built = scene({ duration: 1 }, (stage) => {
+        loose(stage)["effect"]?.(sweatEffect, {
+          on: { actor: stage.actor(), offset: { x: NaN, y: 0 } },
+        });
+      });
+      expect(codes(built)).toEqual(["ERR_SCENE_OUT_OF_RANGE"]);
+      expect(effectData(built)).toMatchObject({ on: { offset: { x: 0, y: 0 } } });
+    });
+
+    it("reports a key of on that is none of actor, part and offset", () => {
+      const built = scene({ duration: 1 }, (stage) => {
+        loose(stage)["effect"]?.(sweatEffect, {
+          on: { actor: stage.actor(), parts: "head" },
+        });
+      });
+      expect(only(built, "ERR_SCENE_UNKNOWN_OPTION").nearest).toEqual(["part"]);
+    });
+
+    it("is not an option of a prop or a backdrop", () => {
+      const built = scene({ duration: 1 }, (stage) => {
+        loose(stage)["prop"]?.(ballProp, { radius: 0.1, on: { x: 0, y: 0 } });
+        loose(stage)["backdrop"]?.(plainBackdrop, { on: { x: 0, y: 0 } });
+      });
+      expect(codes(built)).toEqual([
+        "ERR_SCENE_UNKNOWN_OPTION",
+        "ERR_SCENE_UNKNOWN_OPTION",
+      ]);
+      expect(segments(built, "prop")[0]).not.toHaveProperty("data.on");
+    });
   });
 
   it.each([

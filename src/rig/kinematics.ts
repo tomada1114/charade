@@ -35,6 +35,34 @@ export const POINT_NAMES = [
 
 export type PointName = (typeof POINT_NAMES)[number];
 
+/**
+ * The parts of an actor an effect can be on: the points a state description prints.
+ */
+export const ANCHOR_PART_NAMES = [
+  "head",
+  "pelvis",
+  "handL",
+  "handR",
+  "footL",
+  "footR",
+] as const;
+
+type AnchorPartName = (typeof ANCHOR_PART_NAMES)[number];
+
+/** The skeleton point each part is; a foot is its ankle point, as a `reach` target is. */
+export const ANCHOR_PARTS: Readonly<Record<AnchorPartName, PointName>> = {
+  head: "headCentre",
+  pelvis: "pelvis",
+  handL: "handL",
+  handR: "handR",
+  footL: "ankleL",
+  footR: "ankleR",
+};
+
+export function isAnchorPart(value: unknown): value is AnchorPartName {
+  return ANCHOR_PART_NAMES.some((name) => name === value);
+}
+
 /** Joint positions in the actor's own frame, facing right: `x` forward, `y` up. */
 export type Skeleton = Readonly<Record<PointName, Point>>;
 

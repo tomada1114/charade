@@ -12,6 +12,9 @@ import {
   type ActionDefinition,
   type ActionOptions,
   type Actor,
+  type AnchorPart,
+  type EffectAnchor,
+  type EffectOptions,
   type ActorOptions,
   AsyncBuildError,
   type BackdropDefinition,
@@ -875,7 +878,9 @@ describe("using definitions", () => {
       | "rock"
     >();
     expectTypeOf<BuiltinName<{ readonly a: 1; readonly 2: 2 }>>().toEqualTypeOf<"a">();
-    expectTypeOf<keyof BuiltinEffects>().toEqualTypeOf<never>();
+    expectTypeOf<BuiltinName<BuiltinEffects>>().toEqualTypeOf<
+      "impact" | "sparkle" | "speedLines" | "sweat"
+    >();
     expectTypeOf(builtinActions).toEqualTypeOf<BuiltinActions>();
     expectTypeOf(builtinExpressions).toEqualTypeOf<BuiltinExpressions>();
     expectTypeOf(builtinProps).toEqualTypeOf<BuiltinProps>();
@@ -1032,6 +1037,38 @@ describe("using definitions", () => {
         draw: () => undefined,
       });
       expectTypeOf(row.effect(sweat)).toEqualTypeOf<Span>();
+      expectTypeOf(row.effect(sweat, { on: actor })).toEqualTypeOf<Span>();
+      expectTypeOf(row.effect(sweat, { on: { x: 1, y: 0 } })).toEqualTypeOf<Span>();
+      expectTypeOf(
+        row.effect(sweat, {
+          on: { actor, part: "handR", offset: { x: 0, y: 0.1 } },
+          at: 1,
+          duration: 2,
+        }),
+      ).toEqualTypeOf<Span>();
+      // @ts-expect-error a part is one of six names
+      row.effect(sweat, { on: { actor, part: "elbowR" } });
+      // @ts-expect-error a prop is not a place for an effect
+      row.effect(sweat, { on: row.prop(ball, { radius: 0.1 }) });
+      // @ts-expect-error on is an option of an effect, not of a backdrop
+      row.backdrop(plain, { on: actor });
+      // #25 R6: a built-in effect's name types its parameters.
+      expectTypeOf(
+        row.effect("sweat", { drops: 4, side: "both", on: actor, duration: 1 }),
+      ).toEqualTypeOf<Span>();
+      expectTypeOf(
+        row.effect("impact", { size: 0.2, spikes: 9 }),
+      ).toEqualTypeOf<Span>();
+      expectTypeOf(
+        row.effect("speedLines", { moving: "left", on: { actor, part: "pelvis" } }),
+      ).toEqualTypeOf<Span>();
+      expectTypeOf(row.effect("sparkle")).toEqualTypeOf<Span>();
+      // @ts-expect-error spakle is not a built-in effect
+      row.effect("spakle");
+      // @ts-expect-error sweat has no parameter named drop
+      row.effect("sweat", { drop: 4 });
+      // @ts-expect-error side is one of back, front and both
+      row.effect("sweat", { side: "left" });
       expectTypeOf(
         row.prop(ball, { radius: 0.1 }).place({ x: 1, y: 0 }, { at: 1 }),
       ).toEqualTypeOf<Span>();
@@ -1044,6 +1081,16 @@ describe("using definitions", () => {
       "at" | "duration" | "blend" | "mode"
     >();
     expectTypeOf<keyof ItemOptions>().toEqualTypeOf<"at" | "duration">();
+    expectTypeOf<keyof EffectOptions>().toEqualTypeOf<"at" | "duration" | "on">();
+    expectTypeOf<EffectOptions>().toExtend<ItemOptions>();
+    expectTypeOf<EffectOptions["on"]>().toEqualTypeOf<
+      Point | Actor | EffectAnchor | undefined
+    >();
+    expectTypeOf<keyof EffectAnchor>().toEqualTypeOf<"actor" | "part" | "offset">();
+    expectTypeOf<AnchorPart>().toEqualTypeOf<
+      "head" | "pelvis" | "handL" | "handR" | "footL" | "footR"
+    >();
+    expectTypeOf<EffectorName>().toExtend<AnchorPart>();
     expectTypeOf<keyof PlaceOptions>().toEqualTypeOf<"at" | "layer">();
     expectTypeOf<PlaceOptions["layer"]>().toEqualTypeOf<
       "behind" | "front" | undefined
