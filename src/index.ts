@@ -98,6 +98,8 @@ export type {
   AnchorPart,
   ActorOptions,
   Clip,
+  CycleKey,
+  CycleOptions,
   DrawFunction,
   DrawOptions,
   DriveOptions,

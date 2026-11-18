@@ -61,6 +61,8 @@ import {
   type CheckReport,
   checkReport,
   COULD_NOT_RUN,
+  type CycleKey,
+  type CycleOptions,
   type DrawFunction,
   type DrawingContext,
   type DrawOptions,
@@ -506,7 +508,7 @@ describe("handle types", () => {
 
   it("gives an actor an id, its four calls, and do and express", () => {
     expectTypeOf<keyof Actor>().toEqualTypeOf<
-      "id" | "pose" | "reach" | "drive" | "wait" | "say" | "do" | "express"
+      "id" | "pose" | "reach" | "drive" | "cycle" | "wait" | "say" | "do" | "express"
     >();
     expectTypeOf<Actor["id"]>().toEqualTypeOf<string>();
     expectTypeOf<Actor["pose"]>().parameters.toEqualTypeOf<
@@ -519,6 +521,32 @@ describe("handle types", () => {
       [motion: MotionFunction, options?: DriveOptions | undefined]
     >();
     expectTypeOf<Actor["wait"]>().parameters.toEqualTypeOf<[seconds: number]>();
+  });
+
+  it("takes a cycle as keyed values and a period, and returns a span", () => {
+    expectTypeOf<Actor["cycle"]>().toEqualTypeOf<
+      (keys: readonly CycleKey[], options: CycleOptions) => Span
+    >();
+    expectTypeOf<Clip["cycle"]>().toEqualTypeOf<Actor["cycle"]>();
+    expectTypeOf<CycleKey>().toEqualTypeOf<{
+      readonly at: number;
+      readonly channels: PoseChannels;
+    }>();
+    expectTypeOf<keyof CycleOptions>().toEqualTypeOf<
+      "period" | "at" | "duration" | "blend" | "mode"
+    >();
+    expectTypeOf<CycleOptions["period"]>().toEqualTypeOf<number>();
+    const rejected = (actor: Actor): void => {
+      // @ts-expect-error a cycle needs its period
+      actor.cycle([{ at: 0, channels: { chest: 0 } }]);
+      // @ts-expect-error a cycle needs its period, also beside other options
+      actor.cycle([{ at: 0, channels: { chest: 0 } }], { duration: 1 });
+      // @ts-expect-error chst is not a channel
+      actor.cycle([{ at: 0, channels: { chst: 0 } }], { period: 1 });
+      // @ts-expect-error a cycle takes keys, not a function
+      actor.cycle((t: number) => ({ chest: t }), { period: 1 });
+    };
+    expect(rejected).toBeTypeOf("function");
   });
 
   it("names the channels and the effectors", () => {
@@ -846,7 +874,17 @@ describe("using definitions", () => {
   });
 
   it("names the built-ins in the maps, and none where a kind has no item yet", () => {
-    expectTypeOf<keyof BuiltinActions>().toEqualTypeOf<"sitDown" | "slump" | "throw">();
+    expectTypeOf<keyof BuiltinActions>().toEqualTypeOf<
+      | "cheer"
+      | "point"
+      | "run"
+      | "sitDown"
+      | "slump"
+      | "stand"
+      | "think"
+      | "throw"
+      | "walk"
+    >();
     expectTypeOf<keyof BuiltinExpressions>().toEqualTypeOf<
       "angry" | "dejected" | "focused" | "happy" | "neutral" | "surprised"
     >();
@@ -920,6 +958,22 @@ describe("using definitions", () => {
       expectTypeOf(actor.express("happy")).toEqualTypeOf<Span>();
       expectTypeOf(actor.express("angry", { intensity: 0.5 })).toEqualTypeOf<Span>();
       expectTypeOf(actor.do("sitDown", { mood: "surprised" })).toEqualTypeOf<Span>();
+      // #26 R6
+      expectTypeOf(actor.do("walk")).toEqualTypeOf<Span>();
+      expectTypeOf(
+        actor.do("walk", { distance: 1.2, from: -0.6, mood: "happy", duration: 3 }),
+      ).toEqualTypeOf<Span>();
+      expectTypeOf(actor.do("run", { distance: 2, from: -1 })).toEqualTypeOf<Span>();
+      expectTypeOf(actor.do("stand")).toEqualTypeOf<Span>();
+      expectTypeOf(
+        actor.do("stand", { duration: 2, mood: "dejected" }),
+      ).toEqualTypeOf<Span>();
+      expectTypeOf(actor.do("think", { ponder: 2 })).toEqualTypeOf<Span>();
+      expectTypeOf(actor.do("cheer", { times: 3 })).toEqualTypeOf<Span<"up">>();
+      expectTypeOf(actor.do("cheer").marks.up).toEqualTypeOf<number>();
+      expectTypeOf(
+        actor.do("point", { to: { x: 1, y: 1.5 }, from: 0.9, hold: 1 }).marks.aimed,
+      ).toEqualTypeOf<number>();
       expectTypeOf(row.prop("box", { width: 0.5, at: 1 })).toEqualTypeOf<Prop>();
       // #24 R4
       expectTypeOf(row.backdrop("night")).toEqualTypeOf<Span>();
@@ -962,6 +1016,15 @@ describe("using definitions", () => {
       actor.do("slum");
       // @ts-expect-error sitDown has no parameter named height
       actor.do("sitDown", { height: 0.3 });
+      // #26 R6
+      // @ts-expect-error walk has no parameter named speed
+      actor.do("walk", { speed: 2 });
+      // @ts-expect-error distance is a number
+      actor.do("walk", { distance: "far" });
+      // @ts-expect-error stand takes no parameter
+      actor.do("stand", { breath: 2 });
+      // @ts-expect-error to is a point
+      actor.do("point", { to: 1 });
       // @ts-expect-error sad is not a built-in expression
       actor.do("slump", { mood: "sad" });
       // @ts-expect-error angy is not a built-in expression
@@ -1113,7 +1176,15 @@ describe("using definitions", () => {
 
   it("gives a clip the actor's depth 2 and 3 calls and mark", () => {
     expectTypeOf<keyof Clip>().toEqualTypeOf<
-      "id" | "duration" | "mood" | "pose" | "reach" | "drive" | "wait" | "mark"
+      | "id"
+      | "duration"
+      | "mood"
+      | "pose"
+      | "reach"
+      | "drive"
+      | "cycle"
+      | "wait"
+      | "mark"
     >();
     expectTypeOf<Clip["duration"]>().toEqualTypeOf<number | null>();
     expectTypeOf<Clip<"release">["mark"]>().parameters.toEqualTypeOf<

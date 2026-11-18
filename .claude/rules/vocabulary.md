@@ -45,10 +45,10 @@ never repeats it. This rule holds only what is true inside this repository.
   `row.effect` takes: a prop keeps the name, since `on` is what a lamp's switch would be
   called. The types do not catch that, nor a default outside the allowed values; the
   `define…` function rejects both when it runs.
-- An action's `build` receives a clip with an actor's depth 2 and 3 calls, time 0 at the
-  action's start, and the resolved parameters. It records and returns nothing. An action
-  states its marks, and built-in actions stay free of functions on the timeline so that
-  a scene written at depth 1 serialises without loss.
+- An action's `build` receives a clip with an actor's depth 2 and 3 calls, `cycle` among
+  them, time 0 at the action's start, and the resolved parameters. It records and
+  returns nothing. An action states its marks, and built-in actions stay free of
+  functions on the timeline so that a scene written at depth 1 serialises without loss.
 - An expression returns face channels. A prop, backdrop or effect has a `draw` that
   receives the drawing interface, the resolved parameters and the same second argument a
   depth 4 callback gets, in row units with the origin at the item's ground point. That
@@ -264,6 +264,52 @@ These set the conventions the later items follow.
 - An expression other than `neutral` takes `intensity`, 0 to 1, and scales every
   channel's distance from rest by it. `neutral` sets all eight channels, which is what
   lets it clear another expression.
+
+## The six solo actions
+
+- `stand` records two open-ended `cycle` calls and nothing bounded, so alone it is the
+  open-ended-only error and beside a bounded call it does not lengthen the scene. One
+  cycle names every angle and `pelvisY`: the stance, constant, and the breath on the
+  back, neck and shoulders, in for 0.42 of a 3.4 s period and out until 0.9. The other
+  adds to `eyeOpen` and shuts the eyes four times in 10.4 s (at 1.2, 4, 4.35 and 7.6 s,
+  so the sample's sheet shows two), one of them a double blink: the timing varies by
+  being keyed unevenly, not by the random source, which a clip has no access to; every
+  actor therefore blinks on the same beat. It adds −1.5, which shuts the widest eye of
+  any mood, and the drawing stops at 0.
+- There is no placement call yet, so where an actor stands is `pelvisX`, which a pose
+  holds. `walk` and `run` take `from` (default 0) and `distance`, set `pelvisX` to
+  `from` at once and leave it on `from + distance`; a second one names where the first
+  ended. `point` takes `from` for the same reason: its aim is an angle from the
+  shoulder. `stand`, `cheer` and `think` move no root `x` and plant no foot by `reach`,
+  so they play wherever the actor is. `sitDown` and `throw` still plant their feet
+  around 0; the placement call is what removes `from`.
+- `walk` and `run` share one recorder, `stride` in `actions/walk.ts`, driven by a `Gait`
+  of numbers; a mood is another `Gait`. A foot on the ground is a `reach` on its spot
+  from its landing until its next step is under way, so it cannot slide; its heel peels
+  up over the toe before it leaves; in the air it is three overlapping reaches (up
+  behind, through, down). The hips' steady speed is poses of `pelvisX` overlapped four
+  deep, since one blend is eased, which keeps it within a fourteenth of steady; their
+  height is keyed between and over the supports, and no higher than both legs can span
+  while both feet are down. The ankle is keyed from the same geometry so the foot lies
+  flat. A `duration` scales the pace; the number of steps follows `distance` alone.
+- A walk is 0.32 a step and 0.46 s a beat, both feet down for 0.12 of a beat; a run is
+  0.46 a stride and 0.27 s a beat, both feet off the ground for 0.38 of one, leaning in,
+  with the heels kicked up. The default `distance` of each is 0.9, which stays inside a
+  square one-row frame from its middle; their samples go from −0.9 to 0.9.
+- Moods: `stand` lists `dejected` (sagging, slow breath); `walk` `dejected` (a trudge)
+  and `happy` (a bounce); `run` `surprised` (fleeing, arms up) and `dejected` (a plod);
+  `cheer` `happy` (jumps) and `dejected` (a limp wave); `point` `angry` (jabs twice,
+  fist on hip) and `surprised` (leans away); `think` `happy` (ends on the idea, finger
+  up) and `dejected` (scratches its head and gives up).
+- Marks: `cheer` states `up` and `point` states `aimed`, the moments an effect or a
+  label is timed to. The others state none.
+- A joint that arrives on or near its limit is posed without `followThrough`, in a pose
+  of its own beside the one that overshoots: a straight elbow or knee, a shoulder raised
+  past 3.
+- Each pose of these actions lasts until the next one on its channels has arrived, not
+  only until it starts (`.claude/rules/engine.md` § Sequencing), so an action plays the
+  same alone and over an open-ended `stand`. The sweep in
+  `tests/vocabulary-samples.test.ts` runs every action both ways.
 
 ## The four effects
 

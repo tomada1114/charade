@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { lastFrameOf } from "../src/check/check.js";
 import {
   type Actor,
   AsyncBuildError,
@@ -531,6 +532,13 @@ describe("handles", () => {
       },
     ],
     [
+      "actor.cycle",
+      (stage: Stage): (() => unknown) => {
+        const actor = stage.row(0).actor();
+        return () => actor.cycle([{ at: 0, channels: { spine: 0 } }], { period: 1 });
+      },
+    ],
+    [
       "actor.wait",
       (stage: Stage): (() => unknown) => {
         const actor = stage.row(0).actor();
@@ -682,6 +690,68 @@ describe("recording", () => {
       { start: 0, end: Infinity, duration: Infinity, marks: {} },
       { start: 1, end: 1.5, duration: 0.5, marks: {} },
     ]);
+  });
+
+  it("records a cycle as data: its period, its keys in time order, mode and blend", () => {
+    const spans: Span[] = [];
+    const keys = [
+      { at: 1.4, channels: { chest: -0.08, neck: 0.1 } },
+      { at: 0, channels: { chest: -0 } },
+    ];
+    const built = scene({ duration: 5 }, (stage) => {
+      const a = stage.actor();
+      spans.push(a.cycle(keys, { period: 3.4, duration: 2, blend: 0.1, mode: "add" }));
+      spans.push(a.cycle(keys, { period: 3.4 }));
+    });
+    expect(built.findings).toEqual([]);
+    expect(spans).toEqual([
+      { start: 0, end: 2, duration: 2, marks: {} },
+      { start: 2, end: Infinity, duration: Infinity, marks: {} },
+    ]);
+    expect(trackOf(built).segments[1]).toMatchObject({
+      start: 2_000_000,
+      end: null,
+      data: { kind: "cycle", mode: "replace", blend: 200_000 },
+    });
+    expect(trackOf(built).segments.slice(0, 1)).toEqual([
+      {
+        start: 0,
+        end: 2_000_000,
+        data: {
+          kind: "cycle",
+          period: 3_400_000,
+          keys: [
+            { at: 0, channels: { chest: 0 } },
+            { at: 1_400_000, channels: { chest: -0.08, neck: 0.1 } },
+          ],
+          mode: "add",
+          blend: 100_000,
+        },
+      },
+    ]);
+    expect(serializeTimeline(built.timeline)).toContain('"lossy":false');
+    // The author's keys are copied, not kept.
+    expect(Object.isFrozen(keys)).toBe(false);
+  });
+
+  it("does not let an open-ended cycle extend the scene, and shortens a cycle's blend to its duration", () => {
+    const alone = scene((stage) => {
+      stage.actor().cycle([{ at: 0, channels: { spine: 0.1 } }], { period: 1 });
+    });
+    expect(codes(alone)).toEqual(["ERR_SCENE_NO_DURATION"]);
+    const built = scene({ rows: 2 }, (stage) => {
+      stage
+        .row(0)
+        .actor()
+        .cycle([{ at: 0, channels: { spine: 0.1 } }], { period: 1 });
+      stage
+        .row(1)
+        .actor()
+        .cycle([{ at: 0, channels: { spine: 0.1 } }], { period: 1, duration: 0.1 });
+    });
+    expect(built.findings).toEqual([]);
+    expect(lastFrameOf(built.timeline)).toBe(3);
+    expect(trackOf(built, 1).segments[0]?.data).toMatchObject({ blend: 100_000 });
   });
 
   it("shortens a drive's blend to its duration", () => {
@@ -890,6 +960,89 @@ describe("findings while authoring", () => {
       end: 1_500_000,
       data: { kind: "drive", channels: [] },
     });
+  });
+
+  it.each([
+    ["no period", { duration: 0.5 }, "ERR_SCENE_OUT_OF_RANGE"],
+    ["a period of 0", { period: 0, duration: 0.5 }, "ERR_SCENE_OUT_OF_RANGE"],
+    [
+      "a period that is not a time",
+      { period: "1", duration: 0.5 },
+      "ERR_SCENE_OUT_OF_RANGE",
+    ],
+  ])("records a cycle given %s as a wait", (_label, options, code) => {
+    const spans: Span[] = [];
+    const built = acting((a) => {
+      spans.push(a.cycle([{ at: 0, channels: { spine: 0.1 } }], untyped(options)));
+    });
+    expect(onlyFinding(built)).toMatchObject({
+      code,
+      severity: "error",
+      target: "row0/actor/actor/0",
+    });
+    expect(spans[0]).toMatchObject({ start: 1, end: 1.5 });
+    expect(trackOf(built).segments[1]?.data).toEqual({ kind: "wait" });
+  });
+
+  it("records a cycle given keys that are not a list as a wait", () => {
+    const built = acting((a) => {
+      a.cycle(untyped({ at: 0, channels: { spine: 0.1 } }), {
+        period: 1,
+        duration: 0.5,
+      });
+    });
+    expect(onlyFinding(built)).toMatchObject({ code: "ERR_SCENE_INVALID_VALUE" });
+    expect(trackOf(built).segments[1]).toMatchObject({
+      start: 1_000_000,
+      end: 1_500_000,
+      data: { kind: "wait" },
+    });
+  });
+
+  it("drops a cycle's key without a time inside the period, and a bad channel of a key", () => {
+    const built = acting((a) => {
+      a.cycle(
+        untyped([
+          { at: 0, channels: { spine: 0.1, wing: 1, kneeR: Number.NaN } },
+          { at: 1, channels: { spine: 0.2 } },
+          { at: -0.5, channels: { spine: 0.3 } },
+          { channels: { spine: 0.4 } },
+          "soon",
+          { at: 0.5 },
+        ]),
+        { period: 1, duration: 2 },
+      );
+    });
+    expect(codes(built)).toEqual([
+      "ERR_SCENE_UNKNOWN_CHANNEL",
+      "ERR_SCENE_OUT_OF_RANGE",
+      "ERR_SCENE_OUT_OF_RANGE",
+      "ERR_SCENE_OUT_OF_RANGE",
+      "ERR_SCENE_OUT_OF_RANGE",
+      "ERR_SCENE_OUT_OF_RANGE",
+      "ERR_SCENE_INVALID_VALUE",
+    ]);
+    expect(trackOf(built).segments[1]?.data).toMatchObject({
+      kind: "cycle",
+      keys: [
+        { at: 0, channels: { spine: 0.1 } },
+        { at: 500_000, channels: {} },
+      ],
+    });
+  });
+
+  it("reports an unknown option of a cycle and its unknown mode", () => {
+    const built = acting((a) => {
+      a.cycle(
+        [{ at: 0, channels: { spine: 0.1 } }],
+        untyped({ period: 1, duration: 1, perod: 2, mode: "ad" }),
+      );
+    });
+    expect(codes(built)).toEqual([
+      "ERR_SCENE_UNKNOWN_OPTION",
+      "ERR_SCENE_UNKNOWN_MODE",
+    ]);
+    expect(built.findings[0]?.nearest).toEqual(["period"]);
   });
 
   it.each([

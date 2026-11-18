@@ -18,7 +18,7 @@ export const dejectedExpression: ExpressionDefinition<typeof dejectedParams> =
   defineExpression({
     name: "dejected",
     description:
-      "Downcast: heavy lids, eyes on the ground, brows raised at their inner ends, a small downturned mouth. As a mood it also changes the body of sitDown, throw and slump.",
+      "Downcast: heavy lids, eyes on the ground, brows raised at their inner ends, a small downturned mouth. As a mood it also changes the body of sitDown, throw, slump, stand, walk, run, cheer and think.",
     params: dejectedParams,
     build({ intensity }) {
       return {

@@ -18,6 +18,7 @@ import {
   type BlendMode,
   DEFAULT_BLEND_MICROS,
   type DrawData,
+  type CycleData,
   type DriveData,
   type HoldData,
   type ItemData,
@@ -127,6 +128,7 @@ const TIMING = ["at", "duration"] as const;
 const POSE_OPTIONS = [...TIMING, "blend", "mode", "anticipation", "followThrough"];
 const REACH_OPTIONS = [...TIMING, "blend", "anticipation", "followThrough"];
 const DRIVE_OPTIONS = [...TIMING, "blend", "mode"];
+const CYCLE_OPTIONS = [...TIMING, "period", "blend", "mode"];
 const DRAW_OPTIONS = [...TIMING, "name"];
 const ACTOR_OPTIONS = ["name"];
 const ACTION_OPTIONS = [...TIMING, "mood", "blend", "mode"];
@@ -550,6 +552,8 @@ export class SceneBuilder {
         this.#reach(state, effector, target, reachOptions),
       drive: (motion: unknown, driveOptions?: unknown) =>
         this.#drive(state, motion, driveOptions),
+      cycle: (keys: unknown, cycleOptions?: unknown) =>
+        this.#cycle(state, keys, cycleOptions),
       wait: (seconds: unknown) => this.#wait(state, seconds),
       say: (text: unknown, sayOptions?: unknown) => this.#say(state, text, sayOptions),
       do: (action: unknown, doOptions?: unknown) => this.#do(state, action, doOptions),
@@ -839,8 +843,14 @@ export class SceneBuilder {
     this.#open();
     const where: Where = { row: actor.row, target: actor.id };
     const bag = this.#options(options, POSE_OPTIONS, "pose", where);
+    const values = this.#values(channels, "pose", where);
+    return this.#recordPose(actor, values, bag, "pose", where);
+  }
+
+  /** The finite values of a channel map, with a finding for each entry that is not one. */
+  #values(channels: unknown, call: string, where: Where): Record<string, number> {
     const values: Record<string, number> = {};
-    for (const [name, value] of this.#channels(channels, "pose", where)) {
+    for (const [name, value] of this.#channels(channels, call, where)) {
       if (typeof value === "number" && Number.isFinite(value)) {
         // `+ 0` stores a `-0` as `0`, as the timeline's JSON form does.
         values[name] = value + 0;
@@ -854,7 +864,7 @@ export class SceneBuilder {
         );
       }
     }
-    return this.#recordPose(actor, values, bag, "pose", where);
+    return values;
   }
 
   /** Records a pose of checked `values`, timed by an already checked options `bag`. */
@@ -1034,6 +1044,58 @@ export class SceneBuilder {
       return [];
     }
     return this.#channels(first, "drive's function", where).map(([name]) => name);
+  }
+
+  #cycle(actor: ActorState, keys: unknown, options: unknown): Span {
+    this.#open();
+    const where: Where = { row: actor.row, target: actor.id };
+    const bag = this.#options(options, CYCLE_OPTIONS, "cycle", where);
+    const duration =
+      this.#seconds(bag["duration"], "cycle's options.duration", where) ?? null;
+    const blend = Math.min(
+      this.#seconds(bag["blend"], "cycle's options.blend", where) ??
+        actor.defaults.blend ??
+        DEFAULT_BLEND_MICROS,
+      duration ?? Infinity,
+    );
+    const mode = this.#mode(bag["mode"], "cycle", where, actor.defaults.mode);
+    const { start, end } = this.#place(actor, "cycle", bag["at"], duration, where);
+    const period = microsOf(bag["period"]);
+    if (period === undefined || period === 0 || !Array.isArray(keys)) {
+      const timed = period !== undefined && period !== 0;
+      this.#report(
+        timed ? "ERR_SCENE_INVALID_VALUE" : "ERR_SCENE_OUT_OF_RANGE",
+        timed
+          ? "cycle was not given a list of keys; the call was recorded as a wait."
+          : "cycle's options.period is not a time above 0; the call was recorded as a wait.",
+        "Pass keys and a period in seconds, such as cycle([{ at: 0, channels: { chest: 0 } }, { at: 1, channels: { chest: -0.05 } }], { period: 3 }).",
+        where,
+      );
+      actor.track.segments.push({ start, end, data: { kind: "wait" } });
+      return localSpan(actor, start, end);
+    }
+    const list: readonly unknown[] = keys;
+    const kept: CycleData["keys"][number][] = [];
+    for (const key of list) {
+      const at = isRecord(key) ? microsOf(key["at"]) : undefined;
+      if (!isRecord(key) || at === undefined || at >= period) {
+        this.#report(
+          "ERR_SCENE_OUT_OF_RANGE",
+          "A key of cycle has no time at within its period; the key was ignored.",
+          "Give every key { at, channels } with at in seconds, 0 or more and less than the period.",
+          where,
+        );
+        continue;
+      }
+      kept.push({ at, channels: this.#values(key["channels"], "cycle", where) });
+    }
+    kept.sort((a, b) => a.at - b.at);
+    actor.track.segments.push({
+      start,
+      end,
+      data: { kind: "cycle", period, keys: kept, mode, blend },
+    });
+    return localSpan(actor, start, end);
   }
 
   #wait(actor: ActorState, seconds: unknown): Span {
@@ -1333,6 +1395,8 @@ export class SceneBuilder {
           this.#reach(clipState, effector, target, reachOptions),
         drive: (motion: unknown, driveOptions?: unknown) =>
           this.#drive(clipState, motion, driveOptions),
+        cycle: (keys: unknown, cycleOptions?: unknown) =>
+          this.#cycle(clipState, keys, cycleOptions),
         wait: (seconds: unknown) => this.#wait(clipState, seconds),
         mark: (name: unknown, at: unknown) => {
           this.#mark(action, marks, start, name, at, where);

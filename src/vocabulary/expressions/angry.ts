@@ -18,7 +18,7 @@ export const angryExpression: ExpressionDefinition<typeof angryParams> =
   defineExpression({
     name: "angry",
     description:
-      "Cross: brows pulled down into a V over hard eyes, a wide mouth bent down at the corners and a little open.",
+      "Cross: brows pulled down into a V over hard eyes, a wide mouth bent down at the corners and a little open. As a mood it also changes the body of point.",
     params: angryParams,
     build({ intensity }) {
       return {

@@ -101,6 +101,23 @@ export function isMotion(value: unknown): value is DriveData["motion"] {
   return typeof value === "function";
 }
 
+/**
+ * A `cycle` call: keyed values that repeat every `period`, each channel eased from
+ * one of its keys to the next and from its last back to its first. All data, so it
+ * serialises.
+ */
+export interface CycleData {
+  readonly kind: "cycle";
+  readonly period: Micros;
+  /** In time order, each `at` within `[0, period)`. */
+  readonly keys: readonly {
+    readonly at: Micros;
+    readonly channels: Readonly<Record<string, number>>;
+  }[];
+  readonly mode: BlendMode;
+  readonly blend: Micros;
+}
+
 /** A `wait` call, or the placeholder of a call that could not be recorded. */
 export interface WaitData {
   readonly kind: "wait";
@@ -113,7 +130,7 @@ export interface DrawData {
 }
 
 /** What a segment of an actor's track records. */
-export type ActorSegmentData = PoseData | ReachData | DriveData | WaitData;
+export type ActorSegmentData = PoseData | ReachData | DriveData | CycleData | WaitData;
 
 /** A prop's placement: where its ground point is from the segment's start on. */
 export interface PlaceData {

@@ -24,6 +24,9 @@ import {
   type Span,
   type Stage,
 } from "../src/index.js";
+import { poseAtFrame } from "../src/rig/compose.js";
+import { forwardKinematics, type Skeleton } from "../src/rig/kinematics.js";
+import type { Pose } from "../src/rig/rig.js";
 import { parseTimeline, serializeTimeline } from "../src/timeline/json.js";
 
 /** How many frames of a sample are recorded, spread from its first to its last. */
@@ -119,11 +122,17 @@ function segmentsOf(built: Scene, kind: string, row = 0): readonly unknown[] {
 }
 
 describe("the built-in vocabulary", () => {
-  it("is the three actions, six expressions, ten props, five backdrops and four effects", () => {
+  it("is the nine actions, six expressions, ten props, five backdrops and four effects", () => {
     expect(ITEMS.map(([kind, name]) => `${kind} ${name}`)).toEqual([
+      "action cheer",
+      "action point",
+      "action run",
       "action sitDown",
       "action slump",
+      "action stand",
+      "action think",
       "action throw",
+      "action walk",
       "expression angry",
       "expression dejected",
       "expression focused",
@@ -162,10 +171,20 @@ describe("the built-in vocabulary", () => {
     },
   );
 
-  it("states throw's release mark and no mark for the other actions", () => {
-    expect(builtinActions.throw.marks).toEqual(["release"]);
-    expect(builtinActions.sitDown.marks).toEqual([]);
-    expect(builtinActions.slump.marks).toEqual([]);
+  it("states throw's release, cheer's up and point's aimed, and no mark for the other actions", () => {
+    expect(
+      Object.fromEntries(ACTIONS.map(([name, { marks }]) => [name, marks])),
+    ).toEqual({
+      cheer: ["up"],
+      point: ["aimed"],
+      run: [],
+      sitDown: [],
+      slump: [],
+      stand: [],
+      think: [],
+      throw: ["release"],
+      walk: [],
+    });
   });
 
   it.each(ACTIONS)(
@@ -1079,14 +1098,44 @@ describe("a scene written with names", () => {
 describe("a built-in action", () => {
   /** One action alone on a rest figure, with whatever it needs beside it. */
   function alone(name: keyof typeof builtinActions, options: object): Scene {
-    return scene((stage) => {
+    // A stand without a duration never ends: the scene is given a length instead.
+    const endless = name === "stand" && !Object.hasOwn(options, "duration");
+    return scene(endless ? { duration: 3 } : {}, (stage) => {
       const actor = stage.actor();
       loosely(actor)(
         name,
         name === "throw" ? { ball: stage.prop("ball"), ...options } : options,
       );
-      actor.wait(0.3);
+      if (!endless) {
+        actor.wait(0.3);
+      }
     });
+  }
+
+  /** The same action started 0.7 s into a stand that runs to the end of the scene. */
+  function overStand(name: keyof typeof builtinActions, options: object): Scene {
+    return scene({ rows: 2 }, (stage) => {
+      const actor = stage.row(0).actor();
+      actor.do("stand");
+      const span = loosely(actor)(
+        name,
+        name === "throw"
+          ? { ball: stage.row(0).prop("ball"), ...options, at: 0.7 }
+          : { ...options, at: 0.7 },
+      );
+      stage
+        .row(1)
+        .actor()
+        .wait(span.end + 0.6);
+    });
+  }
+
+  /** The findings of `built` and of its checks, but for leaving the frame. */
+  function faults(built: Scene): Finding[] {
+    expect(built.findings).toEqual([]);
+    return checkScene(built).findings.filter(
+      (finding) => finding.code !== "ERR_CHECK_OFF_FRAME",
+    );
   }
 
   const moods = [undefined, ...Object.keys(builtinExpressions)];
@@ -1107,16 +1156,56 @@ describe("a built-in action", () => {
     ["throw", { to: { x: 0.4, y: 1.2 }, loft: 0.05, bounce: false }],
     ["throw", { duration: 0.5 }],
     ["throw", { duration: 4 }],
-  ] as const)("keeps every joint within its limits: %s %j", (name, options) => {
-    for (const mood of moods) {
-      const built = alone(name, mood === undefined ? options : { ...options, mood });
-      expect(built.findings).toEqual([]);
-      const found = checkScene(built).findings.filter(
-        (finding) => finding.code !== "ERR_CHECK_OFF_FRAME",
-      );
-      expect(found).toEqual([]);
-    }
-  });
+    // #26 R2
+    ["stand", {}],
+    ["stand", { duration: 0.2 }],
+    ["stand", { duration: 12 }],
+    ["walk", {}],
+    ["walk", { distance: 0.3 }],
+    ["walk", { distance: 8, from: -4 }],
+    ["walk", { from: -1.5, distance: 3 }],
+    ["walk", { duration: 0.4 }],
+    ["walk", { duration: 9 }],
+    ["run", {}],
+    ["run", { distance: 0.5 }],
+    ["run", { distance: 8, from: -4 }],
+    ["run", { from: -1.5, distance: 3 }],
+    ["run", { duration: 0.3 }],
+    ["run", { duration: 9 }],
+    ["cheer", {}],
+    ["cheer", { times: 1 }],
+    ["cheer", { times: 5 }],
+    ["cheer", { duration: 0.4 }],
+    ["cheer", { duration: 6 }],
+    ["point", {}],
+    ["point", { to: { x: 0.2, y: 2.2 } }],
+    ["point", { to: { x: 0.3, y: 0 } }],
+    ["point", { to: { x: -1, y: 1 } }],
+    ["point", { to: { x: 3, y: 0.76 }, from: 2, hold: 0 }],
+    ["point", { hold: 10 }],
+    ["point", { duration: 0.3 }],
+    ["point", { duration: 6 }],
+    ["think", {}],
+    ["think", { ponder: 0.4 }],
+    ["think", { ponder: 10 }],
+    ["think", { duration: 0.4 }],
+    ["think", { duration: 8 }],
+  ] as const)(
+    "keeps every joint within its limits: %s %j",
+    // The longest walk is some six hundred frames of several hundred segments, fourteen times.
+    { timeout: 30_000 },
+    (name, options) => {
+      for (const mood of moods) {
+        const asked = mood === undefined ? options : { ...options, mood };
+        expect(faults(alone(name, asked))).toEqual([]);
+        // Over a stand a pose that has ended gives way to the stand beneath it, which
+        // the six solo actions are written for; the first three plant their feet at 0.
+        if (!["stand", "sitDown", "throw"].includes(name)) {
+          expect(faults(overStand(name, asked))).toEqual([]);
+        }
+      }
+    },
+  );
 
   it.each(Object.keys(builtinActions))(
     "puts no function on the timeline: %s",
@@ -1187,5 +1276,337 @@ describe("a built-in action", () => {
       )
       .find((channels) => channels?.["pelvisX"] === -0.24);
     expect(seated?.["pelvisY"]).toBeCloseTo(0.3 + 0.015 - 0.48, 10);
+  });
+});
+
+describe("the six solo actions", () => {
+  const SOLO = ["stand", "walk", "run", "cheer", "point", "think"] as const;
+
+  /** The actor of row `row`, posed at every frame of `built`. */
+  function frames(built: Scene, row = 0): { pose: Pose; skeleton: Skeleton }[] {
+    const track = built.timeline.rows[row]?.tracks.find(({ kind }) => kind === "actor");
+    const last = lastFrameOf(built.timeline);
+    if (track === undefined || last === undefined) {
+      throw new Error("no actor, or no length");
+    }
+    return Array.from({ length: last + 1 }, (_, frame) => {
+      const pose = poseAtFrame(built.timeline, row, track, frame);
+      return { pose, skeleton: forwardKinematics(pose) };
+    });
+  }
+
+  /** One row per solo action, each written with names alone, over a stand in row 0. */
+  function depthOne(stage: Stage): void {
+    const idle = stage.row(0).actor();
+    idle.do("stand", { mood: "dejected" });
+    idle.do("cheer", { at: 1, times: 1, mood: "happy" });
+    idle.do("think", { at: 3, ponder: 0.8, mood: "happy" });
+
+    const walker = stage.row(1).actor();
+    walker.do("walk", { distance: 0.6, mood: "dejected" });
+    walker.do("point", { from: 0.6, to: { x: 2, y: 1.4 }, mood: "angry" });
+    walker.do("stand", { duration: 1 });
+
+    const runner = stage.row(2).actor();
+    runner.do("run", { from: -1, distance: 2, mood: "surprised" });
+    runner.do("think");
+    runner.do("cheer");
+  }
+
+  // R3
+  it("serialise without the lossy marker in a scene written with names", () => {
+    const built = scene({ rows: 3 }, depthOne);
+    expect(built.findings).toEqual([]);
+    expect(errors(checkScene(built).findings)).toEqual([]);
+    const text = serializeTimeline(built.timeline);
+    expect(text.startsWith('{"version":1,"lossy":false,')).toBe(true);
+    expect(text).not.toContain("$omitted");
+    const parsed = parseTimeline(text);
+    if (!parsed.ok) {
+      throw new Error(parsed.reason);
+    }
+    expect(parsed.document.timeline).toEqual(built.timeline);
+    const again = { ...built, timeline: parsed.document.timeline };
+    for (const frame of [0, 20, 45, 70, 110]) {
+      expect(record(again, frame)).toBe(record(built, frame));
+    }
+  });
+
+  // R4
+  it("does not let a stand without a duration extend the scene past a walk in another row", () => {
+    let walked = Number.NaN;
+    const built = scene({ rows: 2 }, (stage) => {
+      const stood = stage.row(0).actor().do("stand");
+      expect(stood).toMatchObject({ start: 0, end: Infinity, duration: Infinity });
+      walked = stage.row(1).actor().do("walk").end;
+    });
+    expect(built.findings).toEqual([]);
+    const { fps } = built.timeline;
+    // Not a whole number of frames, so the scene's last frame is the next one up.
+    expect(Number.isInteger(walked * fps)).toBe(false);
+    expect(lastFrameOf(built.timeline)).toBe(Math.ceil(walked * fps));
+    expect(segmentsOf(built, "actor", 0)).toEqual([
+      expect.objectContaining({ start: 0, end: null }),
+      expect.objectContaining({ start: 0, end: null }),
+    ]);
+  });
+
+  it("plays a point after a walk when neither is given a time", () => {
+    scene((stage) => {
+      const actor = stage.actor();
+      const walk = actor.do("walk");
+      const point = actor.do("point", { from: 0.9 });
+      expect(walk.start).toBe(0);
+      expect(point.start).toBe(walk.end);
+      expect(point.marks.aimed).toBeGreaterThan(point.start);
+      expect(point.marks.aimed).toBeLessThan(point.end);
+    });
+  });
+
+  it("is the open-ended-only error when a stand is alone, and valid in a scene with a duration", () => {
+    const alone = scene((stage) => {
+      stage.actor().do("stand");
+    });
+    expect(alone.findings.map(({ code, severity }) => [code, severity])).toEqual([
+      ["ERR_SCENE_NO_DURATION", "error"],
+    ]);
+    const timed = scene({ duration: 3 }, (stage) => {
+      stage.actor().do("stand");
+    });
+    expect(timed.findings).toEqual([]);
+    expect(checkScene(timed).findings).toEqual([]);
+    expect(lastFrameOf(timed.timeline)).toBe(90);
+  });
+
+  it("reports a cheer in the mood happyy as an unknown expression, nearest happy", () => {
+    const built = scene((stage) => {
+      loosely(stage.actor())("cheer", { at: 1, mood: "happyy" });
+    });
+    expect(built.findings).toHaveLength(1);
+    expect(built.findings[0]).toMatchObject({
+      code: "ERR_SCENE_UNKNOWN_EXPRESSION",
+      severity: "error",
+      nearest: ["happy"],
+    });
+  });
+
+  it("breathes and blinks on a loop that comes round without a jump", () => {
+    const built = scene({ duration: 24 }, (stage) => {
+      stage.actor().do("stand");
+    });
+    const posed = frames(built).map(({ pose }) => pose);
+    const chests = posed.map(({ chest }) => chest);
+    expect(Math.max(...chests) - Math.min(...chests)).toBeGreaterThan(0.05);
+    // The breath's period is 3.4 s: 102 frames.
+    expect(posed[30 + 102]?.chest).toBeCloseTo(posed[30]?.chest ?? Number.NaN, 12);
+    const shut = posed.flatMap(({ eyeOpen }, frame) => (eyeOpen <= 0 ? [frame] : []));
+    expect(shut.length).toBeGreaterThan(4);
+    expect(posed.filter(({ eyeOpen }) => eyeOpen === 1).length).toBeGreaterThan(600);
+    for (let frame = 13; frame < posed.length; frame += 1) {
+      const [before, now] = [posed[frame - 1], posed[frame]];
+      // Once the stance has blended in, nothing of the body moves fast, loop points included.
+      expect(Math.abs((now?.chest ?? 0) - (before?.chest ?? 0))).toBeLessThan(0.01);
+      expect(Math.abs((now?.neck ?? 0) - (before?.neck ?? 0))).toBeLessThan(0.01);
+    }
+  });
+
+  it("shuts the eyes of any mood when a stand blinks", () => {
+    for (const mood of ["surprised", "dejected"] as const) {
+      const built = scene({ duration: 2 }, (stage) => {
+        stage.actor().do("stand", { mood });
+      });
+      // 1.2 s into the stand is the first blink: frame 36.
+      expect(frames(built)[36]?.pose.eyeOpen).toBeLessThanOrEqual(0);
+    }
+  });
+
+  it.each([
+    ["walk", {}],
+    ["walk", { mood: "dejected" }],
+    ["walk", { mood: "happy" }],
+    ["run", {}],
+    ["run", { mood: "surprised" }],
+    ["run", { mood: "dejected" }],
+  ] as const)(
+    "keeps a foot where it is planted, on the ground: %s %j",
+    (name, options) => {
+      const built = scene({ fps: 60 }, (stage) => {
+        const actor = stage.actor();
+        actor.do(name, { from: -0.9, distance: 1.8, ...options });
+        actor.wait(0.2);
+      });
+      const posed = frames(built).map(({ skeleton }) => skeleton);
+      let planted = 0;
+      for (let frame = 1; frame < posed.length; frame += 1) {
+        for (const side of ["L", "R"] as const) {
+          const [before, now] = [
+            posed[frame - 1]?.[`ankle${side}`],
+            posed[frame]?.[`ankle${side}`],
+          ];
+          if (before === undefined || now === undefined) {
+            throw new Error("no ankle");
+          }
+          // Never under the ground by more than a third of the line's width.
+          expect(now.y).toBeGreaterThan(-0.008);
+          expect(posed[frame]?.[`toe${side}`].y).toBeGreaterThan(-0.03);
+          // On its spot: a reach that is met puts the ankle on the ground exactly.
+          if (Math.abs(before.y) < 1e-9 && Math.abs(now.y) < 1e-9) {
+            planted += 1;
+            expect(Math.abs(now.x - before.x)).toBeLessThan(1e-6);
+          }
+        }
+      }
+      expect(planted).toBeGreaterThan(posed.length / 2);
+      expect(posed.at(-1)?.pelvis.x).toBeCloseTo(0.9, 10);
+      expect(posed.at(-1)?.ankleL.x).toBeCloseTo(0.9, 10);
+      expect(posed.at(-1)?.ankleR.x).toBeCloseTo(0.9, 10);
+    },
+  );
+
+  it("moves the hips at a steady speed between an eased start and stop", () => {
+    const built = scene({ fps: 60 }, (stage) => {
+      stage.actor().do("walk", { from: -2, distance: 4 });
+    });
+    const xs = frames(built).map(({ skeleton }) => skeleton.pelvis.x);
+    const steps = xs.slice(1).map((x, i) => x - (xs[i] ?? 0));
+    expect(Math.min(...steps)).toBeGreaterThanOrEqual(0);
+    // The middle third of the way, where the walk is neither starting nor stopping.
+    const cruise = steps.slice(
+      Math.floor(steps.length / 3),
+      Math.ceil((2 * steps.length) / 3),
+    );
+    expect(Math.max(...cruise) / Math.min(...cruise)).toBeLessThan(1.15);
+  });
+
+  it("runs well over twice as fast as it walks, off the ground between strides", () => {
+    const gone = (name: "walk" | "run"): { seconds: number; airborne: number } => {
+      let seconds = Number.NaN;
+      const built = scene({ fps: 60 }, (stage) => {
+        seconds = stage.actor().do(name, { from: -2, distance: 4 }).duration;
+      });
+      const airborne = frames(built).filter(
+        ({ skeleton }) => skeleton.ankleL.y > 0.01 && skeleton.ankleR.y > 0.01,
+      ).length;
+      return { seconds, airborne };
+    };
+    const [walk, run] = [gone("walk"), gone("run")];
+    expect(walk.seconds / run.seconds).toBeGreaterThan(2);
+    expect(walk.airborne).toBe(0);
+    expect(run.airborne).toBeGreaterThan(20);
+  });
+
+  it("takes a second walk on from where the first one ended", () => {
+    const built = scene({ fps: 60 }, (stage) => {
+      const actor = stage.actor();
+      actor.do("walk", { from: -1, distance: 0.6 });
+      actor.do("stand", { duration: 0.5 });
+      actor.do("run", { from: -0.4, distance: 1 });
+    });
+    expect(built.findings).toEqual([]);
+    const xs = frames(built).map(({ skeleton }) => skeleton.pelvis.x);
+    expect(xs[0]).toBe(-1);
+    expect(xs.at(-1)).toBeCloseTo(0.6, 10);
+    // No step back, and no jump: the fastest frame is a run's.
+    for (let frame = 1; frame < xs.length; frame += 1) {
+      const step = (xs[frame] ?? 0) - (xs[frame - 1] ?? 0);
+      expect(step).toBeGreaterThan(-1e-9);
+      expect(step).toBeLessThan(0.05);
+    }
+  });
+
+  it.each([
+    [{}],
+    [{ to: { x: 0.4, y: 2 } }],
+    [{ to: { x: 0.6, y: 0.1 } }],
+    [{ to: { x: 2, y: 1.2 }, from: 0.8 }],
+    [{ mood: "angry" }],
+    [{ mood: "surprised" }],
+  ] as const)("aims the straight near arm at its target: point %j", (options) => {
+    let aimed = Number.NaN;
+    const built = scene({ fps: 100 }, (stage) => {
+      const actor = stage.actor();
+      actor.pose({ pelvisX: "from" in options ? options.from : 0 }, { blend: 0 });
+      aimed = actor.do("point", { hold: 1, ...options }).marks.aimed;
+    });
+    // Half a second into the hold, when the lean has settled.
+    const at = frames(built)[Math.round((aimed + 0.5) * 100)];
+    if (at === undefined) {
+      throw new Error("no frame");
+    }
+    const to = "to" in options ? options.to : { x: 1, y: 0.95 };
+    const { shoulders, handR } = at.skeleton;
+    const arm = Math.atan2(handR.y - shoulders.y, handR.x - shoulders.x);
+    const target = Math.atan2(to.y - shoulders.y, to.x - shoulders.x);
+    expect(arm).toBeCloseTo(target, 2);
+    expect(at.pose.elbowR).toBe(0);
+    // The feet have not moved under the lean.
+    expect(at.skeleton.ankleR.x).toBeCloseTo(at.skeleton.pelvis.x, 10);
+    expect(at.skeleton.ankleR.y).toBeCloseTo(0, 10);
+  });
+
+  it("brings the near hand to the chin with the head tilted, and keeps it there", () => {
+    const built = scene({ fps: 100 }, (stage) => {
+      const actor = stage.actor();
+      actor.do("think");
+      actor.wait(1);
+    });
+    const posed = frames(built);
+    for (const frame of [80, 150, posed.length - 1]) {
+      const at = posed[frame];
+      if (at === undefined) {
+        throw new Error("no frame");
+      }
+      const { handR, headCentre } = at.skeleton;
+      const reach = Math.hypot(handR.x - headCentre.x, handR.y - headCentre.y);
+      // On the head's lower front edge: the head is 0.09 in radius.
+      expect(reach).toBeGreaterThan(0.07);
+      expect(reach).toBeLessThan(0.12);
+      expect(handR.x).toBeGreaterThan(headCentre.x);
+      expect(handR.y).toBeLessThan(headCentre.y);
+      expect(Math.abs(at.pose.neck)).toBeGreaterThan(0.1);
+    }
+  });
+
+  it("throws both hands above the head at a cheer's up mark, and jumps when happy", () => {
+    const cheering = (mood?: "happy"): { up: Skeleton; highest: number } => {
+      let up = Number.NaN;
+      const built = scene({ fps: 100 }, (stage) => {
+        up = stage.actor().do("cheer", mood === undefined ? {} : { mood }).marks.up;
+      });
+      const posed = frames(built);
+      const at = posed[Math.round(up * 100)];
+      if (at === undefined) {
+        throw new Error("no frame");
+      }
+      return {
+        up: at.skeleton,
+        highest: Math.max(...posed.map(({ skeleton }) => skeleton.ankleR.y)),
+      };
+    };
+    const plain = cheering();
+    expect(plain.up.handL.y).toBeGreaterThan(plain.up.headTop.y);
+    expect(plain.up.handR.y).toBeGreaterThan(plain.up.headCentre.y);
+    // The two arms apart, so they read as a V and not as one line.
+    expect(plain.up.handR.x - plain.up.handL.x).toBeGreaterThan(0.15);
+    expect(plain.highest).toBeLessThan(0.01);
+    expect(cheering("happy").highest).toBeGreaterThan(0.1);
+  });
+
+  it.each(SOLO)("ends %s where the next action can start from", (name) => {
+    const built = scene({ fps: 100 }, (stage) => {
+      const actor = stage.actor();
+      loosely(actor)(name, name === "stand" ? { duration: 1 } : {});
+      actor.wait(0.5);
+    });
+    const { pose, skeleton } = frames(built).at(-1) ?? {};
+    if (pose === undefined || skeleton === undefined) {
+      throw new Error("no frame");
+    }
+    // Both feet flat on the ground under the hips, the legs straight.
+    expect(skeleton.ankleL.y).toBeCloseTo(0, 6);
+    expect(skeleton.ankleR.y).toBeCloseTo(0, 6);
+    expect(skeleton.toeR.y).toBeCloseTo(0, 6);
+    expect(skeleton.ankleR.x).toBeCloseTo(skeleton.pelvis.x, 6);
+    expect(pose.pelvisY).toBeCloseTo(0, 6);
   });
 });

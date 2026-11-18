@@ -61,9 +61,10 @@ export default scene({ rows: 2 }, (stage) => {
 - Time is in seconds, angles are radians, and points are in a row's own units: the
   origin on the ground at the row's centre, `y` up, a standing figure 1 unit tall.
 - `pose` moves the channels it names and holds them; `reach` puts a hand or a foot on a
-  point; `drive` runs channels as a function of time; `wait` moves the actor's cursor
-  on. When two calls overlap, the one recorded later wins for the channels it names,
-  blended in over `blend` seconds (0.2 by default).
+  point; `drive` runs channels as a function of time and `cycle` repeats keyed values,
+  which stays data; `wait` moves the actor's cursor on. When two calls overlap, the one
+  recorded later wins for the channels it names, blended in over `blend` seconds (0.2 by
+  default).
 - `stage.row(i)` names a row, 0 at the top; on a one-row scene the stage is the row.
   `stage.sync()` moves every actor's cursor to the latest end. `row.draw` records a free
   drawing on a `ShapeContext`.
@@ -236,15 +237,20 @@ export default scene((stage) => {
 });
 ```
 
-- The first built-ins are the actions `sitDown`, `throw` and `slump`, the expressions
-  `neutral`, `happy`, `dejected`, `angry`, `surprised` and `focused`, and the props
-  `ball`, `box`, `hoop`, `rock`, `lever`, `cart`, `ladder`, `desk`, `laptop` and
-  `lightbulb`. A built-in is named by a string, and its parameters are typed by that
-  name. `mood` puts an expression on the face for the length of an action, and an action
-  lists the moods that also change its body. `throw` takes the prop it throws: the ball
-  rides the near hand until the mark `release`, then flies a parabola. A prop has
-  `place`, `hold` (it rides a hand or a foot) and `move` (a straight or arced path),
-  which is how your own action moves one. A placed prop draws behind the actor;
+- The built-in actions are `stand`, `walk`, `run`, `cheer`, `point`, `think`, `sitDown`,
+  `throw` and `slump`, with the expressions `neutral`, `happy`, `dejected`, `angry`,
+  `surprised` and `focused`, and the props `ball`, `box`, `hoop`, `rock`, `lever`,
+  `cart`, `ladder`, `desk`, `laptop` and `lightbulb`. A built-in is named by a string,
+  and its parameters are typed by that name. `mood` puts an expression on the face for
+  the length of an action, and an action lists the moods that also change its body.
+  `throw` takes the prop it throws: the ball rides the near hand until the mark
+  `release`, then flies a parabola. `stand` breathes and blinks to the end of the scene
+  without lengthening it, so it is the last call on an actor that has nothing more to
+  do: an open-ended `stand` shows through wherever a later call has ended, so started
+  first it would stand a seated figure back up. `walk` and `run` take the actor
+  `distance` along the ground from `from` and leave it there. A prop has `place`, `hold`
+  (it rides a hand or a foot) and `move` (a straight or arced path), which is how your
+  own action moves one. A placed prop draws behind the actor;
   `place(point, { layer: "front" })` puts it in front, as for a desk the figure sits
   behind.
 - The built-in backdrops are `plain`, `court`, `office`, `hill` and `night`:

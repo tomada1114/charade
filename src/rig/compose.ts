@@ -137,6 +137,58 @@ function driveOf(
 }
 
 /**
+ * A cycle's value of each channel at a time: eased from the channel's key before that
+ * time to its next, the last key leading back to the first one period on. A channel
+ * with one key keeps that value.
+ */
+function cycleOf(
+  data: Readonly<Record<string, unknown>>,
+  start: number,
+  fps: number,
+): Source | undefined {
+  const { keys, period } = data;
+  if (!Array.isArray(keys) || typeof period !== "number" || !(period > 0)) {
+    return undefined;
+  }
+  const recorded: readonly unknown[] = keys;
+  const series = new Map<ChannelName, { at: number; value: number }[]>();
+  for (const key of recorded) {
+    if (!isRecord(key) || typeof key["at"] !== "number") {
+      continue;
+    }
+    const names = isRecord(key["channels"])
+      ? Object.keys(key["channels"]).filter(isChannelName)
+      : [];
+    for (const [name, value] of finiteValues(key["channels"], names)) {
+      const points = series.get(name) ?? [];
+      points.push({ at: key["at"] * fps, value });
+      series.set(name, points);
+    }
+  }
+  const length = period * fps;
+  return {
+    names: [...series.keys()],
+    evaluate: (at) => {
+      const local = (((at - start) % length) + length) % length;
+      return [...series].map(([name, points]): [ChannelName, number] => {
+        const after = points.findIndex((point) => point.at > local);
+        const next = points.at(after === -1 ? 0 : after);
+        const last = points.at(after === -1 ? -1 : after - 1);
+        if (next === undefined || last === undefined || next === last) {
+          return [name, next?.value ?? 0];
+        }
+        const from = last.at > local ? last.at - length : last.at;
+        const to = next.at > local ? next.at : next.at + length;
+        return [
+          name,
+          mix(last.value, next.value, smoothstep((local - from) / (to - from))),
+        ];
+      });
+    },
+  };
+}
+
+/**
  * The segment as a layer, or `undefined` when it moves nothing: a wait, or data this
  * version does not know.
  */
@@ -155,7 +207,9 @@ function layerOf(segment: TimelineSegment, fps: number): Layer | undefined {
         ? poseOf(data)
         : kind === "drive"
           ? driveOf(data, start, end)
-          : undefined;
+          : kind === "cycle"
+            ? cycleOf(data, start, fps)
+            : undefined;
   if (source === undefined) {
     return undefined;
   }
