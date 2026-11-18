@@ -5,9 +5,12 @@
 import { sitDownAction } from "./actions/sitDown.js";
 import { slumpAction } from "./actions/slump.js";
 import { throwAction } from "./actions/throw.js";
+import { angryExpression } from "./expressions/angry.js";
 import { dejectedExpression } from "./expressions/dejected.js";
 import { focusedExpression } from "./expressions/focused.js";
+import { happyExpression } from "./expressions/happy.js";
 import { neutralExpression } from "./expressions/neutral.js";
+import { surprisedExpression } from "./expressions/surprised.js";
 import { ballProp } from "./props/ball.js";
 import { boxProp } from "./props/box.js";
 
@@ -43,17 +46,23 @@ export const builtinActions: BuiltinActions = Object.freeze({
  * The built-in expressions by name: what `a.express("name")` and `mood` accept.
  *
  * @remarks
- * They are `dejected`, `focused`, `neutral`.
+ * They are `angry`, `dejected`, `focused`, `happy`, `neutral`, `surprised`.
  *
  * @public
  */
 export interface BuiltinExpressions {
   /** @hidden */
+  readonly angry: typeof angryExpression;
+  /** @hidden */
   readonly dejected: typeof dejectedExpression;
   /** @hidden */
   readonly focused: typeof focusedExpression;
   /** @hidden */
+  readonly happy: typeof happyExpression;
+  /** @hidden */
   readonly neutral: typeof neutralExpression;
+  /** @hidden */
+  readonly surprised: typeof surprisedExpression;
 }
 
 /**
@@ -62,9 +71,12 @@ export interface BuiltinExpressions {
  * @public
  */
 export const builtinExpressions: BuiltinExpressions = Object.freeze({
+  angry: angryExpression,
   dejected: dejectedExpression,
   focused: focusedExpression,
+  happy: happyExpression,
   neutral: neutralExpression,
+  surprised: surprisedExpression,
 });
 
 /**

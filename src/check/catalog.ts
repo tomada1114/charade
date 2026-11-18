@@ -358,14 +358,17 @@ export function sampleScene(definition: Definition): Scene | undefined {
 
 /**
  * The frames a sample image shows. What moves, an action or an effect, is a contact
- * sheet spread over the sample as `sheet` spreads a scene; what holds still is its
- * last frame alone, where a blend into an expression has arrived.
+ * sheet spread over the sample as `sheet` spreads a scene. An expression is its last
+ * frame alone, where its blend from the resting face has arrived. A prop or a backdrop
+ * draws the same while shown and is frame 0 alone: a sample that gives it a `duration`
+ * ending with the sample no longer shows it at the last frame.
  */
 export function sampleFrames(kind: ItemKind, built: Scene): number[] {
   const last = lastFrameOf(built.timeline) ?? 0;
-  return kind === "action" || kind === "effect"
-    ? spreadFrames(0, last, SHEET_CELLS)
-    : [last];
+  if (kind === "action" || kind === "effect") {
+    return spreadFrames(0, last, SHEET_CELLS);
+  }
+  return kind === "expression" ? [last] : [0];
 }
 
 /** A sample image's file name: the kind beside the name, since two kinds may share one. */

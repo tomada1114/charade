@@ -655,9 +655,12 @@ describe("catalog --images (R4)", () => {
       "action.sitDown.png",
       "action.slump.png",
       "action.throw.png",
+      "expression.angry.png",
       "expression.dejected.png",
       "expression.focused.png",
+      "expression.happy.png",
       "expression.neutral.png",
+      "expression.surprised.png",
       "prop.ball.png",
       "prop.box.png",
     ];
@@ -666,7 +669,7 @@ describe("catalog --images (R4)", () => {
     expect(document.images?.map((image) => image.path)).toEqual(
       names.map((name) => path.join(out, name)),
     );
-    expect(document.items).toHaveLength(8);
+    expect(document.items).toHaveLength(11);
     // An action is a contact sheet; an expression is one frame at the sample's size.
     expect(sizeOf(readFileSync(path.join(out, "action.throw.png")))[0]).toBe(1568);
     expect(sizeOf(readFileSync(path.join(out, "expression.dejected.png")))).toEqual([

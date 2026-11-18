@@ -811,7 +811,7 @@ describe("using definitions", () => {
   it("names the built-ins in the maps, and none where a kind has no item yet", () => {
     expectTypeOf<keyof BuiltinActions>().toEqualTypeOf<"sitDown" | "slump" | "throw">();
     expectTypeOf<keyof BuiltinExpressions>().toEqualTypeOf<
-      "dejected" | "focused" | "neutral"
+      "angry" | "dejected" | "focused" | "happy" | "neutral" | "surprised"
     >();
     expectTypeOf<keyof BuiltinProps>().toEqualTypeOf<"ball" | "box">();
     expectTypeOf<keyof BuiltinBackdrops>().toEqualTypeOf<never>();
@@ -854,6 +854,9 @@ describe("using definitions", () => {
       ).toEqualTypeOf<Span>();
       expectTypeOf(actor.express("dejected", { intensity: 0.5 })).toEqualTypeOf<Span>();
       expectTypeOf(actor.express("neutral")).toEqualTypeOf<Span>();
+      expectTypeOf(actor.express("happy")).toEqualTypeOf<Span>();
+      expectTypeOf(actor.express("angry", { intensity: 0.5 })).toEqualTypeOf<Span>();
+      expectTypeOf(actor.do("sitDown", { mood: "surprised" })).toEqualTypeOf<Span>();
       expectTypeOf(row.prop("box", { width: 0.5, at: 1 })).toEqualTypeOf<Prop>();
     };
     expect(record).toBeTypeOf("function");
@@ -878,6 +881,10 @@ describe("using definitions", () => {
       actor.do("sitDown", { height: 0.3 });
       // @ts-expect-error sad is not a built-in expression
       actor.do("slump", { mood: "sad" });
+      // @ts-expect-error angy is not a built-in expression
+      actor.express("angy");
+      // @ts-expect-error happy has no parameter named strength
+      actor.express("happy", { strength: 1 });
       // @ts-expect-error neutral takes no parameter
       actor.express("neutral", { intensity: 1 });
       // @ts-expect-error bal is not a built-in prop
@@ -891,7 +898,14 @@ describe("using definitions", () => {
   it("takes a mood as a built-in expression's name or an expression definition", () => {
     const smug = defineExpression({ name: "smug", description: "", build: () => ({}) });
     expectTypeOf<ActionOptions["mood"]>().toEqualTypeOf<
-      "dejected" | "focused" | "neutral" | ExpressionDefinition | undefined
+      | "angry"
+      | "dejected"
+      | "focused"
+      | "happy"
+      | "neutral"
+      | "surprised"
+      | ExpressionDefinition
+      | undefined
     >();
     expectTypeOf(smug).toExtend<NonNullable<ActionOptions["mood"]>>();
   });

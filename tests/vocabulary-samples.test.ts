@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { sampleFrames } from "../src/check/catalog.js";
 import { checkScene, lastFrameOf } from "../src/check/check.js";
 import { type LogEntry, RecordingContext } from "../src/check/recorder.js";
 import { spreadFrames } from "../src/check/sheet.js";
@@ -13,6 +14,7 @@ import {
   builtinExpressions,
   builtinProps,
   type Definition,
+  type ExpressionDefinition,
   type Finding,
   type Scene,
   scene,
@@ -22,7 +24,37 @@ import {
 import { parseTimeline, serializeTimeline } from "../src/timeline/json.js";
 
 /** How many frames of a sample are recorded, spread from its first to its last. */
-const RECORDED_FRAMES = { action: 7, expression: 1, prop: 1, backdrop: 1, effect: 1 };
+const RECORDED_FRAMES = { action: 7, effect: 1 };
+
+/**
+ * The frames of a sample that are recorded. What moves is spread over the sample; what
+ * holds still is the one frame `catalog --images` draws, so an expression is recorded
+ * where its blend has arrived rather than at the resting face it starts from.
+ */
+function recordedFrames(kind: Definition["kind"], built: Scene): number[] {
+  const last = lastFrameOf(built.timeline);
+  if (last === undefined) {
+    throw new Error("the sample has no length");
+  }
+  return kind === "action" || kind === "effect"
+    ? spreadFrames(0, last, RECORDED_FRAMES[kind])
+    : sampleFrames(kind, built);
+}
+
+/** The face channels' ranges, as `.claude/rules/engine.md` § The rig states them. */
+const FACE_RANGES: Readonly<Record<string, readonly [number, number]>> = {
+  eyeOpen: [0, 1.5],
+  gazeX: [-1, 1],
+  gazeY: [-1, 1],
+  browHeight: [-1, 1],
+  browTilt: [-1, 1],
+  mouthCurve: [-1, 1],
+  mouthOpen: [0, 1],
+  mouthWidth: [0.5, 1.5],
+};
+
+const EXPRESSIONS: readonly (readonly [string, ExpressionDefinition])[] =
+  Object.entries(builtinExpressions);
 
 const MAPS: readonly (readonly [Definition["kind"], object])[] = [
   ["action", builtinActions],
@@ -84,14 +116,17 @@ function segmentsOf(built: Scene, kind: string, row = 0): readonly unknown[] {
 }
 
 describe("the built-in vocabulary", () => {
-  it("is the eight items of the first three actions", () => {
+  it("is the three actions, the six expressions and the two props", () => {
     expect(ITEMS.map(([kind, name]) => `${kind} ${name}`)).toEqual([
       "action sitDown",
       "action slump",
       "action throw",
+      "expression angry",
       "expression dejected",
       "expression focused",
+      "expression happy",
       "expression neutral",
+      "expression surprised",
       "prop ball",
       "prop box",
     ]);
@@ -130,14 +165,30 @@ describe("the samples", () => {
     const built = sampleOf(definition);
     expect(built.findings).toEqual([]);
     expect(checkScene(built).findings).toEqual([]);
-    const last = lastFrameOf(built.timeline);
-    if (last === undefined) {
-      throw new Error("the sample has no length");
-    }
-    for (const frame of spreadFrames(0, last, RECORDED_FRAMES[kind])) {
+    for (const frame of recordedFrames(kind, built)) {
       expect(record(built, frame)).toMatchSnapshot(`frame ${String(frame)}`);
     }
   });
+
+  it("records each expression where its face has arrived, not the resting face", () => {
+    const faces = EXPRESSIONS.map(([, definition]) => {
+      const built = sampleOf(definition);
+      const [frame] = recordedFrames("expression", built);
+      return record(built, frame ?? 0);
+    });
+    // Every face is its own: no two expressions record the same drawing.
+    expect(new Set(faces).size).toBe(EXPRESSIONS.length);
+  });
+
+  it.each(Object.entries(builtinProps) as [string, Definition][])(
+    "shows the prop %s in the frame its catalog image draws",
+    (_name, definition) => {
+      const built = sampleOf(definition);
+      const empty = scene({ duration: 1 }, () => undefined);
+      expect(sampleFrames("prop", built)).toEqual([0]);
+      expect(record(built, 0)).not.toBe(record(empty, 0));
+    },
+  );
 
   it.each(ITEMS)(
     "uses no built-in by name in the sample of the %s %s",
@@ -163,6 +214,96 @@ describe("the samples", () => {
         expect(tracks.map((track) => track.name)).toContain(name);
       }
     }
+  });
+});
+
+describe("a built-in expression", () => {
+  const settings = [{ intensity: 0 }, { intensity: 0.5 }, { intensity: 1 }];
+
+  /** The channels an expression returns for `params`, as a scene's call resolves them. */
+  function faceOf(
+    definition: ExpressionDefinition,
+    params: object,
+  ): Readonly<Record<string, number | undefined>> {
+    return (
+      definition as unknown as { build(params: object): Record<string, number> }
+    ).build(params);
+  }
+
+  // R1
+  it.each(EXPRESSIONS)(
+    "returns all eight face channels within their ranges: %s",
+    (_name, definition) => {
+      for (const params of settings) {
+        const face = faceOf(definition, params);
+        expect(Object.keys(face).sort()).toEqual(Object.keys(FACE_RANGES).sort());
+        for (const [channel, [min, max]] of Object.entries(FACE_RANGES)) {
+          expect(face[channel]).toBeGreaterThanOrEqual(min);
+          expect(face[channel]).toBeLessThanOrEqual(max);
+        }
+      }
+    },
+  );
+
+  it.each(EXPRESSIONS.filter(([name]) => name !== "neutral"))(
+    "is the resting face at intensity 0: %s",
+    (_name, definition) => {
+      const rest: Readonly<Record<string, number>> = {
+        eyeOpen: 1,
+        gazeX: 0,
+        gazeY: 0,
+        browHeight: 0,
+        browTilt: 0,
+        mouthCurve: 0,
+        mouthOpen: 0,
+        mouthWidth: 1,
+      };
+      for (const [channel, value] of Object.entries(rest)) {
+        expect(faceOf(definition, { intensity: 0 })[channel]).toBeCloseTo(value, 10);
+      }
+    },
+  );
+
+  it.each([
+    ["happy", "mouthCurve", 1],
+    ["angry", "browTilt", -1],
+    ["surprised", "eyeOpen", 1.5],
+  ] as const)("shows %s by taking %s to %d", (name, channel, value) => {
+    expect(builtinExpressions[name].build({ intensity: 1 })[channel]).toBe(value);
+  });
+
+  it("reports an expression named angy as unknown, nearest angry", () => {
+    const built = scene({ duration: 1 }, (stage) => {
+      // The types reject the name; a scene file runs with them erased.
+      (stage.actor() as unknown as { express(name: string): Span }).express("angy");
+    });
+    expect(built.findings).toHaveLength(1);
+    expect(built.findings[0]).toMatchObject({
+      code: "ERR_SCENE_UNKNOWN_EXPRESSION",
+      severity: "error",
+      nearest: ["angry"],
+    });
+  });
+
+  it("changes only the face of a slump when it is angry, a mood slump does not list", () => {
+    const slump = (mood?: "angry"): Scene =>
+      scene((stage) => {
+        stage.actor().do("slump", mood === undefined ? {} : { mood });
+      });
+    const plain = slump();
+    const angry = slump("angry");
+    expect(builtinActions.slump.moods).not.toContain("angry");
+    const last = lastFrameOf(plain.timeline) ?? 0;
+    expect(lastFrameOf(angry.timeline)).toBe(last);
+    expect(record(angry, last)).not.toBe(record(plain, last));
+    const faceless = (built: Scene): unknown[] =>
+      segmentsOf(built, "actor").filter(
+        (segment) => !JSON.stringify(segment).includes("mouthCurve"),
+      );
+    expect(faceless(angry)).toEqual(faceless(plain));
+    expect(segmentsOf(angry, "actor").length).toBe(
+      segmentsOf(plain, "actor").length + 1,
+    );
   });
 });
 
