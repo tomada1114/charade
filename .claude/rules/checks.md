@@ -213,3 +213,12 @@ recorded sample is how an unintended change in appearance fails a test.
   head, hands and feet in row units, and the channels away from rest; each shown prop's
   ground point; each shown free drawing's id. Numbers are rounded to three decimals. It
   composes poses, which calls `drive` functions, and never calls a drawing callback.
+- As text (`formatState`) a description is `state at <seconds> s (frame <n>)`, then per
+  row `row <i>` and, indented, `actor <id>: facing <side>, pelvis (x, y), head (x, y)`
+  with a `hands:`/`feet:` line and a `pose:` line of the channels away from rest (`rest`
+  when none), `prop <id>: at (x, y)`, `drawing <id>`, or `empty`. `frame` and `sheet`
+  print the same block for each frame they drew, in frame order with a blank line after
+  each, between the `wrote <path>` line and the count: one format for `check --at` and
+  the check images, so an agent matches a block to a cell by the frame number both
+  carry. The sheet and ghost layout is `src/check/sheet.ts`, pure and recorded like any
+  drawing; `frame` and `sheet` run `checkScene` only for its count.
