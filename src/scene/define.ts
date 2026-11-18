@@ -5,7 +5,7 @@ import {
   type ItemKind,
   ReservedParameterError,
 } from "../errors.js";
-import type { Moment } from "../timeline/segments.js";
+import type { DrawMoment } from "../timeline/segments.js";
 import type { Clip, Stage } from "./handles.js";
 import {
   type Param,
@@ -120,9 +120,10 @@ export interface DrawnDefinition<
    *
    * @param ctx - The drawing interface, without text.
    * @param params - Every parameter, defaults filled in.
-   * @param moment - The scene time, the item's segment and its random source.
+   * @param moment - The scene time, the item's segment, its random source and the row's
+   *   visible area.
    */
-  draw(ctx: ShapeContext, params: ResolvedParams<P>, moment: Moment): void;
+  draw(ctx: ShapeContext, params: ResolvedParams<P>, moment: DrawMoment): void;
 }
 
 /**
@@ -249,9 +250,10 @@ export interface DrawnInput<P extends ParamSpec> {
    *
    * @param ctx - The drawing interface, without text.
    * @param params - Every parameter, defaults filled in.
-   * @param moment - The scene time, the item's segment and its random source.
+   * @param moment - The scene time, the item's segment, its random source and the row's
+   *   visible area.
    */
-  draw(ctx: ShapeContext, params: ResolvedParams<P>, moment: Moment): void;
+  draw(ctx: ShapeContext, params: ResolvedParams<P>, moment: DrawMoment): void;
   /**
    * Records the item's sample.
    *

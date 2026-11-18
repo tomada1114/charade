@@ -1,8 +1,13 @@
+import type { RowView } from "../timeline/segments.js";
+
 /** How many units of height a row shows, at every row count. */
 export const ROW_UNITS = 2.5;
 
 /** How far the ground line sits above a row's lower edge, in units. */
 export const GROUND_UNITS = 0.3;
+
+/** `y` of a row's upper edge above its ground line, in units. */
+const TOP_UNITS = ROW_UNITS - GROUND_UNITS;
 
 /** Where one row sits on the canvas, in pixels, and how its units map to them. */
 export interface RowLayout {
@@ -56,4 +61,18 @@ export function rowTransform(
   layout: RowLayout,
 ): readonly [number, number, number, number, number, number] {
   return [layout.scale, 0, 0, -layout.scale, layout.width / 2, layout.groundY];
+}
+
+/**
+ * The visible area of a row as a drawing whose origin is at `(x, y)` of the row sees
+ * it: the row's own origin by default.
+ */
+export function rowView(layout: RowLayout, x = 0, y = 0): RowView {
+  const half = layout.units / 2;
+  return {
+    left: -half - x,
+    right: half - x,
+    bottom: -GROUND_UNITS - y,
+    top: TOP_UNITS - y,
+  };
 }

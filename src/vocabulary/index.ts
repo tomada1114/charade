@@ -21,6 +21,11 @@ import { laptopProp } from "./props/laptop.js";
 import { leverProp } from "./props/lever.js";
 import { lightbulbProp } from "./props/lightbulb.js";
 import { rockProp } from "./props/rock.js";
+import { courtBackdrop } from "./backdrops/court.js";
+import { hillBackdrop } from "./backdrops/hill.js";
+import { nightBackdrop } from "./backdrops/night.js";
+import { officeBackdrop } from "./backdrops/office.js";
+import { plainBackdrop } from "./backdrops/plain.js";
 
 /**
  * The built-in actions by name: what `a.do("name")` accepts.
@@ -141,19 +146,35 @@ export const builtinProps: BuiltinProps = Object.freeze({
  * The built-in backdrops by name: what `row.backdrop("name")` accepts.
  *
  * @remarks
- * There is no built-in backdrop yet.
+ * They are `court`, `hill`, `night`, `office`, `plain`.
  *
  * @public
  */
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type -- no built-in backdrop yet
-export interface BuiltinBackdrops {}
+export interface BuiltinBackdrops {
+  /** @hidden */
+  readonly court: typeof courtBackdrop;
+  /** @hidden */
+  readonly hill: typeof hillBackdrop;
+  /** @hidden */
+  readonly night: typeof nightBackdrop;
+  /** @hidden */
+  readonly office: typeof officeBackdrop;
+  /** @hidden */
+  readonly plain: typeof plainBackdrop;
+}
 
 /**
  * The built-in backdrops, by name.
  *
  * @public
  */
-export const builtinBackdrops: BuiltinBackdrops = Object.freeze({});
+export const builtinBackdrops: BuiltinBackdrops = Object.freeze({
+  court: courtBackdrop,
+  hill: hillBackdrop,
+  night: nightBackdrop,
+  office: officeBackdrop,
+  plain: plainBackdrop,
+});
 
 /**
  * The built-in effects by name: what `row.effect("name")` accepts.

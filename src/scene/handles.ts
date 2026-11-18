@@ -1,7 +1,7 @@
 import type { ShapeContext } from "../draw/context.js";
 import type { Point } from "../rig/kinematics.js";
 import type { ChannelName, EffectorName } from "../rig/rig.js";
-import type { BlendMode, Moment, TextAlign } from "../timeline/segments.js";
+import type { BlendMode, DrawMoment, Moment, TextAlign } from "../timeline/segments.js";
 import type {
   BuiltinName,
   BuiltinActions,
@@ -83,12 +83,13 @@ export type MotionFunction = (t: number, moment: Moment) => PoseChannels;
  * A free drawing at depth 4: draws one frame on `ctx`, in row units with `y` up.
  *
  * @remarks
- * `t` is seconds since the drawing's segment began. Like a {@link MotionFunction} it
- * must be a pure function of its arguments.
+ * `t` is seconds since the drawing's segment began, and `moment.view` is the row's
+ * visible area. Like a {@link MotionFunction} it must be a pure function of its
+ * arguments.
  *
  * @public
  */
-export type DrawFunction = (ctx: ShapeContext, t: number, moment: Moment) => void;
+export type DrawFunction = (ctx: ShapeContext, t: number, moment: DrawMoment) => void;
 
 /**
  * Options of `actor.pose`.

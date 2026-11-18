@@ -31,6 +31,40 @@ export interface Moment {
   readonly random: RandomSource;
 }
 
+/**
+ * The part of a row a frame shows, in the units and from the origin the function
+ * handed it draws in: `y` up, the ground line at `y = 0` when that origin is on it.
+ *
+ * @remarks
+ * A row always shows 2.5 units of height, 0.3 of them below the ground line. Its width
+ * follows from the canvas and the row count: 2.5 units for one row of a square canvas,
+ * about 17.8 for four rows of a 16:9 one. A drawing that spans the row reads its edges
+ * here.
+ *
+ * @public
+ */
+export interface RowView {
+  /** `x` of the row's left edge. */
+  readonly left: number;
+  /** `x` of the row's right edge. */
+  readonly right: number;
+  /** `y` of the row's lower edge. */
+  readonly bottom: number;
+  /** `y` of the row's upper edge. */
+  readonly top: number;
+}
+
+/**
+ * The moment a drawing function is handed: a free drawing at depth 4, or the `draw` of a
+ * prop, backdrop or effect. It is a {@link Moment} plus the row's visible area.
+ *
+ * @public
+ */
+export interface DrawMoment extends Moment {
+  /** The row's visible area, in the coordinates the function draws in. */
+  readonly view: RowView;
+}
+
 /** A `pose` call: target values, and the three phases of its arrival. */
 export interface PoseData {
   readonly kind: "pose";

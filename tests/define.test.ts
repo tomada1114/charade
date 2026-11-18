@@ -900,11 +900,11 @@ describe("a.do with a name", () => {
     expect(segments(built)[0]).toMatchObject({ data: { kind: "wait" } });
   });
 
-  it("says there are no built-in backdrops yet while none exist", () => {
+  it("says there are no built-in effects yet while none exist", () => {
     const built = scene({ duration: 1 }, (stage) => {
-      loose(stage)["backdrop"]?.("plain");
+      loose(stage)["effect"]?.("sweat");
     });
-    const finding = only(built, "ERR_SCENE_UNKNOWN_BACKDROP");
+    const finding = only(built, "ERR_SCENE_UNKNOWN_EFFECT");
     expect(finding.nearest).toEqual([]);
   });
 

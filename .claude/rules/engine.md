@@ -208,6 +208,19 @@ recorded sample is written against; changing any of it changes all of them at on
   the function types are `MotionFunction` (returns a map of channel values) and
   `DrawFunction` (draws on a `ShapeContext`), and the source is `RandomSource`. In an
   open-ended segment `duration` is `Infinity` and `progress` stays 0.
+- A drawing function — a depth 4 callback, or the `draw` of a prop, backdrop or effect —
+  gets a `DrawMoment`: a `Moment` plus `view`, a `RowView` (`left`, `right`, `bottom`,
+  `top`) giving the row's visible area in the coordinates the function draws in. For a
+  free drawing, a backdrop and an effect that is the row's own (`∓units / 2`, −0.3,
+  2.2); for a prop it is shifted by the prop's ground point, since its context is. The
+  width is the one thing about a row an item cannot know, and a backdrop has to reach
+  both edges at every canvas shape and row count. It is a field of the moment, not a
+  parameter or a method of the context: every drawing function already receives the
+  moment, a parameter would be a reserved name in every definition's bag, and the
+  drawing interface holds only standard Canvas 2D members. It is a separate type because
+  a `drive` has no layout to read: a pose is composed from the timeline alone, which
+  does not hold the canvas size. A function typed against `Moment` is still accepted
+  where a `DrawMoment` is handed over. `rowView` in `src/draw/layout.ts` builds it.
 
 ## The rig
 
@@ -461,9 +474,9 @@ change to the shape raises the version.
 - A prop, backdrop or effect is drawn by `drawItem` in `src/draw/frame.ts` while one of
   its segments of its own kind covers the frame, with the context translated to its
   ground point and the same starting state as a free drawing; its `draw` gets the
-  resolved params and the `Moment` of that segment. The definition is the segment's own
-  when it was passed as one and otherwise the built-in of its name from the map of the
-  track's kind; a name that map lacks, or a parsed timeline's placeholder, draws
+  resolved params and the `DrawMoment` of that segment. The definition is the segment's
+  own when it was passed as one and otherwise the built-in of its name from the map of
+  the track's kind; a name that map lacks, or a parsed timeline's placeholder, draws
   nothing. A backdrop's and an effect's ground point is the row's origin: neither has a
   placement call yet. A prop's comes from `propPlacement` in `src/draw/prop.ts`, a pure
   function of the timeline and the frame. A `draw` that throws is wrapped in
@@ -510,8 +523,8 @@ change to the shape raises the version.
   at the edge keeps its words in the frame. It is not held below the top: a bubble that
   leaves there is a finding.
 - A free drawing is called for each of its segments that `frameInSegment` says frame `n`
-  falls in, with `t` and the `Moment` of that segment; a parsed timeline's placeholder
-  draws nothing.
+  falls in, with `t` and the `DrawMoment` of that segment; a parsed timeline's
+  placeholder draws nothing.
 
 ## Shapes
 

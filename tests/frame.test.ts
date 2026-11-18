@@ -16,6 +16,7 @@ import {
   defineEffect,
   defineProp,
   type Moment,
+  type RowView,
   type Scene,
   scene,
   type Timeline,
@@ -724,6 +725,67 @@ describe("backdrops and effects", () => {
       { call: "lineWidth", args: [250] },
       { call: "rect", args: [60000, 60000, 2500, 10000] },
     ]);
+  });
+
+  it.each([
+    // width, height, rows, the row's edges in units
+    [1080, 1080, 1, -1.25, 1.25],
+    [1920, 1080, 1, -40 / 18, 40 / 18],
+    [1080, 1080, 4, -5, 5],
+    [1920, 1080, 4, -80 / 9, 80 / 9],
+  ])(
+    "hands a backdrop, an effect and a free drawing the row's visible area: %i × %i, %i row(s)",
+    (width, height, rows, left, right) => {
+      const seen: RowView[] = [];
+      const built = scene({ width, height, rows, duration: 1 }, (stage) => {
+        const row = stage.row(rows - 1);
+        row.backdrop(
+          defineBackdrop({
+            name: "wide",
+            description: "A backdrop that notes the view.",
+            draw: (_ctx, _params, { view }) => void seen.push(view),
+          }),
+        );
+        row.effect(
+          defineEffect({
+            name: "wide",
+            description: "An effect that notes the view.",
+            draw: (_ctx, _params, { view }) => void seen.push(view),
+          }),
+        );
+        row.draw((_ctx, _t, { view }) => void seen.push(view));
+      });
+      record(built, 0);
+      expect(seen).toHaveLength(3);
+      for (const view of seen) {
+        expect(view.left).toBeCloseTo(left, 9);
+        expect(view.right).toBeCloseTo(right, 9);
+        expect(view.bottom).toBeCloseTo(-0.3, 9);
+        expect(view.top).toBeCloseTo(2.2, 9);
+      }
+    },
+  );
+
+  it("hands a prop the visible area as seen from its own ground point", () => {
+    const seen: RowView[] = [];
+    const built = scene({ duration: 1 }, (stage) => {
+      stage
+        .prop(
+          defineProp({
+            name: "seer",
+            description: "A prop that notes the view.",
+            draw: (_ctx, _params, { view }) => void seen.push(view),
+          }),
+        )
+        .place({ x: 0.5, y: 0.2 });
+    });
+    record(built, 0);
+    expect(seen).toHaveLength(1);
+    // The row runs from -1.25 to 1.25 and from -0.3 to 2.2; the prop stands at (0.5, 0.2).
+    expect(seen[0]?.left).toBeCloseTo(-1.75, 9);
+    expect(seen[0]?.right).toBeCloseTo(0.75, 9);
+    expect(seen[0]?.bottom).toBeCloseTo(-0.5, 9);
+    expect(seen[0]?.top).toBeCloseTo(2, 9);
   });
 
   it("gives a backdrop its parameters and draws it only while its segment covers the frame", () => {

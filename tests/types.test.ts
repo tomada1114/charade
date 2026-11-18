@@ -71,6 +71,7 @@ import {
   type FindingCollector,
   type Gradient,
   type LabelOptions,
+  type DrawMoment,
   type Moment,
   type MotionFunction,
   type Point,
@@ -79,6 +80,7 @@ import {
   type RandomSource,
   type ReachOptions,
   type Row,
+  type RowView,
   type SayOptions,
   type Scene,
   scene,
@@ -599,9 +601,12 @@ describe("handle types", () => {
       row.draw((ctx, t, moment) => {
         expectTypeOf(ctx).toEqualTypeOf<ShapeContext>();
         expectTypeOf(t).toEqualTypeOf<number>();
-        expectTypeOf(moment).toEqualTypeOf<Moment>();
+        expectTypeOf(moment).toEqualTypeOf<DrawMoment>();
       });
     expectTypeOf(drawn).returns.toEqualTypeOf<Span>();
+    expectTypeOf<DrawFunction>().toEqualTypeOf<
+      (ctx: ShapeContext, t: number, moment: DrawMoment) => void
+    >();
     expectTypeOf<Parameters<DrawFunction>[0]>().not.toHaveProperty("fillText");
   });
 
@@ -614,6 +619,35 @@ describe("handle types", () => {
     }>();
     expectTypeOf<RandomSource["float"]>().toEqualTypeOf<(draw?: number) => number>();
     expectTypeOf<RandomSource["uint32"]>().toEqualTypeOf<(draw?: number) => number>();
+  });
+
+  it("gives a drawing function the moment and the row's visible area", () => {
+    expectTypeOf<RowView>().toEqualTypeOf<{
+      readonly left: number;
+      readonly right: number;
+      readonly bottom: number;
+      readonly top: number;
+    }>();
+    expectTypeOf<DrawMoment>().toExtend<Moment>();
+    expectTypeOf<DrawMoment["view"]>().toEqualTypeOf<RowView>();
+    expectTypeOf<keyof DrawMoment>().toEqualTypeOf<keyof Moment | "view">();
+    // A drive has no row to see: its moment is the plain one.
+    expectTypeOf<Parameters<MotionFunction>[1]>().not.toHaveProperty("view");
+    defineBackdrop({
+      name: "wide",
+      description: "A backdrop that reads the row's edges.",
+      draw(ctx, _params, moment) {
+        expectTypeOf(moment).toEqualTypeOf<DrawMoment>();
+        ctx.fillRect(moment.view.left, 0, moment.view.right - moment.view.left, 1);
+      },
+    });
+    // A draw written against the plain moment is still a draw.
+    const older = (_ctx: ShapeContext, _params: object, moment: Moment): void => {
+      expect(moment.time).toBeTypeOf("number");
+    };
+    expectTypeOf(
+      defineProp({ name: "older", description: "Written before view.", draw: older }),
+    ).toExtend<PropDefinition>();
   });
 });
 
@@ -825,7 +859,9 @@ describe("using definitions", () => {
       | "lightbulb"
       | "rock"
     >();
-    expectTypeOf<keyof BuiltinBackdrops>().toEqualTypeOf<never>();
+    expectTypeOf<keyof BuiltinBackdrops>().toEqualTypeOf<
+      "court" | "hill" | "night" | "office" | "plain"
+    >();
     expectTypeOf<BuiltinName<BuiltinProps>>().toEqualTypeOf<
       | "ball"
       | "box"
@@ -880,6 +916,15 @@ describe("using definitions", () => {
       expectTypeOf(actor.express("angry", { intensity: 0.5 })).toEqualTypeOf<Span>();
       expectTypeOf(actor.do("sitDown", { mood: "surprised" })).toEqualTypeOf<Span>();
       expectTypeOf(row.prop("box", { width: 0.5, at: 1 })).toEqualTypeOf<Prop>();
+      // #24 R4
+      expectTypeOf(row.backdrop("night")).toEqualTypeOf<Span>();
+      expectTypeOf(
+        row.backdrop("night", { moon: "full", sky: "#202850", duration: 2 }),
+      ).toEqualTypeOf<Span>();
+      expectTypeOf(row.backdrop("plain", { color: "#ffffff" })).toEqualTypeOf<Span>();
+      expectTypeOf(row.backdrop("office", { blinds: false })).toEqualTypeOf<Span>();
+      expectTypeOf(row.backdrop("court")).toEqualTypeOf<Span>();
+      expectTypeOf(row.backdrop("hill", { grass: "#88bb77" })).toEqualTypeOf<Span>();
       // R5
       expectTypeOf(row.prop("ladder")).toEqualTypeOf<Prop>();
       expectTypeOf(row.prop("ladder", { height: 1.2, lean: 0 })).toEqualTypeOf<Prop>();
@@ -930,8 +975,12 @@ describe("using definitions", () => {
       row.prop("ladder", { rungs: 4 });
       // @ts-expect-error a hoop faces left or right
       row.prop("hoop", { faces: "up" });
-      // @ts-expect-error no built-in backdrop exists yet
-      row.backdrop("plain");
+      // @ts-expect-error nite is not a built-in backdrop
+      row.backdrop("nite");
+      // @ts-expect-error a moon is crescent, full or none
+      row.backdrop("night", { moon: "half" });
+      // @ts-expect-error plain has no parameter named sky
+      row.backdrop("plain", { sky: "#000000" });
     };
     expect(rejected).toBeTypeOf("function");
   });

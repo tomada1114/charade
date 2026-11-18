@@ -135,7 +135,13 @@ export type {
 export { scene } from "./scene/scene.js";
 export type { Scene, SceneOptions } from "./scene/scene.js";
 export type { RandomSource } from "./timeline/random.js";
-export type { BlendMode, Moment, TextAlign } from "./timeline/segments.js";
+export type {
+  BlendMode,
+  DrawMoment,
+  Moment,
+  RowView,
+  TextAlign,
+} from "./timeline/segments.js";
 export type {
   Timeline,
   TimelineRow,

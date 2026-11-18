@@ -102,6 +102,9 @@ export default scene({ rows: 2 }, (stage) => {
 - Never read the clock (`Date`, `performance`) or `Math.random`; `check` rejects both.
   Functions at depths 3 and 4 get `moment.random.float(i)` instead: a number in [0, 1)
   for each whole number `i`, the same on every run.
+- A row is 2.5 units high but its width depends on the canvas and the row count. A depth
+  4 drawing that spans the row reads its edges from `moment.view` (`left`, `right`,
+  `bottom`, `top`, in row units).
 
 ### Depths
 

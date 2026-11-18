@@ -247,6 +247,37 @@ export default scene((stage) => {
   which is how your own action moves one. A placed prop draws behind the actor;
   `place(point, { layer: "front" })` puts it in front, as for a desk the figure sits
   behind.
+- The built-in backdrops are `plain`, `court`, `office`, `hill` and `night`:
+  `row.backdrop("night")` draws behind that row only, and each paints its whole row at
+  every canvas shape and row count. A drawing function's last argument is a
+  `DrawMoment`: the scene time, the segment's progress, a seeded random source, and
+  `view`, the row's visible area in the units the function draws in (`left`, `right`,
+  `bottom`, `top`). A row is always 2.5 units high, but its width follows the canvas and
+  the row count, so a backdrop of your own reads its edges from `view` instead of
+  assuming them.
+
+```ts
+import { defineBackdrop, scene } from "charade";
+
+const duskBackdrop = defineBackdrop({
+  name: "dusk",
+  description: "An orange sky over dark ground, across the whole row.",
+  draw(ctx, _params, { view }) {
+    const width = view.right - view.left;
+    ctx.fillStyle = "#f6c79a";
+    ctx.fillRect(view.left, 0, width, view.top);
+    ctx.fillStyle = "#6b5a4e";
+    ctx.fillRect(view.left, view.bottom, width, -view.bottom);
+  },
+});
+
+export default scene({ rows: 2 }, (stage) => {
+  stage.row(0).backdrop("office");
+  stage.row(0).actor().do("sitDown");
+  stage.row(1).backdrop(duskBackdrop);
+  stage.row(1).actor().do("slump");
+});
+```
 
 ```ts
 import { scene } from "charade";

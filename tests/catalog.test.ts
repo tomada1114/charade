@@ -655,6 +655,11 @@ describe("catalog --images (R4)", () => {
       "action.sitDown.png",
       "action.slump.png",
       "action.throw.png",
+      "backdrop.court.png",
+      "backdrop.hill.png",
+      "backdrop.night.png",
+      "backdrop.office.png",
+      "backdrop.plain.png",
       "expression.angry.png",
       "expression.dejected.png",
       "expression.focused.png",
@@ -674,10 +679,12 @@ describe("catalog --images (R4)", () => {
     ];
     expect(readdirSync(out).sort()).toEqual(names);
     const document = parsed(result);
-    expect(document.images?.map((image) => image.path)).toEqual(
+    // The document lists them by kind, as the catalog does; the folder by name.
+    expect(document.images?.map((image) => image.path).sort()).toEqual(
       names.map((name) => path.join(out, name)),
     );
-    expect(document.items).toHaveLength(19);
+    expect(document.images?.at(-1)?.path).toBe(path.join(out, "backdrop.plain.png"));
+    expect(document.items).toHaveLength(24);
     // An action is a contact sheet; an expression is one frame at the sample's size.
     expect(sizeOf(readFileSync(path.join(out, "action.throw.png")))[0]).toBe(1568);
     expect(sizeOf(readFileSync(path.join(out, "expression.dejected.png")))).toEqual([
