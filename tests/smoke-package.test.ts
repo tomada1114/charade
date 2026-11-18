@@ -48,6 +48,8 @@ vi.mock("../scripts/lib/node-tools.mjs", async (importOriginal) => {
 const {
   checkBinCommands,
   checkDeepImportBlocked,
+  checkEmptyFolderFrame,
+  checkNoTranspiler,
   checkRequireInterop,
   checkRuntimeImports,
   checkTypeScriptConsumers,
@@ -57,6 +59,7 @@ const {
   main,
   publicBinCommands,
   publicSubpaths,
+  TRANSPILER_PACKAGES,
   unexportedEntryPath,
 } = await import("../scripts/smoke-package.mjs");
 const { repoRoot } = await import("../scripts/lib/node-tools.mjs");
@@ -184,6 +187,218 @@ describe("publicBinCommands and checkBinCommands", () => {
         bin: { "": "./dist/cli.js" },
       }),
     ).toThrow(/ERR_SMOKE_BIN_FAILED/);
+  });
+});
+
+/** Create an installed package directory, `name` possibly scoped. */
+function installPackage(nodeModules: string, name: string): string {
+  const dir = path.join(nodeModules, ...name.split("/"));
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(path.join(dir, "package.json"), JSON.stringify({ name }));
+  return dir;
+}
+
+describe("checkNoTranspiler", () => {
+  it("passes for a consumer with no node_modules at all", () => {
+    expect(() => checkNoTranspiler(makeConsumer())).not.toThrow();
+  });
+
+  it("passes when only unrelated packages are installed, nested and scoped", () => {
+    const consumer = makeConsumer();
+    const nodeModules = path.join(consumer, "node_modules");
+    const root = installPackage(nodeModules, "charade");
+    installPackage(path.join(root, "node_modules"), "skia-canvas");
+    installPackage(path.join(root, "node_modules"), "@swc/helpers");
+    mkdirSync(path.join(nodeModules, ".bin"), { recursive: true });
+    writeFileSync(path.join(nodeModules, ".bin", "tsc"), "");
+
+    expect(() => checkNoTranspiler(consumer)).not.toThrow();
+  });
+
+  it.each([
+    ["typescript at the top level", ["typescript"]],
+    ["tsx nested under a dependency", ["charade", "tsx"]],
+    [
+      "scoped @swc/core nested two levels down",
+      ["charade", "skia-canvas", "@swc/core"],
+    ],
+  ])("throws ERR_SMOKE_CONSUMER_TRANSPILER for %s", (_label, chain) => {
+    const consumer = makeConsumer();
+    let nodeModules = path.join(consumer, "node_modules");
+    for (const name of chain) {
+      nodeModules = path.join(installPackage(nodeModules, name), "node_modules");
+    }
+
+    expect(() => checkNoTranspiler(consumer)).toThrow(/ERR_SMOKE_CONSUMER_TRANSPILER/);
+  });
+
+  it("names each forbidden package once, however often it is installed", () => {
+    const consumer = makeConsumer();
+    const nodeModules = path.join(consumer, "node_modules");
+    installPackage(nodeModules, "esbuild");
+    installPackage(
+      path.join(installPackage(nodeModules, "a"), "node_modules"),
+      "esbuild",
+    );
+
+    expect(() => checkNoTranspiler(consumer)).toThrow(/Subject: esbuild\n/);
+  });
+
+  it("forbids the compilers and loaders the issue names", () => {
+    expect(TRANSPILER_PACKAGES).toEqual(
+      expect.arrayContaining([
+        "typescript",
+        "tsx",
+        "ts-node",
+        "esbuild",
+        "@swc/core",
+        "jiti",
+      ]),
+    );
+  });
+});
+
+describe("checkEmptyFolderFrame", () => {
+  const manifest = { bin: { "fixture-package": "./dist/cli.js" } };
+  const png = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0]);
+
+  /** Fake `frame`: write `contents` beside the scene and answer with `result`. */
+  function fakeFrame(result: RunResult, contents?: Buffer): void {
+    runNodeMock.mockImplementation((_script, _args, options) => {
+      if (contents !== undefined && options?.cwd !== undefined) {
+        writeFileSync(path.join(options.cwd, "scene.frame-0.png"), contents);
+      }
+      return result;
+    });
+  }
+
+  it("draws frame 0 of a .ts scene through node_modules/.bin and passes", () => {
+    vi.stubEnv("NODE_OPTIONS", "--import tsx");
+    fakeFrame(
+      {
+        status: 0,
+        stdout: "wrote scene.frame-0.png\n0 errors, 0 warnings\n",
+        // The 24.0–24.11 notice is expected on stderr and must not fail the step.
+        stderr:
+          "charade: Node 24.11.0 strips types as an experiment; use 24.12 or newer.\n",
+      },
+      png,
+    );
+    const consumer = makeConsumer();
+
+    expect(() =>
+      checkEmptyFolderFrame(consumer, "fixture-package", manifest),
+    ).not.toThrow();
+    expect(runNodeMock).toHaveBeenCalledWith(
+      path.join(consumer, "node_modules", ".bin", "fixture-package"),
+      ["frame", "scene.ts", "--at", "0"],
+      expect.objectContaining({ cwd: consumer }),
+    );
+    const env = runNodeMock.mock.calls[0]?.[2]?.env;
+    expect(env).toBeDefined();
+    expect(env).not.toHaveProperty("NODE_OPTIONS");
+    expect(stdoutSpy).toHaveBeenCalledWith(
+      "wrote scene.frame-0.png\n0 errors, 0 warnings\n",
+    );
+  });
+
+  it("writes a scene that imports the package by name and uses only erasable syntax", () => {
+    fakeFrame({ status: 0, stdout: "wrote scene.frame-0.png\n", stderr: "" }, png);
+    const consumer = makeConsumer();
+
+    checkEmptyFolderFrame(consumer, "fixture-package", manifest);
+
+    const source = readFileSync(path.join(consumer, "scene.ts"), "utf8");
+    expect(source).toContain('import { scene } from "fixture-package";');
+    expect(source).toContain("export default scene(");
+    expect(source).not.toMatch(/\benum\b|\bnamespace\b/);
+  });
+
+  it("names the command after the unscoped part of a scoped package", () => {
+    fakeFrame({ status: 0, stdout: "wrote scene.frame-0.png\n", stderr: "" }, png);
+    const consumer = makeConsumer();
+
+    checkEmptyFolderFrame(consumer, "@scope/fixture-package", {
+      bin: { "fixture-package": "./dist/cli.js" },
+    });
+
+    expect(runNodeMock).toHaveBeenCalledWith(
+      path.join(consumer, "node_modules", ".bin", "fixture-package"),
+      expect.any(Array),
+      expect.anything(),
+    );
+  });
+
+  it.each([
+    ["the package has no bin", {}],
+    ["no command carries the package's name", { bin: { other: "./dist/other.js" } }],
+  ])("skips without spawning anything when %s", (_label, skipped) => {
+    const consumer = makeConsumer();
+
+    expect(() =>
+      checkEmptyFolderFrame(consumer, "fixture-package", skipped),
+    ).not.toThrow();
+    expect(runNodeMock).not.toHaveBeenCalled();
+  });
+
+  it("throws ERR_SMOKE_FRAME_FAILED quoting the command's own error code", () => {
+    fakeFrame({
+      status: 2,
+      stdout: "",
+      stderr:
+        "error ERR_LOAD_PACKAGE_NOT_FOUND: Cannot find package fixture-package.\n",
+    });
+    const consumer = makeConsumer();
+
+    expect(() => checkEmptyFolderFrame(consumer, "fixture-package", manifest)).toThrow(
+      /ERR_SMOKE_FRAME_FAILED[\s\S]*exit 2\nerror ERR_LOAD_PACKAGE_NOT_FOUND/,
+    );
+  });
+
+  it("throws ERR_SMOKE_FRAME_MISSING when the command exits 0 but writes no PNG", () => {
+    fakeFrame({ status: 0, stdout: "wrote scene.frame-0.png\n", stderr: "" });
+    const consumer = makeConsumer();
+
+    expect(() => checkEmptyFolderFrame(consumer, "fixture-package", manifest)).toThrow(
+      /ERR_SMOKE_FRAME_MISSING/,
+    );
+  });
+
+  it("does not accept a PNG left over from an earlier run", () => {
+    fakeFrame({ status: 0, stdout: "wrote scene.frame-0.png\n", stderr: "" });
+    const consumer = makeConsumer();
+    writeFileSync(path.join(consumer, "scene.frame-0.png"), png);
+
+    expect(() => checkEmptyFolderFrame(consumer, "fixture-package", manifest)).toThrow(
+      /ERR_SMOKE_FRAME_MISSING/,
+    );
+  });
+
+  it.each([
+    ["an empty file", Buffer.alloc(0)],
+    ["a JPEG", Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0, 0, 0, 0])],
+  ])(
+    "throws ERR_SMOKE_FRAME_NOT_PNG when the file written is %s",
+    (_label, contents) => {
+      fakeFrame(
+        { status: 0, stdout: "wrote scene.frame-0.png\n", stderr: "" },
+        contents,
+      );
+      const consumer = makeConsumer();
+
+      expect(() =>
+        checkEmptyFolderFrame(consumer, "fixture-package", manifest),
+      ).toThrow(/ERR_SMOKE_FRAME_NOT_PNG/);
+    },
+  );
+
+  it("throws ERR_SMOKE_FRAME_UNREPORTED when stdout does not name the PNG", () => {
+    fakeFrame({ status: 0, stdout: "0 errors, 0 warnings\n", stderr: "" }, png);
+    const consumer = makeConsumer();
+
+    expect(() => checkEmptyFolderFrame(consumer, "fixture-package", manifest)).toThrow(
+      /ERR_SMOKE_FRAME_UNREPORTED/,
+    );
   });
 });
 
@@ -607,5 +822,50 @@ describe("main", () => {
     // (an extra Bundler consumer only for the universal-library profile) +
     // the deep-import check.
     expect(runNodeMock).toHaveBeenCalledTimes(isUniversalProfile() ? 6 : 5);
+  });
+
+  it("runs the empty-folder frame step for a package with its own command", () => {
+    const name = (
+      JSON.parse(readFileSync(path.join(repoRoot, "package.json"), "utf8")) as {
+        name?: string;
+      }
+    ).name;
+    if (name === undefined) {
+      throw new Error("this repository's own package.json has no name");
+    }
+    const command = name.split("/").at(-1) ?? name;
+    const tarball = path.join(workspace, "fixture-package-1.0.0.tgz");
+    const packed = {
+      name,
+      version: "1.0.0",
+      bin: { [command]: "./dist/index.js" },
+      exports: { ".": { types: "./dist/index.d.ts", import: "./dist/index.js" } },
+    };
+    writeFixtureTarball(tarball, packed);
+
+    const calls: string[] = [];
+    runNodeMock.mockImplementation((_script, args, options) => {
+      const cwd = options?.cwd ?? "";
+      calls.push(args[0] ?? "");
+      if (args[0] === "install") {
+        const installed = path.join(cwd, "node_modules", name);
+        mkdirSync(installed, { recursive: true });
+        writeFileSync(path.join(installed, "package.json"), JSON.stringify(packed));
+        mkdirSync(path.join(cwd, "node_modules", ".bin"), { recursive: true });
+        writeFileSync(path.join(cwd, "node_modules", ".bin", command), "");
+      }
+      if (args[0] === "frame") {
+        writeFileSync(
+          path.join(cwd, "scene.frame-0.png"),
+          Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+        );
+        return { status: 0, stdout: "wrote scene.frame-0.png\n", stderr: "" };
+      }
+      return { status: 0, stdout: "  ok\n", stderr: "" };
+    });
+
+    expect(main(["--tarball", tarball])).toBe(0);
+    expect(errorSpy).not.toHaveBeenCalled();
+    expect(calls.slice(0, 4)).toEqual(["install", "", "--help", "frame"]);
   });
 });
