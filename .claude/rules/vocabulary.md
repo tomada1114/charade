@@ -94,22 +94,23 @@ never repeats it. This rule holds only what is true inside this repository.
   records a pose of the face channels `build` returns. A prop, backdrop or effect takes
   `at` (default 0) and `duration` (default open-ended).
 - A prop handle has three calls, and the one that started last says where the prop is (a
-  later-recorded one wins a tie; before any, the row's origin). `place(point, { at })`
-  is an open-ended segment that puts the prop's ground point on `point`.
-  `hold(effector, { at, offset })` is an open-ended segment that carries the ground
-  point on a hand or a foot (a foot is its ankle point) of the row's first actor, moved
-  by `offset` with `x` the way the holder faces. `move(to, { at, duration, arc })` is a
-  bounded segment, 0.5 s unless told otherwise, that takes the prop from where it was at
-  its start to `to`: a straight line at constant speed lifted by
-  `4 · arc · p · (1 − p)`, so a thrown thing's parabola is data and serialises; the prop
-  stays on `to` afterwards, and a move counts towards the scene's length. Inside an
-  action's `build` the prop parameter is a view of the handle whose `at` counts from the
-  action's start and whose holder is the actor doing the action. A hold in a row with no
-  actor yet, or inside an action done by another row's actor, is `ERR_SCENE_NO_ACTOR`,
-  one by something that is not an effector `ERR_SCENE_UNKNOWN_EFFECTOR`; neither is
-  recorded. The option types are `HoldOptions` and `MoveOptions`. `clip.mark(name, t)`
-  sets a stated mark in the action's time; a stated mark left unset is a finding and
-  falls on the action's end.
+  later-recorded one wins a tie; before any, the row's origin).
+  `place(point, { at, layer })` is an open-ended segment that puts the prop's ground
+  point on `point`, behind the actor or with `layer: "front"` in front of it
+  (`.claude/rules/engine.md` § Drawing a frame). `hold(effector, { at, offset })` is an
+  open-ended segment that carries the ground point on a hand or a foot (a foot is its
+  ankle point) of the row's first actor, moved by `offset` with `x` the way the holder
+  faces. `move(to, { at, duration, arc })` is a bounded segment, 0.5 s unless told
+  otherwise, that takes the prop from where it was at its start to `to`: a straight line
+  at constant speed lifted by `4 · arc · p · (1 − p)`, so a thrown thing's parabola is
+  data and serialises; the prop stays on `to` afterwards, and a move counts towards the
+  scene's length. Inside an action's `build` the prop parameter is a view of the handle
+  whose `at` counts from the action's start and whose holder is the actor doing the
+  action. A hold in a row with no actor yet, or inside an action done by another row's
+  actor, is `ERR_SCENE_NO_ACTOR`, one by something that is not an effector
+  `ERR_SCENE_UNKNOWN_EFFECTOR`; neither is recorded. The option types are `HoldOptions`
+  and `MoveOptions`. `clip.mark(name, t)` sets a stated mark in the action's time; a
+  stated mark left unset is a finding and falls on the action's end.
 - A name is looked up with `Object.hasOwn` in the built-in map of its kind, and an
   unknown one is `ERR_SCENE_UNKNOWN_<KIND>` with nearest names by the metric the rest of
   the scene layer uses (`src/check/nearest.ts`): Levenshtein distance ignoring case, at
@@ -173,12 +174,12 @@ never repeats it. This rule holds only what is true inside this repository.
   prop's, one call a line. That one frame is the one `catalog --images` draws
   (`sampleFrames` in `src/check/catalog.ts`). An expression's is the sample's last: it
   blends in from the resting face, so frame 0 is the same resting face for every
-  expression and pins nothing. A prop's is frame 0: it draws the same at every frame it
-  is shown, and a sample that gives the prop a `duration` ending with the sample has no
-  prop in its last frame, so that image and record would be empty. The same file runs
-  every action alone at the ends of its parameters, under every mood and at a short and
-  a long `duration`, and fails on any finding but leaving the frame; a joint limit met
-  by a built-in is a defect of the built-in.
+  expression and pins nothing. A prop's is frame 0: a prop with a moving part (`lever`,
+  `cart`) shows its start state there, and a sample that gives the prop a `duration`
+  ending with the sample has no prop in its last frame, so that image and record would
+  be empty. The same file runs every action alone at the ends of its parameters, under
+  every mood and at a short and a long `duration`, and fails on any finding but leaving
+  the frame; a joint limit met by a built-in is a defect of the built-in.
 
 ## The first three actions
 
@@ -205,6 +206,20 @@ These set the conventions the later items follow.
   see, since at the real value a throw short enough to stay in a one-row frame floats.
   `to` defaults to a point inside that frame, so the default throw leaves no warning.
   `bounce` adds one hop of 0.12 past it.
+- A prop that faces a way takes it as an enum of `left` and `right`, named for what
+  faces (`faces` on `hoop` and `laptop`, `handle` on `lever` and `cart`), and its `draw`
+  mirrors the whole drawing with `scale(-1, 1)`. The default suits a figure standing to
+  its left, since vocabulary is written facing right.
+- A prop's parameters are fixed for as long as it is shown and an action writes only its
+  track, so a part that moves is a parameter read against `moment.time`: `lever` starts
+  at `tilt` and turns by `swing` from `swingAt` over `swingFor`, eased, and `cart`'s
+  wheels start at `turn` and turn for a `roll` of that many units from `rollAt` over
+  `rollFor`, at constant speed like the `move` they accompany. Both keep the end state,
+  so one prop shows the whole motion; scene time, not the segment's `progress`, because
+  an open-ended prop has none. `rock` has no moving part. Each description states its
+  part and the points a scene needs: the lever's handle end, the cart's deck at 0.24,
+  the desk's surface at its `height`, the hoop's rim straight above its ground point,
+  the lightbulb's ground point at the tip of its base.
 - An expression other than `neutral` takes `intensity`, 0 to 1, and scales every
   channel's distance from rest by it. `neutral` sets all eight channels, which is what
   lets it clear another expression.

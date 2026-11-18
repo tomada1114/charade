@@ -140,7 +140,7 @@ both when it runs; the types do not.
   body poses, since a reach is solved over what was recorded before it; set the ankle
   angle beside them where the shin tips, so the foot lies flat.
 - An action that moves a prop takes it as a `prop` parameter and calls the handle's
-  `hold(effector, { at, offset })`, `place(point, { at })` and
+  `hold(effector, { at, offset })`, `place(point, { at, layer })` and
   `move(to, { at, duration, arc })`, with `at` in the action's time.
 - Leave alone the joints of an action yours should compose with, and end in a pose the
   next action can start from.

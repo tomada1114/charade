@@ -1177,9 +1177,42 @@ describe("prop.place and prop parameters", () => {
       ball.place({ x: 2, y: 0 });
     });
     expect(segments(built, "prop").slice(1)).toEqual([
-      { start: 1_000_000, end: null, data: { kind: "place", x: 1, y: 0 } },
-      { start: 0, end: null, data: { kind: "place", x: 2, y: 0 } },
+      {
+        start: 1_000_000,
+        end: null,
+        data: { kind: "place", x: 1, y: 0, layer: "behind" },
+      },
+      { start: 0, end: null, data: { kind: "place", x: 2, y: 0, layer: "behind" } },
     ]);
+  });
+
+  it.each([
+    ["front", "front"],
+    ["behind", "behind"],
+    [undefined, "behind"],
+  ])("records a placement's layer %s as %s", (layer, recorded) => {
+    const built = scene({ duration: 1 }, (stage) => {
+      loose(stage.prop(ballProp))["place"]?.({ x: 1, y: 0 }, { layer });
+    });
+    expect(built.findings).toEqual([]);
+    expect(segments(built, "prop")[1]).toMatchObject({ data: { layer: recorded } });
+  });
+
+  it.each([
+    ["frnt", ["front"]],
+    ["FRONT", ["front"]],
+    ["top", []],
+    [1, []],
+    [null, []],
+  ])("reports the layer %s and places the prop behind", (layer, nearest) => {
+    const built = scene({ duration: 1 }, (stage) => {
+      loose(stage.prop(ballProp))["place"]?.({ x: 1, y: 0 }, { layer });
+    });
+    expect(codes(built)).toEqual(["ERR_SCENE_INVALID_VALUE"]);
+    expect(built.findings[0]?.nearest).toEqual(nearest);
+    expect(segments(built, "prop")[1]).toMatchObject({
+      data: { kind: "place", x: 1, y: 0, layer: "behind" },
+    });
   });
 
   it("lets an action move a prop it is given, in the action's time", () => {
@@ -1193,7 +1226,7 @@ describe("prop.place and prop parameters", () => {
     expect(segments(built, "prop")[1]).toEqual({
       start: 2_500_000,
       end: null,
-      data: { kind: "place", x: 0.5, y: 0 },
+      data: { kind: "place", x: 0.5, y: 0, layer: "behind" },
     });
   });
 

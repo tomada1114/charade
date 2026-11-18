@@ -79,7 +79,8 @@ function placementAt(
     return before(now);
   }
   if (motionOf(data) === "place") {
-    return { point: { x, y }, front: false };
+    // Anything but the stated word is behind: a hand-built timeline may lack it.
+    return { point: { x, y }, front: data["layer"] === "front" };
   }
   const start = segment.start * fps;
   const span = segment.end === null ? 0 : segment.end * fps - start;

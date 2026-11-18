@@ -2903,3 +2903,1440 @@ restore
 restore
 restore"
 `;
+
+exports[`the samples > draws the prop cart as recorded > frame 0 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 10800000
+clip
+setTransform 4320000 0 0 -4320000 5400000 9504000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -12500 0
+lineTo 12500 0
+stroke
+restore
+save
+save
+translate 7200 0
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineJoin "round"
+lineCap "round"
+lineWidth 250
+beginPath
+moveTo -3800 2150
+lineTo -5600 5000
+lineTo -6200 5000
+stroke
+lineWidth 150
+fillStyle "#c58b4e"
+beginPath
+rect -4000 1900 8000 500
+rect 3700 2400 300 700
+fill
+stroke
+save
+translate -2500 900
+lineWidth 150
+beginPath
+moveTo 0 0
+lineTo 0 1000
+stroke
+rotate 0
+fillStyle "#ffffff"
+lineWidth 200
+beginPath
+arc 0 0 800 0 62832
+fill
+stroke
+lineWidth 80
+beginPath
+moveTo -800 0
+lineTo 800 0
+moveTo -400 -693
+lineTo 400 693
+moveTo 400 -693
+lineTo -400 693
+stroke
+fillStyle "#111111"
+beginPath
+arc 0 0 180 0 62832
+fill
+restore
+save
+translate 2500 900
+lineWidth 150
+beginPath
+moveTo 0 0
+lineTo 0 1000
+stroke
+rotate 0
+fillStyle "#ffffff"
+lineWidth 200
+beginPath
+arc 0 0 800 0 62832
+fill
+stroke
+lineWidth 80
+beginPath
+moveTo -800 0
+lineTo 800 0
+moveTo -400 -693
+lineTo 400 693
+moveTo 400 -693
+lineTo -400 693
+stroke
+fillStyle "#111111"
+beginPath
+arc 0 0 180 0 62832
+fill
+restore
+restore
+restore
+save
+save
+translate -7500 0
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+scale -10000 10000
+lineJoin "round"
+lineCap "round"
+lineWidth 250
+beginPath
+moveTo -2300 2150
+lineTo -4100 5000
+lineTo -4700 5000
+stroke
+lineWidth 150
+fillStyle "#8fa3ad"
+beginPath
+rect -2500 1900 5000 500
+rect 2200 2400 300 700
+fill
+stroke
+save
+translate -1000 900
+lineWidth 150
+beginPath
+moveTo 0 0
+lineTo 0 1000
+stroke
+rotate 5000
+fillStyle "#ffffff"
+lineWidth 200
+beginPath
+arc 0 0 800 0 62832
+fill
+stroke
+lineWidth 80
+beginPath
+moveTo -800 0
+lineTo 800 0
+moveTo -400 -693
+lineTo 400 693
+moveTo 400 -693
+lineTo -400 693
+stroke
+fillStyle "#111111"
+beginPath
+arc 0 0 180 0 62832
+fill
+restore
+save
+translate 1000 900
+lineWidth 150
+beginPath
+moveTo 0 0
+lineTo 0 1000
+stroke
+rotate 5000
+fillStyle "#ffffff"
+lineWidth 200
+beginPath
+arc 0 0 800 0 62832
+fill
+stroke
+lineWidth 80
+beginPath
+moveTo -800 0
+lineTo 800 0
+moveTo -400 -693
+lineTo 400 693
+moveTo 400 -693
+lineTo -400 693
+stroke
+fillStyle "#111111"
+beginPath
+arc 0 0 180 0 62832
+fill
+restore
+restore
+restore
+save
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineCap "round"
+lineJoin "round"
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 6200
+lineTo 0 7600
+lineTo 0 8200
+stroke
+beginPath
+arc 0 9100 900 0 62832
+fillStyle "#ffffff"
+fill
+stroke
+fillStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -243 9172
+bezierCurveTo -243 9316 -117 9316 -117 9172
+bezierCurveTo -117 9028 -243 9028 -243 9172
+closePath
+fill
+stroke
+beginPath
+moveTo -54 9505
+lineTo -306 9505
+stroke
+beginPath
+moveTo 261 9172
+bezierCurveTo 261 9316 387 9316 387 9172
+bezierCurveTo 387 9028 261 9028 261 9172
+closePath
+fill
+stroke
+beginPath
+moveTo 198 9505
+lineTo 450 9505
+stroke
+beginPath
+moveTo -198 8740
+quadraticCurveTo 72 8740 342 8740
+quadraticCurveTo 72 8740 -198 8740
+closePath
+fill
+stroke
+lineWidth 250
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+restore
+restore"
+`;
+
+exports[`the samples > draws the prop desk as recorded > frame 0 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 10800000
+clip
+setTransform 4320000 0 0 -4320000 5400000 9504000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -12500 0
+lineTo 12500 0
+stroke
+restore
+save
+save
+translate 7200 0
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineJoin "round"
+lineWidth 150
+fillStyle "#c58b4e"
+beginPath
+rect -4000 0 400 3950
+rect 3600 0 400 3950
+rect 1000 2650 3000 1300
+fill
+stroke
+beginPath
+rect -4500 3950 9000 450
+fill
+stroke
+lineCap "round"
+lineWidth 120
+beginPath
+moveTo 2150 3300
+lineTo 2850 3300
+stroke
+restore
+restore
+save
+save
+translate -8000 0
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineJoin "round"
+lineWidth 150
+fillStyle "#b9c4cc"
+beginPath
+rect -2000 0 400 6550
+rect 1600 0 400 6550
+rect 200 5250 1800 1300
+fill
+stroke
+beginPath
+rect -2500 6550 5000 450
+fill
+stroke
+lineCap "round"
+lineWidth 120
+beginPath
+moveTo 750 5900
+lineTo 1450 5900
+stroke
+restore
+restore
+save
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineCap "round"
+lineJoin "round"
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 6200
+lineTo 0 7600
+lineTo 0 8200
+stroke
+beginPath
+arc 0 9100 900 0 62832
+fillStyle "#ffffff"
+fill
+stroke
+fillStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -243 9172
+bezierCurveTo -243 9316 -117 9316 -117 9172
+bezierCurveTo -117 9028 -243 9028 -243 9172
+closePath
+fill
+stroke
+beginPath
+moveTo -54 9505
+lineTo -306 9505
+stroke
+beginPath
+moveTo 261 9172
+bezierCurveTo 261 9316 387 9316 387 9172
+bezierCurveTo 387 9028 261 9028 261 9172
+closePath
+fill
+stroke
+beginPath
+moveTo 198 9505
+lineTo 450 9505
+stroke
+beginPath
+moveTo -198 8740
+quadraticCurveTo 72 8740 342 8740
+quadraticCurveTo 72 8740 -198 8740
+closePath
+fill
+stroke
+lineWidth 250
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+restore
+restore"
+`;
+
+exports[`the samples > draws the prop hoop as recorded > frame 0 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 10800000
+clip
+setTransform 4320000 0 0 -4320000 5400000 9504000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -12500 0
+lineTo 12500 0
+stroke
+restore
+save
+save
+translate 6500 0
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineCap "round"
+lineJoin "round"
+lineWidth 300
+beginPath
+moveTo 3400 0
+lineTo 5000 0
+moveTo 4200 0
+lineTo 4200 16000
+lineTo 1900 16000
+stroke
+lineWidth 150
+fillStyle "#ffffff"
+beginPath
+rect 1500 14400 400 3600
+fill
+stroke
+lineWidth 60
+beginPath
+moveTo -1300 15000
+lineTo -358 13300
+moveTo -1300 15000
+lineTo -715 13300
+moveTo -650 15000
+lineTo 0 13300
+moveTo -650 15000
+lineTo -715 13300
+moveTo 0 15000
+lineTo 358 13300
+moveTo 0 15000
+lineTo -358 13300
+moveTo 650 15000
+lineTo 715 13300
+moveTo 650 15000
+lineTo 0 13300
+moveTo 1300 15000
+lineTo 715 13300
+moveTo 1300 15000
+lineTo 358 13300
+moveTo -715 13300
+lineTo 715 13300
+stroke
+strokeStyle "#e4572e"
+lineWidth 220
+beginPath
+ellipse 0 15000 1300 280 0 0 62832
+moveTo 1300 15000
+lineTo 1500 15000
+stroke
+restore
+restore
+save
+save
+translate -7000 0
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+scale -10000 10000
+lineCap "round"
+lineJoin "round"
+lineWidth 300
+beginPath
+moveTo 3400 0
+lineTo 5000 0
+moveTo 4200 0
+lineTo 4200 11000
+lineTo 1900 11000
+stroke
+lineWidth 150
+fillStyle "#ffffff"
+beginPath
+rect 1500 9400 400 3600
+fill
+stroke
+lineWidth 60
+beginPath
+moveTo -1300 10000
+lineTo -358 8300
+moveTo -1300 10000
+lineTo -715 8300
+moveTo -650 10000
+lineTo 0 8300
+moveTo -650 10000
+lineTo -715 8300
+moveTo 0 10000
+lineTo 358 8300
+moveTo 0 10000
+lineTo -358 8300
+moveTo 650 10000
+lineTo 715 8300
+moveTo 650 10000
+lineTo 0 8300
+moveTo 1300 10000
+lineTo 715 8300
+moveTo 1300 10000
+lineTo 358 8300
+moveTo -715 8300
+lineTo 715 8300
+stroke
+strokeStyle "#e4572e"
+lineWidth 220
+beginPath
+ellipse 0 10000 1300 280 0 0 62832
+moveTo 1300 10000
+lineTo 1500 10000
+stroke
+restore
+restore
+save
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineCap "round"
+lineJoin "round"
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 6200
+lineTo 0 7600
+lineTo 0 8200
+stroke
+beginPath
+arc 0 9100 900 0 62832
+fillStyle "#ffffff"
+fill
+stroke
+fillStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -243 9172
+bezierCurveTo -243 9316 -117 9316 -117 9172
+bezierCurveTo -117 9028 -243 9028 -243 9172
+closePath
+fill
+stroke
+beginPath
+moveTo -54 9505
+lineTo -306 9505
+stroke
+beginPath
+moveTo 261 9172
+bezierCurveTo 261 9316 387 9316 387 9172
+bezierCurveTo 387 9028 261 9028 261 9172
+closePath
+fill
+stroke
+beginPath
+moveTo 198 9505
+lineTo 450 9505
+stroke
+beginPath
+moveTo -198 8740
+quadraticCurveTo 72 8740 342 8740
+quadraticCurveTo 72 8740 -198 8740
+closePath
+fill
+stroke
+lineWidth 250
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+restore
+restore"
+`;
+
+exports[`the samples > draws the prop ladder as recorded > frame 0 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 10800000
+clip
+setTransform 4320000 0 0 -4320000 5400000 9504000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -12500 0
+lineTo 12500 0
+stroke
+restore
+save
+save
+translate 6500 0
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+transform 10000 0 1206 10000 0 0
+lineJoin "round"
+lineWidth 120
+fillStyle "#c58b4e"
+beginPath
+rect -1500 1880 3000 240
+rect -1500 3880 3000 240
+rect -1500 5880 3000 240
+rect -1500 7880 3000 240
+rect -1500 9880 3000 240
+rect -1500 11880 3000 240
+rect -1500 13880 3000 240
+fill
+stroke
+lineWidth 150
+beginPath
+rect -1680 0 360 15000
+rect 1320 0 360 15000
+fill
+stroke
+restore
+restore
+save
+save
+translate -6000 0
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+transform 10000 0 -3093 10000 0 0
+lineJoin "round"
+lineWidth 120
+fillStyle "#b9c4cc"
+beginPath
+rect -1500 1880 3000 240
+rect -1500 3880 3000 240
+rect -1500 5880 3000 240
+fill
+stroke
+lineWidth 150
+beginPath
+rect -1680 0 360 8000
+rect 1320 0 360 8000
+fill
+stroke
+restore
+restore
+save
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineCap "round"
+lineJoin "round"
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 6200
+lineTo 0 7600
+lineTo 0 8200
+stroke
+beginPath
+arc 0 9100 900 0 62832
+fillStyle "#ffffff"
+fill
+stroke
+fillStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -243 9172
+bezierCurveTo -243 9316 -117 9316 -117 9172
+bezierCurveTo -117 9028 -243 9028 -243 9172
+closePath
+fill
+stroke
+beginPath
+moveTo -54 9505
+lineTo -306 9505
+stroke
+beginPath
+moveTo 261 9172
+bezierCurveTo 261 9316 387 9316 387 9172
+bezierCurveTo 387 9028 261 9028 261 9172
+closePath
+fill
+stroke
+beginPath
+moveTo 198 9505
+lineTo 450 9505
+stroke
+beginPath
+moveTo -198 8740
+quadraticCurveTo 72 8740 342 8740
+quadraticCurveTo 72 8740 -198 8740
+closePath
+fill
+stroke
+lineWidth 250
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+restore
+restore"
+`;
+
+exports[`the samples > draws the prop laptop as recorded > frame 0 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 10800000
+clip
+setTransform 4320000 0 0 -4320000 5400000 9504000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -12500 0
+lineTo 12500 0
+stroke
+restore
+save
+save
+translate 5000 0
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineJoin "round"
+lineWidth 120
+fillStyle "#b9c4cc"
+beginPath
+moveTo -1410 240
+lineTo 1410 240
+quadraticCurveTo 1500 240 1500 150
+lineTo 1500 90
+quadraticCurveTo 1500 0 1410 0
+lineTo -1410 0
+quadraticCurveTo -1500 0 -1500 90
+lineTo -1500 150
+quadraticCurveTo -1500 240 -1410 240
+closePath
+fill
+stroke
+translate 1500 240
+rotate 12416
+beginPath
+moveTo 90 0
+lineTo 2910 0
+quadraticCurveTo 3000 0 3000 -90
+lineTo 3000 -150
+quadraticCurveTo 3000 -240 2910 -240
+lineTo 90 -240
+quadraticCurveTo 0 -240 0 -150
+lineTo 0 -90
+quadraticCurveTo 0 0 90 0
+closePath
+fill
+stroke
+fillStyle "#7fd0ff"
+beginPath
+rect 240 -40 2520 120
+fill
+restore
+restore
+save
+save
+translate -7000 0
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+scale -10000 10000
+lineJoin "round"
+lineWidth 120
+fillStyle "#555b61"
+beginPath
+moveTo -2350 400
+lineTo 2350 400
+quadraticCurveTo 2500 400 2500 250
+lineTo 2500 150
+quadraticCurveTo 2500 0 2350 0
+lineTo -2350 0
+quadraticCurveTo -2500 0 -2500 150
+lineTo -2500 250
+quadraticCurveTo -2500 400 -2350 400
+closePath
+fill
+stroke
+translate 2500 400
+rotate 19416
+beginPath
+moveTo 150 0
+lineTo 4850 0
+quadraticCurveTo 5000 0 5000 -150
+lineTo 5000 -250
+quadraticCurveTo 5000 -400 4850 -400
+lineTo 150 -400
+quadraticCurveTo 0 -400 0 -250
+lineTo 0 -150
+quadraticCurveTo 0 0 150 0
+closePath
+fill
+stroke
+fillStyle "#7fd0ff"
+beginPath
+rect 400 -40 4200 120
+fill
+restore
+restore
+save
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineCap "round"
+lineJoin "round"
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 6200
+lineTo 0 7600
+lineTo 0 8200
+stroke
+beginPath
+arc 0 9100 900 0 62832
+fillStyle "#ffffff"
+fill
+stroke
+fillStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -243 9172
+bezierCurveTo -243 9316 -117 9316 -117 9172
+bezierCurveTo -117 9028 -243 9028 -243 9172
+closePath
+fill
+stroke
+beginPath
+moveTo -54 9505
+lineTo -306 9505
+stroke
+beginPath
+moveTo 261 9172
+bezierCurveTo 261 9316 387 9316 387 9172
+bezierCurveTo 387 9028 261 9028 261 9172
+closePath
+fill
+stroke
+beginPath
+moveTo 198 9505
+lineTo 450 9505
+stroke
+beginPath
+moveTo -198 8740
+quadraticCurveTo 72 8740 342 8740
+quadraticCurveTo 72 8740 -198 8740
+closePath
+fill
+stroke
+lineWidth 250
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+restore
+restore"
+`;
+
+exports[`the samples > draws the prop lever as recorded > frame 0 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 10800000
+clip
+setTransform 4320000 0 0 -4320000 5400000 9504000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -12500 0
+lineTo 12500 0
+stroke
+restore
+save
+save
+translate 9000 0
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineJoin "round"
+lineWidth 150
+fillStyle "#8d8d86"
+beginPath
+moveTo -1000 0
+lineTo 1000 0
+lineTo 0 1200
+closePath
+fill
+stroke
+translate 0 1400
+rotate -4000
+fillStyle "#c58b4e"
+beginPath
+rect -9000 -200 12000 400
+fill
+stroke
+restore
+restore
+save
+save
+translate -8000 0
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+scale -10000 10000
+lineJoin "round"
+lineWidth 150
+fillStyle "#8d8d86"
+beginPath
+moveTo -1000 0
+lineTo 1000 0
+lineTo 0 1200
+closePath
+fill
+stroke
+translate 0 1400
+rotate 2000
+fillStyle "#8fa3ad"
+beginPath
+rect -6000 -200 8000 400
+fill
+stroke
+restore
+restore
+save
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineCap "round"
+lineJoin "round"
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 6200
+lineTo 0 7600
+lineTo 0 8200
+stroke
+beginPath
+arc 0 9100 900 0 62832
+fillStyle "#ffffff"
+fill
+stroke
+fillStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -243 9172
+bezierCurveTo -243 9316 -117 9316 -117 9172
+bezierCurveTo -117 9028 -243 9028 -243 9172
+closePath
+fill
+stroke
+beginPath
+moveTo -54 9505
+lineTo -306 9505
+stroke
+beginPath
+moveTo 261 9172
+bezierCurveTo 261 9316 387 9316 387 9172
+bezierCurveTo 387 9028 261 9028 261 9172
+closePath
+fill
+stroke
+beginPath
+moveTo 198 9505
+lineTo 450 9505
+stroke
+beginPath
+moveTo -198 8740
+quadraticCurveTo 72 8740 342 8740
+quadraticCurveTo 72 8740 -198 8740
+closePath
+fill
+stroke
+lineWidth 250
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+restore
+restore"
+`;
+
+exports[`the samples > draws the prop lightbulb as recorded > frame 0 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 10800000
+clip
+setTransform 4320000 0 0 -4320000 5400000 9504000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -12500 0
+lineTo 12500 0
+stroke
+restore
+save
+save
+translate 0 11500
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineJoin "round"
+lineCap "round"
+strokeStyle "#ffd84d"
+lineWidth 144
+beginPath
+moveTo 837 1275
+lineTo 1131 981
+moveTo 1184 2112
+lineTo 1600 2112
+moveTo 837 2949
+lineTo 1131 3243
+moveTo 0 3296
+lineTo 0 3712
+moveTo -837 2949
+lineTo -1131 3243
+moveTo -1184 2112
+lineTo -1600 2112
+moveTo -837 1275
+lineTo -1131 981
+stroke
+strokeStyle "#111111"
+lineWidth 120
+fillStyle "#ffd84d"
+beginPath
+moveTo -352 896
+bezierCurveTo -352 1280 -896 1440 -896 2112
+ellipse 0 2112 896 896 0 -31416 -62832 true
+bezierCurveTo 896 1440 352 1280 352 896
+closePath
+fill
+stroke
+lineWidth 70
+beginPath
+moveTo -160 896
+lineTo -224 1728
+lineTo -96 1504
+lineTo 0 1760
+lineTo 96 1504
+lineTo 224 1728
+lineTo 160 896
+stroke
+lineWidth 120
+fillStyle "#9a9a94"
+beginPath
+moveTo -352 896
+lineTo 352 896
+lineTo 352 320
+lineTo 160 0
+lineTo -160 0
+lineTo -352 320
+closePath
+fill
+stroke
+lineWidth 70
+beginPath
+moveTo -352 704
+lineTo 352 704
+moveTo -352 512
+lineTo 352 512
+stroke
+restore
+restore
+save
+save
+translate 7500 6000
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineJoin "round"
+lineCap "round"
+lineWidth 120
+fillStyle "#ffffff"
+beginPath
+moveTo -550 1400
+bezierCurveTo -550 2000 -1400 2250 -1400 3300
+ellipse 0 3300 1400 1400 0 -31416 -62832 true
+bezierCurveTo 1400 2250 550 2000 550 1400
+closePath
+fill
+stroke
+lineWidth 70
+beginPath
+moveTo -250 1400
+lineTo -350 2700
+lineTo -150 2350
+lineTo 0 2750
+lineTo 150 2350
+lineTo 350 2700
+lineTo 250 1400
+stroke
+lineWidth 120
+fillStyle "#9a9a94"
+beginPath
+moveTo -550 1400
+lineTo 550 1400
+lineTo 550 500
+lineTo 250 0
+lineTo -250 0
+lineTo -550 500
+closePath
+fill
+stroke
+lineWidth 70
+beginPath
+moveTo -550 1100
+lineTo 550 1100
+moveTo -550 800
+lineTo 550 800
+stroke
+restore
+restore
+save
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineCap "round"
+lineJoin "round"
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 6200
+lineTo 0 7600
+lineTo 0 8200
+stroke
+beginPath
+arc 0 9100 900 0 62832
+fillStyle "#ffffff"
+fill
+stroke
+fillStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -243 9172
+bezierCurveTo -243 9316 -117 9316 -117 9172
+bezierCurveTo -117 9028 -243 9028 -243 9172
+closePath
+fill
+stroke
+beginPath
+moveTo -54 9505
+lineTo -306 9505
+stroke
+beginPath
+moveTo 261 9172
+bezierCurveTo 261 9316 387 9316 387 9172
+bezierCurveTo 387 9028 261 9028 261 9172
+closePath
+fill
+stroke
+beginPath
+moveTo 198 9505
+lineTo 450 9505
+stroke
+beginPath
+moveTo -198 8740
+quadraticCurveTo 72 8740 342 8740
+quadraticCurveTo 72 8740 -198 8740
+closePath
+fill
+stroke
+lineWidth 250
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+restore
+restore"
+`;
+
+exports[`the samples > draws the prop rock as recorded > frame 0 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 10800000
+clip
+setTransform 4320000 0 0 -4320000 5400000 9504000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -12500 0
+lineTo 12500 0
+stroke
+restore
+save
+save
+translate 7000 0
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineJoin "round"
+lineCap "round"
+lineWidth 150
+fillStyle "#a3a39b"
+beginPath
+moveTo -3150 0
+quadraticCurveTo -3710 1400 -2800 2590
+quadraticCurveTo -2380 4340 -630 4970
+quadraticCurveTo 1190 5670 2450 3990
+quadraticCurveTo 3710 2170 3150 0
+closePath
+fill
+stroke
+lineWidth 80
+beginPath
+moveTo -1540 3570
+quadraticCurveTo -630 2660 -1050 1400
+moveTo 910 4480
+quadraticCurveTo 1540 3360 1120 2380
+moveTo 1120 2380
+quadraticCurveTo 1960 1820 2100 840
+stroke
+restore
+restore
+save
+save
+translate -6000 0
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineJoin "round"
+lineCap "round"
+lineWidth 150
+fillStyle "#c9b79c"
+beginPath
+moveTo -1350 0
+quadraticCurveTo -1590 600 -1200 1110
+quadraticCurveTo -1020 1860 -270 2130
+quadraticCurveTo 510 2430 1050 1710
+quadraticCurveTo 1590 930 1350 0
+closePath
+fill
+stroke
+lineWidth 80
+beginPath
+moveTo -660 1530
+quadraticCurveTo -270 1140 -450 600
+moveTo 390 1920
+quadraticCurveTo 660 1440 480 1020
+moveTo 480 1020
+quadraticCurveTo 840 780 900 360
+stroke
+restore
+restore
+save
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineCap "round"
+lineJoin "round"
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 6200
+lineTo 0 7600
+lineTo 0 8200
+stroke
+beginPath
+arc 0 9100 900 0 62832
+fillStyle "#ffffff"
+fill
+stroke
+fillStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -243 9172
+bezierCurveTo -243 9316 -117 9316 -117 9172
+bezierCurveTo -117 9028 -243 9028 -243 9172
+closePath
+fill
+stroke
+beginPath
+moveTo -54 9505
+lineTo -306 9505
+stroke
+beginPath
+moveTo 261 9172
+bezierCurveTo 261 9316 387 9316 387 9172
+bezierCurveTo 387 9028 261 9028 261 9172
+closePath
+fill
+stroke
+beginPath
+moveTo 198 9505
+lineTo 450 9505
+stroke
+beginPath
+moveTo -198 8740
+quadraticCurveTo 72 8740 342 8740
+quadraticCurveTo 72 8740 -198 8740
+closePath
+fill
+stroke
+lineWidth 250
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+restore
+restore"
+`;

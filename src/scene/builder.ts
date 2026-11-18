@@ -131,7 +131,8 @@ const ACTOR_OPTIONS = ["name"];
 const ACTION_OPTIONS = [...TIMING, "mood", "blend", "mode"];
 const EXPRESS_OPTIONS = [...TIMING, "blend", "mode"];
 const ITEM_OPTIONS: readonly string[] = TIMING;
-const PLACE_OPTIONS = ["at"];
+const PLACE_OPTIONS = ["at", "layer"];
+const PROP_LAYERS = ["behind", "front"] as const;
 const HOLD_OPTIONS = ["at", "offset"];
 const MOVE_OPTIONS = [...TIMING, "arc"];
 const LABEL_OPTIONS = [...TIMING, "x", "y", "size", "align", "width", "name"];
@@ -1438,12 +1439,28 @@ export class SceneBuilder {
     const where: Where = { row: prop.row, target: prop.id };
     const bag = this.#options(options, PLACE_OPTIONS, "place", where);
     const start = (this.#seconds(bag["at"], "place's options.at", where) ?? 0) + offset;
+    const { layer = "behind" } = bag;
+    const front = layer === "front";
+    if (!front && layer !== "behind") {
+      this.#report(
+        "ERR_SCENE_INVALID_VALUE",
+        "place's options.layer is not a layer; behind was used.",
+        `Use one of: ${PROP_LAYERS.join(", ")}.`,
+        where,
+        { nearest: typeof layer === "string" ? nearestNames(layer, PROP_LAYERS) : [] },
+      );
+    }
     const target = this.#point(point, "place", where);
     if (target !== undefined) {
       prop.track.segments.push({
         start,
         end: null,
-        data: { kind: "place", x: target.x, y: target.y },
+        data: {
+          kind: "place",
+          x: target.x,
+          y: target.y,
+          layer: front ? "front" : "behind",
+        },
       });
     }
     return spanOf(start - offset, null);

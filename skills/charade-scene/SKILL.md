@@ -88,10 +88,12 @@ export default scene({ rows: 2 }, (stage) => {
   origin and facing right. A row shows `y` from -0.3 to 2.2 and `x` out to ±(1.25 × rows
   × width ÷ height): ±1.25 for one square row, ±2.5 for two.
 - A prop is `row.prop(name, params)`. It stands on the row's origin, under the actor,
-  until its handle says otherwise: `place(point, { at })`,
+  until its handle says otherwise: `place(point, { at, layer })`,
   `hold(effector, { at, offset })` or `move(to, { at, duration, arc })`. Create the
-  row's actor before a `hold`. An action that uses a prop takes the handle as a
-  parameter; if it starts with the prop in a hand, `hold` it there from the start.
+  row's actor before a `hold`. A placed prop draws behind the actor; `layer: "front"`
+  puts it in front, as for a desk the figure sits at. An action that uses a prop takes
+  the handle as a parameter; if it starts with the prop in a hand, `hold` it there from
+  the start.
 - Erasable TypeScript only: no `enum`, no parameter properties, no `namespace`. Loops,
   functions and arithmetic are fine. A helper file is imported with its `.ts` extension.
 - If the folder has a `package.json` without `"type": "module"`, name the scene

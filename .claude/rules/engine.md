@@ -346,14 +346,15 @@ change to the shape raises the version.
 - A segment's `data` is an object with a `kind`: `pose` (channels, mode, and the three
   phases in microseconds), `reach` (effector, target, phases), `drive` (the function,
   the channel names read at `t = 0`, mode, blend), `wait`, `draw` (the callback),
-  `place` (a prop's ground point `x`, `y`), `hold` (the effector, the holding actor's
-  track `name` and `occurrence`, the `offset`), `move` (where it arrives, `x`, `y`, and
-  its `arc`), `label` (text, `x`, `y`, `size`, `align`, and `width` or `null`), `say`
-  (text, the speaking actor's track `name` and `occurrence`, `size`, `width`), or
-  `prop`, `backdrop` and `effect` (name, definition or `null`, resolved params). An
-  action records its clip's calls on the actor's track as ordinary segments, and an
-  expression records a `pose`. These live in `src/timeline/segments.ts`. Nothing is
-  released yet, so this shape is still JSON version 1.
+  `place` (a prop's ground point `x`, `y` and its `layer`), `hold` (the effector, the
+  holding actor's track `name` and `occurrence`, the `offset`), `move` (where it
+  arrives, `x`, `y`, and its `arc`), `label` (text, `x`, `y`, `size`, `align`, and
+  `width` or `null`), `say` (text, the speaking actor's track `name` and `occurrence`,
+  `size`, `width`), or `prop`, `backdrop` and `effect` (name, definition or `null`,
+  resolved params). An action records its clip's calls on the actor's track as ordinary
+  segments, and an expression records a `pose`. These live in
+  `src/timeline/segments.ts`. Nothing is released yet, so this shape is still JSON
+  version 1.
 
 ## The drawing interface
 
@@ -470,12 +471,20 @@ change to the shape raises the version.
   effect's `draw` at every frame on a recording context, as it does a free drawing's, so
   a clock or random read or a failure is a finding named after the item; a held prop's
   holder's reads stay the holder's.
-- With no layering option yet, a prop's slot follows what it is doing: behind the actor
-  while it stands where it was placed or is carried by a far (`L`) hand or foot, in
-  front while a near (`R`) one carries it or it is on a `move`, and after one. So a box
-  to sit on is behind the figure and a ball in the throwing hand in front of it; an
-  option can override this later without a break. Props in front draw before the row's
-  effects and free drawings.
+- A prop's slot follows what it is doing: behind the actor while it stands where it was
+  placed or is carried by a far (`L`) hand or foot, in front while a near (`R`) one
+  carries it or it is on a `move`, and after one. So a box to sit on is behind the
+  figure and a ball in the throwing hand in front of it. Props in front draw before the
+  row's effects and free drawings.
+- That rule alone never puts a standing prop in front, which a desk the figure sits
+  behind needs, so `place` takes `layer`, `"behind"` (the default) or `"front"`: the
+  side the prop draws on while it stands on that placement. It is an option of the
+  placement, not of `row.prop`, whose bag is shared with the item's own parameters and
+  would have taken `layer` from every definition as a reserved name. It is recorded on
+  the `place` segment, always, and anything but `"front"` there draws behind; another
+  value given by a scene is `ERR_SCENE_INVALID_VALUE` and behind is used. A hold still
+  follows its limb and a move is still in front: neither has the option yet, and either
+  can take it later without a break.
 - The text slot holds the row's labels and bubbles, in the order their tracks were made.
   The default size is 0.16 units, a little under the head's 0.18: 17 px on four 1080 px
   rows, and 14 px in a contact sheet cell of a one-row 16:9 scene. A line is 1.35 sizes
