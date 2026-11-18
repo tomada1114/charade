@@ -79,6 +79,13 @@ recorded sample is how an unintended change in appearance fails a test.
   `ERR_CLI_` (usage), `ERR_LOAD_` (loading a scene), `ERR_SCENE_` (authoring calls),
   `ERR_DEFINE_` (definitions), `ERR_CHECK_` (computed over the timeline), `ERR_RENDER_`,
   and `ERR_ENV_` (ffmpeg, fonts, the native binary).
+- A name given to `catalog` that is no item's is `ERR_CLI_UNKNOWN_ITEM`, in the usage
+  area with exit 2, not an `ERR_SCENE_UNKNOWN_<KIND>` finding: the name is an argument
+  of the command, no scene ran, and the command cannot do what was asked. It carries
+  `nearest`, each as `<kind>.<name>`, which `--json` prints as `error.nearest`.
+- A definition's sample that throws is `ERR_DEFINE_SAMPLE_FAILED`, thrown, exit 2; a
+  definition without a sample under `check --defs` is the warning finding
+  `ERR_DEFINE_NO_SAMPLE`. Both are faults of a definition, so they are in its area.
 - skia-canvas or its native binary failing to load throws `SkiaUnavailableError`
   (`ERR_ENV_SKIA_UNAVAILABLE`, internal to `src/export/raster.ts`), carrying a `fix`
   line and the loader's error as `cause`; the code is not chosen by skia's message text.

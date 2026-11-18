@@ -560,6 +560,80 @@ describe("the built CLI in a child process", () => {
     expect(result.status).toBe(1);
   });
 
+  it("loads a module of definitions for catalog and check (#30 R3)", () => {
+    write(
+      work,
+      "items.ts",
+      [
+        'import { defineAction, defineProp, type Stage } from "charade";',
+        "export const nodAction = defineAction({",
+        '  name: "nod",',
+        '  description: "Nods once.",',
+        '  params: { depth: { type: "number", default: 0.4, min: 0, max: 0.9, doc: "How far." } },',
+        "  build(clip, { depth }) {",
+        "    clip.pose({ neck: depth }, { duration: 0.3 });",
+        "  },",
+        "  sample(stage: Stage): void {",
+        "    stage.actor().do(nodAction);",
+        "  },",
+        "});",
+        "export const overNodAction = defineAction({",
+        '  name: "overNod",',
+        '  description: "Nods past the neck\'s limit.",',
+        "  build(clip) {",
+        "    clip.pose({ neck: 1.5 }, { duration: 0.3 });",
+        "  },",
+        "  sample(stage: Stage): void {",
+        "    stage.actor().do(overNodAction);",
+        "  },",
+        "});",
+        "export default defineProp({",
+        '  name: "dot",',
+        '  description: "A dot.",',
+        "  draw(ctx) {",
+        "    ctx.fillRect(0, 0, 0.1, 0.1);",
+        "  },",
+        "});",
+        "export const helper = 1;",
+        "",
+      ].join("\n"),
+    );
+    const listed = run("catalog", "--defs", "items.ts", "--json");
+    expect(listed.status).toBe(0);
+    const catalog = JSON.parse(listed.stdout) as {
+      items: { kind: string; name: string; params: Record<string, unknown> }[];
+    };
+    expect(catalog.items.map(({ kind, name }) => `${kind} ${name}`)).toEqual([
+      "action nod",
+      "action overNod",
+      "prop dot",
+    ]);
+    expect(catalog.items[0]?.params["depth"]).toMatchObject({ default: 0.4, max: 0.9 });
+
+    const checked = run("check", "--defs", "items.ts", "--json");
+    expect(checked.status).toBe(1);
+    const report = JSON.parse(checked.stdout) as {
+      items: { name: string; findings: { code: string; joint?: string }[] }[];
+    };
+    expect(
+      report.items.map(({ name, findings }) => [
+        name,
+        findings.map(({ code }) => code),
+      ]),
+    ).toEqual([
+      ["nod", []],
+      ["overNod", ["ERR_CHECK_JOINT_LIMIT"]],
+      ["dot", ["ERR_DEFINE_NO_SAMPLE"]],
+    ]);
+
+    write(work, "empty.ts", "export const helper = 1;\n");
+    const empty = run("catalog", "--defs", "empty.ts", "--json");
+    expect(empty.status).toBe(2);
+    expect(JSON.parse(empty.stdout)).toMatchObject({
+      error: { code: "ERR_LOAD_NO_DEFINITIONS" },
+    });
+  });
+
   it("prints no version notice in a folder without charade", () => {
     write(work, "scene.ts", SCENE);
     const result = check("scene.ts");

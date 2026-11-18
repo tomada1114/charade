@@ -12,6 +12,7 @@ const fixtures = "tests/fixtures/**";
 // functions directly, and agents.test.ts only reads the committed tier files.
 const automationTests = [
   "tests/bootstrap.test.ts",
+  "tests/catalog.test.ts",
   "tests/check-attw.test.ts",
   "tests/check-release-status.test.ts",
   "tests/check-staged.test.ts",

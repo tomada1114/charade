@@ -112,8 +112,8 @@ describe("usage errors (R1)", () => {
       code: "ERR_CLI_UNEXPECTED_ARGUMENT",
     },
     {
-      label: "two catalog modules",
-      argv: ["catalog", "a.ts", "b.ts"],
+      label: "two catalog names",
+      argv: ["catalog", "sitDown", "slump"],
       code: "ERR_CLI_UNEXPECTED_ARGUMENT",
     },
     {
@@ -255,15 +255,15 @@ describe("commands", () => {
   });
 
   it("runs catalog without loading a scene", async () => {
-    const result = await runCli(["catalog", "--images"], quiet);
-    expect(result.exitCode).toBe(2);
-    expect(result.stderr).toContain("ERR_CLI_NOT_IMPLEMENTED");
+    const result = await runCli(["catalog"], quiet);
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain("action sitDown — ");
   });
 
-  it("reports a stub as text without --json", async () => {
-    const result = await runCli(["catalog"], quiet);
+  it("reports a failure as text without --json", async () => {
+    const result = await runCli(["catalog", "sitDwon"], quiet);
     expect(result.stdout).toBe("");
-    expect(result.stderr).toMatch(/^error ERR_CLI_NOT_IMPLEMENTED: .+\n {2}fix: .+\n$/);
+    expect(result.stderr).toMatch(/^error ERR_CLI_UNKNOWN_ITEM: .+\n {2}fix: .+\n$/);
   });
 
   it("passes a loader's own load error through with its code", async () => {
