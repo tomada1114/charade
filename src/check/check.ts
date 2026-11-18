@@ -1,7 +1,7 @@
 import { facingOf } from "../draw/figure.js";
 import { drawItem, drawTrack, idOf } from "../draw/frame.js";
 import { propPlacement } from "../draw/prop.js";
-import { GROUND_UNITS, type RowLayout, ROW_UNITS, rowLayout } from "../draw/layout.js";
+import { type RowLayout, rowLayout, rowView } from "../draw/layout.js";
 import {
   isTextTrack,
   type PlacedText,
@@ -418,11 +418,8 @@ function violationsAt(
     if (layout === undefined) {
       return;
     }
-    const area: Area = {
-      halfWidth: layout.units / 2,
-      bottom: -GROUND_UNITS,
-      top: ROW_UNITS - GROUND_UNITS,
-    };
+    const view = rowView(layout);
+    const area: Area = { halfWidth: view.right, bottom: view.bottom, top: view.top };
     for (const track of timelineRow.tracks) {
       const id = idOf(row, track);
       // The author's functions run only inside `watched`, where a clock or random
@@ -450,11 +447,11 @@ function violationsAt(
         }
       } else if (track.kind === "draw") {
         watched(() => {
-          drawTrack(new RecordingContext(), timeline, row, track, frame);
+          drawTrack(new RecordingContext(), timeline, layout, track, frame);
         });
       } else if (track.kind === "backdrop" || track.kind === "effect") {
         watched(() => {
-          drawItem(new RecordingContext(), timeline, row, track, frame);
+          drawItem(new RecordingContext(), timeline, layout, track, frame);
         });
       } else if (track.kind === "prop") {
         // A held prop composes its holder's pose, which calls the holder's functions.
@@ -463,7 +460,14 @@ function violationsAt(
         if (placed !== undefined) {
           found.push(...offFrame(area, placed.point, placed.point, row, id));
           watched(() => {
-            drawItem(new RecordingContext(), timeline, row, track, frame, placed.point);
+            drawItem(
+              new RecordingContext(),
+              timeline,
+              layout,
+              track,
+              frame,
+              placed.point,
+            );
           });
         }
       } else {

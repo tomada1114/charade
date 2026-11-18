@@ -3,12 +3,12 @@ import { poseAtFrame } from "../rig/compose.js";
 import type { Point } from "../rig/kinematics.js";
 import { builtinBackdrops, builtinEffects, builtinProps } from "../scene/builtins.js";
 import { randomSource } from "../timeline/random.js";
-import type { Moment } from "../timeline/segments.js";
+import type { DrawMoment } from "../timeline/segments.js";
 import { frameInSegment, frameSeconds, MICROS_PER_SECOND } from "../timeline/time.js";
 import type { Timeline, TimelineTrack } from "../timeline/timeline.js";
 import type { DrawingContext, ShapeContext } from "./context.js";
 import { drawFigure, facingOf, FIGURE_LINE, INK, PAPER } from "./figure.js";
-import { type RowLayout, rowLayout, rowTransform } from "./layout.js";
+import { type RowLayout, rowLayout, rowTransform, rowView } from "./layout.js";
 import { propPlacement } from "./prop.js";
 import { isTextTrack, placedText, textFont } from "./text.js";
 
@@ -88,7 +88,7 @@ export class FrameItemError extends CharadeError {
   }
 }
 
-type DrawCallback = (ctx: ShapeContext, t: number, moment: Moment) => unknown;
+type DrawCallback = (ctx: ShapeContext, t: number, moment: DrawMoment) => unknown;
 
 /** The kinds of item drawn by their definition's `draw`. */
 type DrawnKind = "prop" | "backdrop" | "effect";
@@ -100,7 +100,7 @@ const BUILTIN_DRAWN: Readonly<Record<DrawnKind, Readonly<Record<string, unknown>
   effect: { ...builtinEffects },
 };
 
-type ItemDraw = (ctx: ShapeContext, params: unknown, moment: Moment) => unknown;
+type ItemDraw = (ctx: ShapeContext, params: unknown, moment: DrawMoment) => unknown;
 
 function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
   return typeof value === "object" && value !== null;
@@ -226,15 +226,15 @@ function guardedPainter(
 /** A painter for each of row `row`'s backdrop or effect tracks, in track order. */
 function shownPainters(
   timeline: Timeline,
-  row: number,
+  layout: RowLayout,
   frame: number,
   kind: "backdrop" | "effect",
 ): Painter[] {
-  return (timeline.rows[row]?.tracks ?? [])
+  return (timeline.rows[layout.index]?.tracks ?? [])
     .filter((track) => track.kind === kind)
     .map((track) =>
-      guardedPainter(timeline, row, frame, track, (ctx) => {
-        drawItem(ctx, timeline, row, track, frame);
+      guardedPainter(timeline, layout.index, frame, track, (ctx) => {
+        drawItem(ctx, timeline, layout, track, frame);
       }),
     );
 }
@@ -246,7 +246,7 @@ export function rowBackdrop(
   frame: number,
 ): readonly Painter[] {
   return [
-    ...shownPainters(timeline, layout.index, frame, "backdrop"),
+    ...shownPainters(timeline, layout, frame, "backdrop"),
     (ctx) => {
       drawGround(ctx, layout);
     },
@@ -275,7 +275,7 @@ export function rowContent(
     .filter((track) => track.kind === "draw")
     .map((track) =>
       guarded(track, (ctx) => {
-        drawTrack(ctx, timeline, row, track, frame);
+        drawTrack(ctx, timeline, layout, track, frame);
       }),
     );
   const propsBehind: Painter[] = [];
@@ -300,7 +300,7 @@ export function rowContent(
       const { point } = placed;
       (placed.front ? propsInFront : propsBehind).push(
         guarded(track, (ctx) => {
-          drawItem(ctx, timeline, row, track, frame, point);
+          drawItem(ctx, timeline, layout, track, frame, point);
         }),
       );
     }
@@ -316,7 +316,7 @@ export function rowContent(
     actor: actors,
     propsInFront: [
       ...propsInFront,
-      ...shownPainters(timeline, row, frame, "effect"),
+      ...shownPainters(timeline, layout, frame, "effect"),
       ...drawings,
     ],
     text,
@@ -342,12 +342,12 @@ function isDrawnKind(kind: string): kind is DrawnKind {
  * Draws a prop, backdrop or effect with its ground point on `point`, the row's origin
  * by default, once for each of its segments of its own kind shown at `frame`. Its
  * `draw` starts as a free drawing's does: ink as both styles and the figure's line
- * width.
+ * width, and its moment's `view` is the row's visible area as seen from `point`.
  */
 export function drawItem(
   ctx: ShapeContext,
   timeline: Timeline,
-  row: number,
+  layout: RowLayout,
   track: TimelineTrack,
   frame: number,
   point: Point = ORIGIN,
@@ -356,6 +356,8 @@ export function drawItem(
   if (!isDrawnKind(kind)) {
     return;
   }
+  const row = layout.index;
+  const view = rowView(layout, point.x, point.y);
   const { fps } = timeline;
   const random = randomSource({
     seed: timeline.seed,
@@ -390,6 +392,7 @@ export function drawItem(
         duration,
         progress: end === null ? 0 : t / duration,
         random,
+        view,
       });
     } finally {
       ctx.restore();
@@ -401,11 +404,13 @@ export function drawItem(
 export function drawTrack(
   ctx: DrawingContext,
   timeline: Timeline,
-  row: number,
+  layout: RowLayout,
   track: TimelineTrack,
   frame: number,
 ): void {
   const { fps } = timeline;
+  const row = layout.index;
+  const view = rowView(layout);
   const random = randomSource({
     seed: timeline.seed,
     row,
@@ -434,6 +439,7 @@ export function drawTrack(
       duration,
       progress: end === null ? 0 : t / duration,
       random,
+      view,
     });
   }
 }

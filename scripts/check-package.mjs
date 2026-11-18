@@ -70,7 +70,7 @@ import { findSingleTarball } from "./lib/tarball.mjs";
  */
 export const PACKAGE_LIMITS = {
   maxUnpackedBytes: 2_097_152,
-  maxFileCount: 200,
+  maxFileCount: 400,
   maxSingleFileBytes: 131_072,
 };
 

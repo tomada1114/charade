@@ -49,7 +49,9 @@ never repeats it. This rule holds only what is true inside this repository.
   a scene written at depth 1 serialises without loss.
 - An expression returns face channels. A prop, backdrop or effect has a `draw` that
   receives the drawing interface, the resolved parameters and the same second argument a
-  depth 4 callback gets, in row units with the origin at the item's ground point.
+  depth 4 callback gets, in row units with the origin at the item's ground point. That
+  argument's `view` is the row's visible area (`.claude/rules/engine.md` § Sequencing),
+  which is how a backdrop learns the row's width.
 - `mood` is an option of every action and takes any expression name. An action lists the
   moods that also change the body.
 - An action that moves a prop takes it as a parameter: the scene passes the prop's
@@ -220,6 +222,21 @@ These set the conventions the later items follow.
   part and the points a scene needs: the lever's handle end, the cart's deck at 0.24,
   the desk's surface at its `height`, the hoop's rim straight above its ground point,
   the lightbulb's ground point at the tip of its base.
+- A backdrop paints its own opaque fill over the whole of `moment.view`, wall or sky
+  from the ground line up and floor below it, and its description says so. The frame's
+  white paper would otherwise show wherever a backdrop stopped, and a row with a
+  backdrop reads as a panel beside one without. It is anchored on the row's origin,
+  where the actor stands, and repeats or extends outwards from there (`court`'s fence
+  posts, `office`'s windows, `hill`'s crests, `night`'s stars one to a cell), so a wider
+  row shows more of the same picture and a scene keeps its composition when its canvas
+  or row count changes. Whatever is not a fill stays paler than ink and thinner than the
+  figure's line, and detail hangs above head height or lies below the ground line: the
+  figure and the props are the subject. `night` fades to a light horizon for the same
+  reason, since the figure is ink. A backdrop has no moving part and takes colours, and
+  at most one switch (`office`'s `blinds`, `night`'s `moon`).
+- A backdrop's record is its sample's frame 0, as a prop's is, and a second record of
+  the definition alone in row 2 of a four-row scene, where the row is four times as wide
+  as it is high.
 - An expression other than `neutral` takes `intensity`, 0 to 1, and scales every
   channel's distance from rest by it. `neutral` sets all eight channels, which is what
   lets it clear another expression.

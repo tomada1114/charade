@@ -8,6 +8,7 @@ import { drawFrame } from "../src/draw/frame.js";
 import {
   type ActionDefinition,
   type Actor,
+  type BackdropDefinition,
   builtinActions,
   builtinBackdrops,
   builtinEffects,
@@ -16,6 +17,7 @@ import {
   type Definition,
   type ExpressionDefinition,
   type Finding,
+  type Row,
   type Scene,
   scene,
   type Span,
@@ -116,7 +118,7 @@ function segmentsOf(built: Scene, kind: string, row = 0): readonly unknown[] {
 }
 
 describe("the built-in vocabulary", () => {
-  it("is the three actions, the six expressions and the ten props", () => {
+  it("is the three actions, the six expressions, the ten props and the five backdrops", () => {
     expect(ITEMS.map(([kind, name]) => `${kind} ${name}`)).toEqual([
       "action sitDown",
       "action slump",
@@ -137,6 +139,11 @@ describe("the built-in vocabulary", () => {
       "prop lever",
       "prop lightbulb",
       "prop rock",
+      "backdrop court",
+      "backdrop hill",
+      "backdrop night",
+      "backdrop office",
+      "backdrop plain",
     ]);
   });
 
@@ -440,6 +447,234 @@ describe("a built-in prop", () => {
     });
     expect(built.findings).toEqual([]);
     expect(checkScene(built).findings).toEqual([]);
+  });
+});
+
+describe("a built-in backdrop", () => {
+  const BACKDROPS: readonly (readonly [string, BackdropDefinition])[] =
+    Object.entries(builtinBackdrops);
+
+  /** `row.backdrop` as a scene file calls it once its types are erased. */
+  function backdropOf(
+    row: Row,
+    name: string | BackdropDefinition,
+    options?: object,
+  ): void {
+    (row as unknown as { backdrop(name: unknown, options?: object): unknown }).backdrop(
+      name,
+      options,
+    );
+  }
+
+  /** Frame 0 of a one-row scene of `size` showing the backdrop `name`. */
+  function shown(name: string, options: object = {}, size: object = {}): string[] {
+    const built = scene({ ...size, duration: 1 }, (stage) => {
+      backdropOf(stage, name, options);
+    });
+    expect(built.findings).toEqual([]);
+    return record(built, 0).split("\n");
+  }
+
+  /** Where each row's clip band is set in a log: the `rect` that spans the canvas. */
+  function bands(log: readonly string[]): number[] {
+    return log.flatMap((entry, index) =>
+      /^rect 0 \d+ 10800000 /.test(entry) ? [index] : [],
+    );
+  }
+
+  // #24 R1: one row is the sample itself, recorded with every other item above.
+  it.each(BACKDROPS)(
+    "draws the backdrop %s as recorded in a row of four",
+    (name, definition) => {
+      const built = scene({ rows: 4, duration: 1 }, (stage) => {
+        backdropOf(stage.row(2), definition);
+      });
+      expect(built.findings).toEqual([]);
+      expect(checkScene(built).findings).toEqual([]);
+      expect(sampleFrames("backdrop", built)).toEqual([0]);
+      expect(record(built, 0)).toMatchSnapshot(`${name} in row 2 of 4`);
+    },
+  );
+
+  it.each(BACKDROPS)(
+    "shows the backdrop %s in the frame its catalog image draws",
+    (_name, definition) => {
+      const built = sampleOf(definition);
+      const bare = scene((stage) => {
+        stage.actor().wait(1);
+      });
+      expect(sampleFrames("backdrop", built)).toEqual([0]);
+      expect(record(built, 0)).not.toBe(record(bare, 0));
+    },
+  );
+
+  // #24 R2
+  it.each(BACKDROPS)(
+    "draws the backdrop %s before the ground line, every prop and the actor of its row",
+    (name) => {
+      const alone = scene({ duration: 1 }, (stage) => {
+        backdropOf(stage, name);
+      });
+      const busy = scene({ duration: 1 }, (stage) => {
+        // Made last, drawn first: the order is the drawer's.
+        stage.prop("box").place({ x: -0.5, y: 0 });
+        stage.prop("ball").place({ x: 0.5, y: 0 }, { layer: "front" });
+        stage.actor();
+        backdropOf(stage, name);
+      });
+      const bare = scene({ duration: 1 }, (stage) => {
+        stage.prop("box").place({ x: -0.5, y: 0 });
+        stage.prop("ball").place({ x: 0.5, y: 0 }, { layer: "front" });
+        stage.actor();
+      });
+      const [backdropLog, busyLog, bareLog] = [alone, busy, bare].map((built) =>
+        record(built, 0).split("\n"),
+      );
+      // Everything but the restore that closes the row: the backdrop, then the ground.
+      const first = backdropLog?.slice(0, -1) ?? [];
+      const empty = record(
+        scene({ duration: 1 }, () => undefined),
+        0,
+      ).split("\n");
+      expect(first.length).toBeGreaterThan(empty.length);
+      expect(busyLog?.slice(0, first.length)).toEqual(first);
+      // What follows is exactly what the props and the actor draw without a backdrop.
+      expect(busyLog?.slice(first.length)).toEqual(bareLog?.slice(empty.length - 1));
+    },
+  );
+
+  const SHAPES = [
+    // width, height, rows, the row's width in units
+    [1080, 1080, 1, 2.5],
+    [1920, 1080, 1, 40 / 9],
+    [1080, 1080, 4, 10],
+    [1920, 1080, 4, 160 / 9],
+  ] as const;
+
+  it.each(
+    BACKDROPS.flatMap(([name]) => SHAPES.map((shape) => [name, ...shape] as const)),
+  )(
+    "paints %s over its whole row, edge to edge: %i × %i, %i row(s)",
+    (name, width, height, rows, units) => {
+      const built = scene({ width, height, rows, duration: 1 }, (stage) => {
+        backdropOf(stage.row(rows - 1), name);
+      });
+      expect(built.findings).toEqual([]);
+      const fills = record(built, 0)
+        .split("\n")
+        .filter((entry) => entry.startsWith("fillRect "))
+        .map((entry) => entry.split(" ").slice(1).map(Number));
+      const [left, wide] = [Math.round(-units * 5000), Math.round(units * 1e4)];
+      // From the ground line to the row's top, and the 0.3 below the ground line.
+      expect(fills).toContainEqual([left, 0, wide, 22000]);
+      expect(fills).toContainEqual([left, -3000, wide, 3000]);
+    },
+  );
+
+  it("draws the office behind row 1 only", () => {
+    const rowsOf = (backdrop: boolean): string[] =>
+      record(
+        scene({ rows: 4 }, (stage) => {
+          if (backdrop) {
+            stage.row(1).backdrop("office");
+          }
+          for (let row = 0; row < 4; row += 1) {
+            stage.row(row).actor().wait(1);
+          }
+        }),
+        0,
+      ).split("\n");
+    const [without, behind] = [rowsOf(false), rowsOf(true)];
+    const [, start = 0, next = 0] = bands(without);
+    const added = behind.length - without.length;
+    expect(added).toBeGreaterThan(10);
+    // Rows 0, 2 and 3 draw what they drew; everything new is inside row 1's band.
+    expect(behind.slice(0, start + 1)).toEqual(without.slice(0, start + 1));
+    expect(behind.slice(next + added)).toEqual(without.slice(next));
+    expect(bands(behind)[2]).toBe(next + added);
+  });
+
+  it.each([
+    // `nite` is three edits from `night`, past the two the nearest-name metric allows.
+    ["nite", []],
+    ["nigt", ["night"]],
+    ["Plain", ["plain"]],
+    ["offce", ["office"]],
+  ])("reports a backdrop named %s as unknown, nearest %j", (name, nearest) => {
+    const built = scene({ duration: 1 }, (stage) => {
+      backdropOf(stage, name);
+    });
+    expect(built.findings).toHaveLength(1);
+    expect(built.findings[0]).toMatchObject({
+      code: "ERR_SCENE_UNKNOWN_BACKDROP",
+      severity: "error",
+      nearest,
+    });
+  });
+
+  it("does not let an open-ended backdrop extend the scene", () => {
+    const built = scene((stage) => {
+      stage.backdrop("hill");
+      stage.actor().wait(1);
+    });
+    expect(built.findings).toEqual([]);
+    expect(lastFrameOf(built.timeline)).toBe(30);
+  });
+
+  it.each([
+    ["plain", { color: "#00ff00" }],
+    ["plain", { floor: "#00ff00" }],
+    ["court", { floor: "#00ff00" }],
+    ["court", { sky: "#00ff00" }],
+    ["office", { wall: "#00ff00" }],
+    ["office", { floor: "#00ff00" }],
+    ["hill", { grass: "#00ff00" }],
+    ["hill", { sky: "#00ff00" }],
+    ["night", { sky: "#00ff00" }],
+    ["night", { horizon: "#00ff00" }],
+  ])("paints %s in the colour it is given: %j", (name, options) => {
+    expect(shown(name).join("\n")).not.toContain("#00ff00");
+    expect(shown(name, options).join("\n")).toContain("#00ff00");
+  });
+
+  it("hangs blinds in the office windows unless told not to", () => {
+    const [bare, hung] = [shown("office", { blinds: false }), shown("office")];
+    expect(hung.length).toBeGreaterThan(bare.length);
+    expect(shown("office", { blinds: true })).toEqual(hung);
+  });
+
+  it("draws the night's moon as a crescent, a full disc or not at all", () => {
+    const moons = ["crescent", "full", "none"].map((moon) => shown("night", { moon }));
+    expect(new Set(moons.map((log) => log.join("\n"))).size).toBe(3);
+    expect(shown("night")).toEqual(moons[0]);
+    // The full moon is one disc of radius 0.16 at (0.85, 1.78).
+    expect(moons[1]).toContain(
+      `arc 8500 17800 1600 0 ${String(Math.round(Math.PI * 2e4))}`,
+    );
+    expect(moons[0]).not.toContain(
+      `arc 8500 17800 1600 0 ${String(Math.round(Math.PI * 2e4))}`,
+    );
+  });
+
+  it("scatters the night's stars by the scene's seed, the same on every frame", () => {
+    const night = (seed: number, frame: number): string =>
+      record(
+        scene({ seed, duration: 1 }, (stage) => {
+          stage.backdrop("night");
+        }),
+        frame,
+      );
+    expect(night(1, 0)).toBe(night(1, 30));
+    expect(night(1, 0)).not.toBe(night(2, 0));
+  });
+
+  it("shows more of the same picture in a wider row, not a stretched one", () => {
+    // What a square row draws of the hill's tree, a wide row draws too.
+    const square = shown("hill");
+    const wide = shown("hill", {}, { width: 1920 });
+    const tree = square.findIndex((entry) => entry.startsWith("translate 9500 "));
+    expect(tree).toBeGreaterThan(-1);
+    expect(wide).toContain(square[tree]);
   });
 });
 

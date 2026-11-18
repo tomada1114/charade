@@ -1,5 +1,1583 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
+exports[`a built-in backdrop > draws the backdrop court as recorded in a row of four > court in row 2 of 4 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 2700000
+clip
+setTransform 1080000 0 0 -1080000 5400000 2376000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -50000 0
+lineTo 50000 0
+stroke
+restore
+restore
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 2700000 10800000 2700000
+clip
+setTransform 1080000 0 0 -1080000 5400000 5076000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -50000 0
+lineTo 50000 0
+stroke
+restore
+restore
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 5400000 10800000 2700000
+clip
+setTransform 1080000 0 0 -1080000 5400000 7776000
+save
+save
+translate 0 0
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+fillStyle "#e3eef5"
+fillRect -50000 0 100000 22000
+fillStyle "#e3b98a"
+fillRect -50000 -3000 100000 3000
+fillStyle "#ffffff"
+fillRect -50000 -1700 100000 400
+strokeStyle "#c2cfd7"
+lineCap "butt"
+lineWidth 60
+beginPath
+moveTo -65000 0
+lineTo -50000 15000
+moveTo -65000 0
+lineTo -80000 15000
+moveTo -63750 0
+lineTo -48750 15000
+moveTo -63750 0
+lineTo -78750 15000
+moveTo -62500 0
+lineTo -47500 15000
+moveTo -62500 0
+lineTo -77500 15000
+moveTo -61250 0
+lineTo -46250 15000
+moveTo -61250 0
+lineTo -76250 15000
+moveTo -60000 0
+lineTo -45000 15000
+moveTo -60000 0
+lineTo -75000 15000
+moveTo -58750 0
+lineTo -43750 15000
+moveTo -58750 0
+lineTo -73750 15000
+moveTo -57500 0
+lineTo -42500 15000
+moveTo -57500 0
+lineTo -72500 15000
+moveTo -56250 0
+lineTo -41250 15000
+moveTo -56250 0
+lineTo -71250 15000
+moveTo -55000 0
+lineTo -40000 15000
+moveTo -55000 0
+lineTo -70000 15000
+moveTo -53750 0
+lineTo -38750 15000
+moveTo -53750 0
+lineTo -68750 15000
+moveTo -52500 0
+lineTo -37500 15000
+moveTo -52500 0
+lineTo -67500 15000
+moveTo -51250 0
+lineTo -36250 15000
+moveTo -51250 0
+lineTo -66250 15000
+moveTo -50000 0
+lineTo -35000 15000
+moveTo -50000 0
+lineTo -65000 15000
+moveTo -48750 0
+lineTo -33750 15000
+moveTo -48750 0
+lineTo -63750 15000
+moveTo -47500 0
+lineTo -32500 15000
+moveTo -47500 0
+lineTo -62500 15000
+moveTo -46250 0
+lineTo -31250 15000
+moveTo -46250 0
+lineTo -61250 15000
+moveTo -45000 0
+lineTo -30000 15000
+moveTo -45000 0
+lineTo -60000 15000
+moveTo -43750 0
+lineTo -28750 15000
+moveTo -43750 0
+lineTo -58750 15000
+moveTo -42500 0
+lineTo -27500 15000
+moveTo -42500 0
+lineTo -57500 15000
+moveTo -41250 0
+lineTo -26250 15000
+moveTo -41250 0
+lineTo -56250 15000
+moveTo -40000 0
+lineTo -25000 15000
+moveTo -40000 0
+lineTo -55000 15000
+moveTo -38750 0
+lineTo -23750 15000
+moveTo -38750 0
+lineTo -53750 15000
+moveTo -37500 0
+lineTo -22500 15000
+moveTo -37500 0
+lineTo -52500 15000
+moveTo -36250 0
+lineTo -21250 15000
+moveTo -36250 0
+lineTo -51250 15000
+moveTo -35000 0
+lineTo -20000 15000
+moveTo -35000 0
+lineTo -50000 15000
+moveTo -33750 0
+lineTo -18750 15000
+moveTo -33750 0
+lineTo -48750 15000
+moveTo -32500 0
+lineTo -17500 15000
+moveTo -32500 0
+lineTo -47500 15000
+moveTo -31250 0
+lineTo -16250 15000
+moveTo -31250 0
+lineTo -46250 15000
+moveTo -30000 0
+lineTo -15000 15000
+moveTo -30000 0
+lineTo -45000 15000
+moveTo -28750 0
+lineTo -13750 15000
+moveTo -28750 0
+lineTo -43750 15000
+moveTo -27500 0
+lineTo -12500 15000
+moveTo -27500 0
+lineTo -42500 15000
+moveTo -26250 0
+lineTo -11250 15000
+moveTo -26250 0
+lineTo -41250 15000
+moveTo -25000 0
+lineTo -10000 15000
+moveTo -25000 0
+lineTo -40000 15000
+moveTo -23750 0
+lineTo -8750 15000
+moveTo -23750 0
+lineTo -38750 15000
+moveTo -22500 0
+lineTo -7500 15000
+moveTo -22500 0
+lineTo -37500 15000
+moveTo -21250 0
+lineTo -6250 15000
+moveTo -21250 0
+lineTo -36250 15000
+moveTo -20000 0
+lineTo -5000 15000
+moveTo -20000 0
+lineTo -35000 15000
+moveTo -18750 0
+lineTo -3750 15000
+moveTo -18750 0
+lineTo -33750 15000
+moveTo -17500 0
+lineTo -2500 15000
+moveTo -17500 0
+lineTo -32500 15000
+moveTo -16250 0
+lineTo -1250 15000
+moveTo -16250 0
+lineTo -31250 15000
+moveTo -15000 0
+lineTo 0 15000
+moveTo -15000 0
+lineTo -30000 15000
+moveTo -13750 0
+lineTo 1250 15000
+moveTo -13750 0
+lineTo -28750 15000
+moveTo -12500 0
+lineTo 2500 15000
+moveTo -12500 0
+lineTo -27500 15000
+moveTo -11250 0
+lineTo 3750 15000
+moveTo -11250 0
+lineTo -26250 15000
+moveTo -10000 0
+lineTo 5000 15000
+moveTo -10000 0
+lineTo -25000 15000
+moveTo -8750 0
+lineTo 6250 15000
+moveTo -8750 0
+lineTo -23750 15000
+moveTo -7500 0
+lineTo 7500 15000
+moveTo -7500 0
+lineTo -22500 15000
+moveTo -6250 0
+lineTo 8750 15000
+moveTo -6250 0
+lineTo -21250 15000
+moveTo -5000 0
+lineTo 10000 15000
+moveTo -5000 0
+lineTo -20000 15000
+moveTo -3750 0
+lineTo 11250 15000
+moveTo -3750 0
+lineTo -18750 15000
+moveTo -2500 0
+lineTo 12500 15000
+moveTo -2500 0
+lineTo -17500 15000
+moveTo -1250 0
+lineTo 13750 15000
+moveTo -1250 0
+lineTo -16250 15000
+moveTo 0 0
+lineTo 15000 15000
+moveTo 0 0
+lineTo -15000 15000
+moveTo 1250 0
+lineTo 16250 15000
+moveTo 1250 0
+lineTo -13750 15000
+moveTo 2500 0
+lineTo 17500 15000
+moveTo 2500 0
+lineTo -12500 15000
+moveTo 3750 0
+lineTo 18750 15000
+moveTo 3750 0
+lineTo -11250 15000
+moveTo 5000 0
+lineTo 20000 15000
+moveTo 5000 0
+lineTo -10000 15000
+moveTo 6250 0
+lineTo 21250 15000
+moveTo 6250 0
+lineTo -8750 15000
+moveTo 7500 0
+lineTo 22500 15000
+moveTo 7500 0
+lineTo -7500 15000
+moveTo 8750 0
+lineTo 23750 15000
+moveTo 8750 0
+lineTo -6250 15000
+moveTo 10000 0
+lineTo 25000 15000
+moveTo 10000 0
+lineTo -5000 15000
+moveTo 11250 0
+lineTo 26250 15000
+moveTo 11250 0
+lineTo -3750 15000
+moveTo 12500 0
+lineTo 27500 15000
+moveTo 12500 0
+lineTo -2500 15000
+moveTo 13750 0
+lineTo 28750 15000
+moveTo 13750 0
+lineTo -1250 15000
+moveTo 15000 0
+lineTo 30000 15000
+moveTo 15000 0
+lineTo 0 15000
+moveTo 16250 0
+lineTo 31250 15000
+moveTo 16250 0
+lineTo 1250 15000
+moveTo 17500 0
+lineTo 32500 15000
+moveTo 17500 0
+lineTo 2500 15000
+moveTo 18750 0
+lineTo 33750 15000
+moveTo 18750 0
+lineTo 3750 15000
+moveTo 20000 0
+lineTo 35000 15000
+moveTo 20000 0
+lineTo 5000 15000
+moveTo 21250 0
+lineTo 36250 15000
+moveTo 21250 0
+lineTo 6250 15000
+moveTo 22500 0
+lineTo 37500 15000
+moveTo 22500 0
+lineTo 7500 15000
+moveTo 23750 0
+lineTo 38750 15000
+moveTo 23750 0
+lineTo 8750 15000
+moveTo 25000 0
+lineTo 40000 15000
+moveTo 25000 0
+lineTo 10000 15000
+moveTo 26250 0
+lineTo 41250 15000
+moveTo 26250 0
+lineTo 11250 15000
+moveTo 27500 0
+lineTo 42500 15000
+moveTo 27500 0
+lineTo 12500 15000
+moveTo 28750 0
+lineTo 43750 15000
+moveTo 28750 0
+lineTo 13750 15000
+moveTo 30000 0
+lineTo 45000 15000
+moveTo 30000 0
+lineTo 15000 15000
+moveTo 31250 0
+lineTo 46250 15000
+moveTo 31250 0
+lineTo 16250 15000
+moveTo 32500 0
+lineTo 47500 15000
+moveTo 32500 0
+lineTo 17500 15000
+moveTo 33750 0
+lineTo 48750 15000
+moveTo 33750 0
+lineTo 18750 15000
+moveTo 35000 0
+lineTo 50000 15000
+moveTo 35000 0
+lineTo 20000 15000
+moveTo 36250 0
+lineTo 51250 15000
+moveTo 36250 0
+lineTo 21250 15000
+moveTo 37500 0
+lineTo 52500 15000
+moveTo 37500 0
+lineTo 22500 15000
+moveTo 38750 0
+lineTo 53750 15000
+moveTo 38750 0
+lineTo 23750 15000
+moveTo 40000 0
+lineTo 55000 15000
+moveTo 40000 0
+lineTo 25000 15000
+moveTo 41250 0
+lineTo 56250 15000
+moveTo 41250 0
+lineTo 26250 15000
+moveTo 42500 0
+lineTo 57500 15000
+moveTo 42500 0
+lineTo 27500 15000
+moveTo 43750 0
+lineTo 58750 15000
+moveTo 43750 0
+lineTo 28750 15000
+moveTo 45000 0
+lineTo 60000 15000
+moveTo 45000 0
+lineTo 30000 15000
+moveTo 46250 0
+lineTo 61250 15000
+moveTo 46250 0
+lineTo 31250 15000
+moveTo 47500 0
+lineTo 62500 15000
+moveTo 47500 0
+lineTo 32500 15000
+moveTo 48750 0
+lineTo 63750 15000
+moveTo 48750 0
+lineTo 33750 15000
+moveTo 50000 0
+lineTo 65000 15000
+moveTo 50000 0
+lineTo 35000 15000
+moveTo 51250 0
+lineTo 66250 15000
+moveTo 51250 0
+lineTo 36250 15000
+moveTo 52500 0
+lineTo 67500 15000
+moveTo 52500 0
+lineTo 37500 15000
+moveTo 53750 0
+lineTo 68750 15000
+moveTo 53750 0
+lineTo 38750 15000
+moveTo 55000 0
+lineTo 70000 15000
+moveTo 55000 0
+lineTo 40000 15000
+moveTo 56250 0
+lineTo 71250 15000
+moveTo 56250 0
+lineTo 41250 15000
+moveTo 57500 0
+lineTo 72500 15000
+moveTo 57500 0
+lineTo 42500 15000
+moveTo 58750 0
+lineTo 73750 15000
+moveTo 58750 0
+lineTo 43750 15000
+moveTo 60000 0
+lineTo 75000 15000
+moveTo 60000 0
+lineTo 45000 15000
+moveTo 61250 0
+lineTo 76250 15000
+moveTo 61250 0
+lineTo 46250 15000
+moveTo 62500 0
+lineTo 77500 15000
+moveTo 62500 0
+lineTo 47500 15000
+moveTo 63750 0
+lineTo 78750 15000
+moveTo 63750 0
+lineTo 48750 15000
+moveTo 65000 0
+lineTo 80000 15000
+moveTo 65000 0
+lineTo 50000 15000
+stroke
+fillStyle "#e3eef5"
+fillRect -50000 15000 100000 7000
+strokeStyle "#b0bfc9"
+lineWidth 220
+beginPath
+moveTo -50000 15000
+lineTo 50000 15000
+moveTo -56000 0
+lineTo -56000 15500
+moveTo -40000 0
+lineTo -40000 15500
+moveTo -24000 0
+lineTo -24000 15500
+moveTo -8000 0
+lineTo -8000 15500
+moveTo 8000 0
+lineTo 8000 15500
+moveTo 24000 0
+lineTo 24000 15500
+moveTo 40000 0
+lineTo 40000 15500
+moveTo 56000 0
+lineTo 56000 15500
+moveTo 72000 0
+lineTo 72000 15500
+stroke
+restore
+restore
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -50000 0
+lineTo 50000 0
+stroke
+restore
+restore
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 8100000 10800000 2700000
+clip
+setTransform 1080000 0 0 -1080000 5400000 10476000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -50000 0
+lineTo 50000 0
+stroke
+restore
+restore"
+`;
+
+exports[`a built-in backdrop > draws the backdrop hill as recorded in a row of four > hill in row 2 of 4 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 2700000
+clip
+setTransform 1080000 0 0 -1080000 5400000 2376000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -50000 0
+lineTo 50000 0
+stroke
+restore
+restore
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 2700000 10800000 2700000
+clip
+setTransform 1080000 0 0 -1080000 5400000 5076000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -50000 0
+lineTo 50000 0
+stroke
+restore
+restore
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 5400000 10800000 2700000
+clip
+setTransform 1080000 0 0 -1080000 5400000 7776000
+save
+save
+translate 0 0
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+fillStyle "#e4f1f7"
+fillRect -50000 0 100000 22000
+fillStyle "#ffffff"
+save
+translate -92500 19300
+beginPath
+moveTo -1800 0
+quadraticCurveTo -2500 0 -2400 700
+quadraticCurveTo -2300 1300 -1600 1200
+quadraticCurveTo -1400 2200 -400 2100
+quadraticCurveTo 400 2800 1100 1900
+quadraticCurveTo 2100 2000 2200 1000
+quadraticCurveTo 2500 100 1700 0
+closePath
+fill
+restore
+save
+translate -63500 17200
+beginPath
+moveTo -2700 0
+quadraticCurveTo -3750 0 -3600 1050
+quadraticCurveTo -3450 1950 -2400 1800
+quadraticCurveTo -2100 3300 -600 3150
+quadraticCurveTo 600 4200 1650 2850
+quadraticCurveTo 3150 3000 3300 1500
+quadraticCurveTo 3750 150 2550 0
+closePath
+fill
+restore
+save
+translate -34500 19300
+beginPath
+moveTo -1800 0
+quadraticCurveTo -2500 0 -2400 700
+quadraticCurveTo -2300 1300 -1600 1200
+quadraticCurveTo -1400 2200 -400 2100
+quadraticCurveTo 400 2800 1100 1900
+quadraticCurveTo 2100 2000 2200 1000
+quadraticCurveTo 2500 100 1700 0
+closePath
+fill
+restore
+save
+translate -5500 17200
+beginPath
+moveTo -2700 0
+quadraticCurveTo -3750 0 -3600 1050
+quadraticCurveTo -3450 1950 -2400 1800
+quadraticCurveTo -2100 3300 -600 3150
+quadraticCurveTo 600 4200 1650 2850
+quadraticCurveTo 3150 3000 3300 1500
+quadraticCurveTo 3750 150 2550 0
+closePath
+fill
+restore
+save
+translate 23500 19300
+beginPath
+moveTo -1800 0
+quadraticCurveTo -2500 0 -2400 700
+quadraticCurveTo -2300 1300 -1600 1200
+quadraticCurveTo -1400 2200 -400 2100
+quadraticCurveTo 400 2800 1100 1900
+quadraticCurveTo 2100 2000 2200 1000
+quadraticCurveTo 2500 100 1700 0
+closePath
+fill
+restore
+save
+translate 52500 17200
+beginPath
+moveTo -2700 0
+quadraticCurveTo -3750 0 -3600 1050
+quadraticCurveTo -3450 1950 -2400 1800
+quadraticCurveTo -2100 3300 -600 3150
+quadraticCurveTo 600 4200 1650 2850
+quadraticCurveTo 3150 3000 3300 1500
+quadraticCurveTo 3750 150 2550 0
+closePath
+fill
+restore
+fillStyle "#9ccb8b"
+globalAlpha 3000
+beginPath
+moveTo -50000 0
+lineTo -50000 10875
+lineTo -48000 10962
+lineTo -46000 11141
+lineTo -44000 11415
+lineTo -42000 11775
+lineTo -40000 12202
+lineTo -38000 12669
+lineTo -36000 13145
+lineTo -34000 13597
+lineTo -32000 13992
+lineTo -30000 14304
+lineTo -28000 14515
+lineTo -26000 14616
+lineTo -24000 14609
+lineTo -22000 14507
+lineTo -20000 14332
+lineTo -18000 14109
+lineTo -16000 13870
+lineTo -14000 13644
+lineTo -12000 13458
+lineTo -10000 13329
+lineTo -8000 13268
+lineTo -6000 13274
+lineTo -4000 13337
+lineTo -2000 13438
+lineTo 0 13551
+lineTo 2000 13648
+lineTo 4000 13700
+lineTo 6000 13682
+lineTo 8000 13576
+lineTo 10000 13374
+lineTo 12000 13077
+lineTo 14000 12695
+lineTo 16000 12251
+lineTo 18000 11773
+lineTo 20000 11294
+lineTo 22000 10846
+lineTo 24000 10461
+lineTo 26000 10163
+lineTo 28000 9968
+lineTo 30000 9882
+lineTo 32000 9900
+lineTo 34000 10007
+lineTo 36000 10179
+lineTo 38000 10390
+lineTo 40000 10608
+lineTo 42000 10805
+lineTo 44000 10956
+lineTo 46000 11047
+lineTo 48000 11069
+lineTo 50000 11027
+lineTo 50000 0
+fill
+globalAlpha 6200
+beginPath
+moveTo -50000 0
+lineTo -50000 11416
+lineTo -48000 10642
+lineTo -46000 9722
+lineTo -44000 8730
+lineTo -42000 7746
+lineTo -40000 6843
+lineTo -38000 6076
+lineTo -36000 5477
+lineTo -34000 5047
+lineTo -32000 4767
+lineTo -30000 4599
+lineTo -28000 4502
+lineTo -26000 4439
+lineTo -24000 4389
+lineTo -22000 4353
+lineTo -20000 4351
+lineTo -18000 4420
+lineTo -16000 4605
+lineTo -14000 4947
+lineTo -12000 5471
+lineTo -10000 6181
+lineTo -8000 7050
+lineTo -6000 8029
+lineTo -4000 9046
+lineTo -2000 10021
+lineTo 0 10876
+lineTo 2000 11550
+lineTo 4000 12004
+lineTo 6000 12230
+lineTo 8000 12247
+lineTo 10000 12095
+lineTo 12000 11827
+lineTo 14000 11497
+lineTo 16000 11146
+lineTo 18000 10800
+lineTo 20000 10458
+lineTo 22000 10104
+lineTo 24000 9705
+lineTo 26000 9226
+lineTo 28000 8640
+lineTo 30000 7937
+lineTo 32000 7130
+lineTo 34000 6260
+lineTo 36000 5386
+lineTo 38000 4581
+lineTo 40000 3919
+lineTo 42000 3463
+lineTo 44000 3253
+lineTo 46000 3301
+lineTo 48000 3589
+lineTo 50000 4072
+lineTo 50000 0
+fill
+strokeStyle "#8a7a63"
+lineCap "round"
+lineWidth 220
+save
+translate -130126 12437
+globalAlpha 10000
+beginPath
+moveTo 0 0
+lineTo 0 2000
+stroke
+globalAlpha 8500
+beginPath
+moveTo 0 1710
+quadraticCurveTo -1170 1620 -1080 2700
+quadraticCurveTo -1260 3870 -90 4140
+quadraticCurveTo 1080 4410 1170 2970
+quadraticCurveTo 1350 1710 0 1710
+closePath
+fill
+restore
+save
+translate -60313 11891
+globalAlpha 10000
+beginPath
+moveTo 0 0
+lineTo 0 2000
+stroke
+globalAlpha 8500
+beginPath
+moveTo 0 1710
+quadraticCurveTo -1170 1620 -1080 2700
+quadraticCurveTo -1260 3870 -90 4140
+quadraticCurveTo 1080 4410 1170 2970
+quadraticCurveTo 1350 1710 0 1710
+closePath
+fill
+restore
+save
+translate 9500 12046
+globalAlpha 10000
+beginPath
+moveTo 0 0
+lineTo 0 2000
+stroke
+globalAlpha 8500
+beginPath
+moveTo 0 1710
+quadraticCurveTo -1170 1620 -1080 2700
+quadraticCurveTo -1260 3870 -90 4140
+quadraticCurveTo 1080 4410 1170 2970
+quadraticCurveTo 1350 1710 0 1710
+closePath
+fill
+restore
+save
+translate 79313 12301
+globalAlpha 10000
+beginPath
+moveTo 0 0
+lineTo 0 2000
+stroke
+globalAlpha 8500
+beginPath
+moveTo 0 1710
+quadraticCurveTo -1170 1620 -1080 2700
+quadraticCurveTo -1260 3870 -90 4140
+quadraticCurveTo 1080 4410 1170 2970
+quadraticCurveTo 1350 1710 0 1710
+closePath
+fill
+restore
+globalAlpha 10000
+fillRect -50000 -3000 100000 3000
+restore
+restore
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -50000 0
+lineTo 50000 0
+stroke
+restore
+restore
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 8100000 10800000 2700000
+clip
+setTransform 1080000 0 0 -1080000 5400000 10476000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -50000 0
+lineTo 50000 0
+stroke
+restore
+restore"
+`;
+
+exports[`a built-in backdrop > draws the backdrop night as recorded in a row of four > night in row 2 of 4 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 2700000
+clip
+setTransform 1080000 0 0 -1080000 5400000 2376000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -50000 0
+lineTo 50000 0
+stroke
+restore
+restore
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 2700000 10800000 2700000
+clip
+setTransform 1080000 0 0 -1080000 5400000 5076000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -50000 0
+lineTo 50000 0
+stroke
+restore
+restore
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 5400000 10800000 2700000
+clip
+setTransform 1080000 0 0 -1080000 5400000 7776000
+save
+save
+translate 0 0
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+createLinearGradient 0 22000 0 0
+addColorStop {"gradient":0} 0 "#2f3b6b"
+addColorStop {"gradient":0} 10000 "#96a5cc"
+fillStyle {"gradient":0}
+fillRect -50000 0 100000 22000
+fillStyle "#f6f1d3"
+globalAlpha 8767
+beginPath
+arc -48626 20125 102 0 62832
+fill
+globalAlpha 6792
+beginPath
+arc -48329 19684 90 0 62832
+fill
+globalAlpha 8155
+beginPath
+arc -45141 20605 151 0 62832
+fill
+globalAlpha 8755
+beginPath
+arc -44367 14271 80 0 62832
+fill
+globalAlpha 7606
+beginPath
+arc -42094 20293 76 0 62832
+fill
+globalAlpha 8828
+beginPath
+arc -40257 15530 71 0 62832
+fill
+globalAlpha 7384
+beginPath
+arc -38891 13950 77 0 62832
+fill
+globalAlpha 8596
+beginPath
+arc -36410 12160 139 0 62832
+fill
+globalAlpha 7999
+beginPath
+arc -34863 17006 102 0 62832
+fill
+globalAlpha 6923
+beginPath
+arc -33240 16983 104 0 62832
+fill
+globalAlpha 7633
+beginPath
+arc -30981 19843 145 0 62832
+fill
+globalAlpha 8071
+beginPath
+arc -29305 19047 78 0 62832
+fill
+globalAlpha 6717
+beginPath
+arc -28654 18320 154 0 62832
+fill
+globalAlpha 9261
+beginPath
+arc -25580 16651 131 0 62832
+fill
+globalAlpha 6916
+beginPath
+arc -23450 15541 105 0 62832
+fill
+globalAlpha 6958
+beginPath
+arc -23342 12458 106 0 62832
+fill
+globalAlpha 5724
+beginPath
+arc -21120 12313 155 0 62832
+fill
+globalAlpha 7355
+beginPath
+arc -18520 14740 116 0 62832
+fill
+globalAlpha 7356
+beginPath
+arc -16679 20500 108 0 62832
+fill
+globalAlpha 9125
+beginPath
+arc -14920 12203 117 0 62832
+fill
+globalAlpha 9421
+beginPath
+arc -13466 14032 144 0 62832
+fill
+globalAlpha 6951
+beginPath
+arc -10936 13891 141 0 62832
+fill
+globalAlpha 9070
+beginPath
+arc -9758 18447 89 0 62832
+fill
+globalAlpha 9132
+beginPath
+arc -7898 21268 137 0 62832
+fill
+globalAlpha 9300
+beginPath
+arc -5722 11285 154 0 62832
+fill
+globalAlpha 6766
+beginPath
+arc -3632 17983 123 0 62832
+fill
+globalAlpha 8081
+beginPath
+arc -2613 20453 118 0 62832
+fill
+globalAlpha 5584
+beginPath
+arc -1299 21171 99 0 62832
+fill
+globalAlpha 6076
+beginPath
+arc 1683 18670 126 0 62832
+fill
+globalAlpha 6834
+beginPath
+arc 2236 14892 138 0 62832
+fill
+globalAlpha 6750
+beginPath
+arc 4908 15364 74 0 62832
+fill
+globalAlpha 6230
+beginPath
+arc 5856 13240 129 0 62832
+fill
+globalAlpha 8099
+beginPath
+arc 9748 14120 74 0 62832
+fill
+globalAlpha 9070
+beginPath
+arc 11168 13425 96 0 62832
+fill
+globalAlpha 9909
+beginPath
+arc 13774 16752 109 0 62832
+fill
+globalAlpha 8355
+beginPath
+arc 15656 12410 96 0 62832
+fill
+globalAlpha 6757
+beginPath
+arc 16975 20188 81 0 62832
+fill
+globalAlpha 6236
+beginPath
+arc 18449 19695 136 0 62832
+fill
+globalAlpha 8102
+beginPath
+arc 20694 16316 100 0 62832
+fill
+globalAlpha 8583
+beginPath
+arc 23226 13741 77 0 62832
+fill
+globalAlpha 7181
+beginPath
+arc 24435 19955 103 0 62832
+fill
+globalAlpha 5567
+beginPath
+arc 25213 13261 99 0 62832
+fill
+globalAlpha 7284
+beginPath
+arc 27909 18865 100 0 62832
+fill
+globalAlpha 9485
+beginPath
+arc 29389 19810 113 0 62832
+fill
+globalAlpha 5914
+beginPath
+arc 31463 20370 146 0 62832
+fill
+globalAlpha 6190
+beginPath
+arc 34004 19634 159 0 62832
+fill
+globalAlpha 5624
+beginPath
+arc 35268 15072 142 0 62832
+fill
+globalAlpha 8210
+beginPath
+arc 36632 14458 130 0 62832
+fill
+globalAlpha 7893
+beginPath
+arc 38726 11915 111 0 62832
+fill
+globalAlpha 7450
+beginPath
+arc 40594 12639 137 0 62832
+fill
+globalAlpha 7128
+beginPath
+arc 41422 17104 133 0 62832
+fill
+globalAlpha 8406
+beginPath
+arc 44724 18032 107 0 62832
+fill
+globalAlpha 9504
+beginPath
+arc 45356 20203 159 0 62832
+fill
+globalAlpha 5700
+beginPath
+arc 47708 18843 155 0 62832
+fill
+globalAlpha 8193
+beginPath
+arc 50059 12066 149 0 62832
+fill
+globalAlpha 5508
+beginPath
+arc 50871 16661 89 0 62832
+fill
+globalAlpha 10000
+beginPath
+moveTo 8908 19364
+ellipse 8481 17789 1632 1632 0 13061 60376 false
+ellipse 8966 18073 1292 1292 0 -5555 -46673 true
+closePath
+fill
+fillStyle "#2f3b6b"
+globalAlpha 4500
+beginPath
+moveTo -50000 0
+lineTo -50000 2699
+lineTo -47500 2326
+lineTo -45000 1897
+lineTo -42500 1485
+lineTo -40000 1164
+lineTo -37500 991
+lineTo -35000 988
+lineTo -32500 1143
+lineTo -30000 1406
+lineTo -27500 1711
+lineTo -25000 1988
+lineTo -22500 2183
+lineTo -20000 2271
+lineTo -17500 2265
+lineTo -15000 2206
+lineTo -12500 2153
+lineTo -10000 2167
+lineTo -7500 2289
+lineTo -5000 2531
+lineTo -2500 2867
+lineTo 0 3241
+lineTo 2500 3583
+lineTo 5000 3819
+lineTo 7500 3900
+lineTo 10000 3805
+lineTo 12500 3556
+lineTo 15000 3204
+lineTo 17500 2821
+lineTo 20000 2480
+lineTo 22500 2235
+lineTo 25000 2112
+lineTo 27500 2098
+lineTo 30000 2153
+lineTo 32500 2215
+lineTo 35000 2226
+lineTo 37500 2143
+lineTo 40000 1956
+lineTo 42500 1688
+lineTo 45000 1394
+lineTo 47500 1142
+lineTo 50000 1001
+lineTo 50000 0
+fill
+globalAlpha 8000
+fillStyle "#96a5cc"
+fillRect -50000 -3000 100000 3000
+fillStyle "#2f3b6b"
+globalAlpha 5000
+fillRect -50000 -3000 100000 3000
+restore
+restore
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -50000 0
+lineTo 50000 0
+stroke
+restore
+restore
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 8100000 10800000 2700000
+clip
+setTransform 1080000 0 0 -1080000 5400000 10476000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -50000 0
+lineTo 50000 0
+stroke
+restore
+restore"
+`;
+
+exports[`a built-in backdrop > draws the backdrop office as recorded in a row of four > office in row 2 of 4 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 2700000
+clip
+setTransform 1080000 0 0 -1080000 5400000 2376000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -50000 0
+lineTo 50000 0
+stroke
+restore
+restore
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 2700000 10800000 2700000
+clip
+setTransform 1080000 0 0 -1080000 5400000 5076000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -50000 0
+lineTo 50000 0
+stroke
+restore
+restore
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 5400000 10800000 2700000
+clip
+setTransform 1080000 0 0 -1080000 5400000 7776000
+save
+save
+translate 0 0
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+fillStyle "#eceff0"
+fillRect -50000 0 100000 22000
+fillStyle "#d9d2c5"
+fillRect -50000 -3000 100000 3000
+strokeStyle "#aeb8bd"
+lineJoin "round"
+lineCap "round"
+lineWidth 80
+beginPath
+moveTo -50000 800
+lineTo 50000 800
+stroke
+fillStyle "#dcebf3"
+lineWidth 140
+beginPath
+rect -75600 10000 9600 8600
+fill
+fillStyle "#f7f7f3"
+fillRect -75600 13870 9600 4730
+save
+lineWidth 50
+beginPath
+moveTo -75600 14461
+lineTo -66000 14461
+moveTo -75600 15053
+lineTo -66000 15053
+moveTo -75600 15644
+lineTo -66000 15644
+moveTo -75600 16235
+lineTo -66000 16235
+moveTo -75600 16826
+lineTo -66000 16826
+moveTo -75600 17418
+lineTo -66000 17418
+moveTo -75600 18009
+lineTo -66000 18009
+stroke
+restore
+beginPath
+rect -75600 10000 9600 8600
+moveTo -70800 10000
+lineTo -70800 18600
+moveTo -76000 9800
+lineTo -65600 9800
+stroke
+fillStyle "#dcebf3"
+lineWidth 140
+beginPath
+rect -43600 10000 9600 8600
+fill
+fillStyle "#f7f7f3"
+fillRect -43600 13870 9600 4730
+save
+lineWidth 50
+beginPath
+moveTo -43600 14461
+lineTo -34000 14461
+moveTo -43600 15053
+lineTo -34000 15053
+moveTo -43600 15644
+lineTo -34000 15644
+moveTo -43600 16235
+lineTo -34000 16235
+moveTo -43600 16826
+lineTo -34000 16826
+moveTo -43600 17418
+lineTo -34000 17418
+moveTo -43600 18009
+lineTo -34000 18009
+stroke
+restore
+beginPath
+rect -43600 10000 9600 8600
+moveTo -38800 10000
+lineTo -38800 18600
+moveTo -44000 9800
+lineTo -33600 9800
+stroke
+fillStyle "#dcebf3"
+lineWidth 140
+beginPath
+rect -11600 10000 9600 8600
+fill
+fillStyle "#f7f7f3"
+fillRect -11600 13870 9600 4730
+save
+lineWidth 50
+beginPath
+moveTo -11600 14461
+lineTo -2000 14461
+moveTo -11600 15053
+lineTo -2000 15053
+moveTo -11600 15644
+lineTo -2000 15644
+moveTo -11600 16235
+lineTo -2000 16235
+moveTo -11600 16826
+lineTo -2000 16826
+moveTo -11600 17418
+lineTo -2000 17418
+moveTo -11600 18009
+lineTo -2000 18009
+stroke
+restore
+beginPath
+rect -11600 10000 9600 8600
+moveTo -6800 10000
+lineTo -6800 18600
+moveTo -12000 9800
+lineTo -1600 9800
+stroke
+fillStyle "#dcebf3"
+lineWidth 140
+beginPath
+rect 20400 10000 9600 8600
+fill
+fillStyle "#f7f7f3"
+fillRect 20400 13870 9600 4730
+save
+lineWidth 50
+beginPath
+moveTo 20400 14461
+lineTo 30000 14461
+moveTo 20400 15053
+lineTo 30000 15053
+moveTo 20400 15644
+lineTo 30000 15644
+moveTo 20400 16235
+lineTo 30000 16235
+moveTo 20400 16826
+lineTo 30000 16826
+moveTo 20400 17418
+lineTo 30000 17418
+moveTo 20400 18009
+lineTo 30000 18009
+stroke
+restore
+beginPath
+rect 20400 10000 9600 8600
+moveTo 25200 10000
+lineTo 25200 18600
+moveTo 20000 9800
+lineTo 30400 9800
+stroke
+fillStyle "#dcebf3"
+lineWidth 140
+beginPath
+rect 52400 10000 9600 8600
+fill
+fillStyle "#f7f7f3"
+fillRect 52400 13870 9600 4730
+save
+lineWidth 50
+beginPath
+moveTo 52400 14461
+lineTo 62000 14461
+moveTo 52400 15053
+lineTo 62000 15053
+moveTo 52400 15644
+lineTo 62000 15644
+moveTo 52400 16235
+lineTo 62000 16235
+moveTo 52400 16826
+lineTo 62000 16826
+moveTo 52400 17418
+lineTo 62000 17418
+moveTo 52400 18009
+lineTo 62000 18009
+stroke
+restore
+beginPath
+rect 52400 10000 9600 8600
+moveTo 57200 10000
+lineTo 57200 18600
+moveTo 52000 9800
+lineTo 62400 9800
+stroke
+fillStyle "#fbfbf8"
+lineWidth 140
+beginPath
+arc 8500 16000 1300 0 62832
+fill
+stroke
+strokeStyle "#8f9aa0"
+lineWidth 120
+beginPath
+moveTo 7980 16400
+lineTo 8500 16000
+lineTo 9200 16700
+stroke
+restore
+restore
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -50000 0
+lineTo 50000 0
+stroke
+restore
+restore
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 8100000 10800000 2700000
+clip
+setTransform 1080000 0 0 -1080000 5400000 10476000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -50000 0
+lineTo 50000 0
+stroke
+restore
+restore"
+`;
+
+exports[`a built-in backdrop > draws the backdrop plain as recorded in a row of four > plain in row 2 of 4 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 2700000
+clip
+setTransform 1080000 0 0 -1080000 5400000 2376000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -50000 0
+lineTo 50000 0
+stroke
+restore
+restore
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 2700000 10800000 2700000
+clip
+setTransform 1080000 0 0 -1080000 5400000 5076000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -50000 0
+lineTo 50000 0
+stroke
+restore
+restore
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 5400000 10800000 2700000
+clip
+setTransform 1080000 0 0 -1080000 5400000 7776000
+save
+save
+translate 0 0
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+fillStyle "#f1ece2"
+fillRect -50000 0 100000 22000
+fillStyle "#e0d9cb"
+fillRect -50000 -3000 100000 3000
+restore
+restore
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -50000 0
+lineTo 50000 0
+stroke
+restore
+restore
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 8100000 10800000 2700000
+clip
+setTransform 1080000 0 0 -1080000 5400000 10476000
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -50000 0
+lineTo 50000 0
+stroke
+restore
+restore"
+`;
+
 exports[`the samples > draws the action sitDown as recorded > frame 0 1`] = `
 "reset
 fillStyle "#ffffff"
@@ -2222,6 +3800,1071 @@ arc -540 600 660 -9000 9000
 lineWidth 80
 stroke
 restore
+restore
+restore"
+`;
+
+exports[`the samples > draws the backdrop court as recorded > frame 0 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 10800000
+clip
+setTransform 4320000 0 0 -4320000 5400000 9504000
+save
+save
+translate 0 0
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+fillStyle "#e3eef5"
+fillRect -12500 0 25000 22000
+fillStyle "#e3b98a"
+fillRect -12500 -3000 25000 3000
+fillStyle "#ffffff"
+fillRect -12500 -1700 25000 400
+strokeStyle "#c2cfd7"
+lineCap "butt"
+lineWidth 60
+beginPath
+moveTo -27500 0
+lineTo -12500 15000
+moveTo -27500 0
+lineTo -42500 15000
+moveTo -26250 0
+lineTo -11250 15000
+moveTo -26250 0
+lineTo -41250 15000
+moveTo -25000 0
+lineTo -10000 15000
+moveTo -25000 0
+lineTo -40000 15000
+moveTo -23750 0
+lineTo -8750 15000
+moveTo -23750 0
+lineTo -38750 15000
+moveTo -22500 0
+lineTo -7500 15000
+moveTo -22500 0
+lineTo -37500 15000
+moveTo -21250 0
+lineTo -6250 15000
+moveTo -21250 0
+lineTo -36250 15000
+moveTo -20000 0
+lineTo -5000 15000
+moveTo -20000 0
+lineTo -35000 15000
+moveTo -18750 0
+lineTo -3750 15000
+moveTo -18750 0
+lineTo -33750 15000
+moveTo -17500 0
+lineTo -2500 15000
+moveTo -17500 0
+lineTo -32500 15000
+moveTo -16250 0
+lineTo -1250 15000
+moveTo -16250 0
+lineTo -31250 15000
+moveTo -15000 0
+lineTo 0 15000
+moveTo -15000 0
+lineTo -30000 15000
+moveTo -13750 0
+lineTo 1250 15000
+moveTo -13750 0
+lineTo -28750 15000
+moveTo -12500 0
+lineTo 2500 15000
+moveTo -12500 0
+lineTo -27500 15000
+moveTo -11250 0
+lineTo 3750 15000
+moveTo -11250 0
+lineTo -26250 15000
+moveTo -10000 0
+lineTo 5000 15000
+moveTo -10000 0
+lineTo -25000 15000
+moveTo -8750 0
+lineTo 6250 15000
+moveTo -8750 0
+lineTo -23750 15000
+moveTo -7500 0
+lineTo 7500 15000
+moveTo -7500 0
+lineTo -22500 15000
+moveTo -6250 0
+lineTo 8750 15000
+moveTo -6250 0
+lineTo -21250 15000
+moveTo -5000 0
+lineTo 10000 15000
+moveTo -5000 0
+lineTo -20000 15000
+moveTo -3750 0
+lineTo 11250 15000
+moveTo -3750 0
+lineTo -18750 15000
+moveTo -2500 0
+lineTo 12500 15000
+moveTo -2500 0
+lineTo -17500 15000
+moveTo -1250 0
+lineTo 13750 15000
+moveTo -1250 0
+lineTo -16250 15000
+moveTo 0 0
+lineTo 15000 15000
+moveTo 0 0
+lineTo -15000 15000
+moveTo 1250 0
+lineTo 16250 15000
+moveTo 1250 0
+lineTo -13750 15000
+moveTo 2500 0
+lineTo 17500 15000
+moveTo 2500 0
+lineTo -12500 15000
+moveTo 3750 0
+lineTo 18750 15000
+moveTo 3750 0
+lineTo -11250 15000
+moveTo 5000 0
+lineTo 20000 15000
+moveTo 5000 0
+lineTo -10000 15000
+moveTo 6250 0
+lineTo 21250 15000
+moveTo 6250 0
+lineTo -8750 15000
+moveTo 7500 0
+lineTo 22500 15000
+moveTo 7500 0
+lineTo -7500 15000
+moveTo 8750 0
+lineTo 23750 15000
+moveTo 8750 0
+lineTo -6250 15000
+moveTo 10000 0
+lineTo 25000 15000
+moveTo 10000 0
+lineTo -5000 15000
+moveTo 11250 0
+lineTo 26250 15000
+moveTo 11250 0
+lineTo -3750 15000
+moveTo 12500 0
+lineTo 27500 15000
+moveTo 12500 0
+lineTo -2500 15000
+moveTo 13750 0
+lineTo 28750 15000
+moveTo 13750 0
+lineTo -1250 15000
+moveTo 15000 0
+lineTo 30000 15000
+moveTo 15000 0
+lineTo 0 15000
+moveTo 16250 0
+lineTo 31250 15000
+moveTo 16250 0
+lineTo 1250 15000
+moveTo 17500 0
+lineTo 32500 15000
+moveTo 17500 0
+lineTo 2500 15000
+moveTo 18750 0
+lineTo 33750 15000
+moveTo 18750 0
+lineTo 3750 15000
+moveTo 20000 0
+lineTo 35000 15000
+moveTo 20000 0
+lineTo 5000 15000
+moveTo 21250 0
+lineTo 36250 15000
+moveTo 21250 0
+lineTo 6250 15000
+moveTo 22500 0
+lineTo 37500 15000
+moveTo 22500 0
+lineTo 7500 15000
+moveTo 23750 0
+lineTo 38750 15000
+moveTo 23750 0
+lineTo 8750 15000
+moveTo 25000 0
+lineTo 40000 15000
+moveTo 25000 0
+lineTo 10000 15000
+moveTo 26250 0
+lineTo 41250 15000
+moveTo 26250 0
+lineTo 11250 15000
+moveTo 27500 0
+lineTo 42500 15000
+moveTo 27500 0
+lineTo 12500 15000
+stroke
+fillStyle "#e3eef5"
+fillRect -12500 15000 25000 7000
+strokeStyle "#b0bfc9"
+lineWidth 220
+beginPath
+moveTo -12500 15000
+lineTo 12500 15000
+moveTo -8000 0
+lineTo -8000 15500
+moveTo 8000 0
+lineTo 8000 15500
+moveTo 24000 0
+lineTo 24000 15500
+stroke
+restore
+restore
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -12500 0
+lineTo 12500 0
+stroke
+restore
+save
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineCap "round"
+lineJoin "round"
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 6200
+lineTo 0 7600
+lineTo 0 8200
+stroke
+beginPath
+arc 0 9100 900 0 62832
+fillStyle "#ffffff"
+fill
+stroke
+fillStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -243 9172
+bezierCurveTo -243 9316 -117 9316 -117 9172
+bezierCurveTo -117 9028 -243 9028 -243 9172
+closePath
+fill
+stroke
+beginPath
+moveTo -54 9505
+lineTo -306 9505
+stroke
+beginPath
+moveTo 261 9172
+bezierCurveTo 261 9316 387 9316 387 9172
+bezierCurveTo 387 9028 261 9028 261 9172
+closePath
+fill
+stroke
+beginPath
+moveTo 198 9505
+lineTo 450 9505
+stroke
+beginPath
+moveTo -198 8740
+quadraticCurveTo 72 8740 342 8740
+quadraticCurveTo 72 8740 -198 8740
+closePath
+fill
+stroke
+lineWidth 250
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+restore
+restore"
+`;
+
+exports[`the samples > draws the backdrop hill as recorded > frame 0 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 10800000
+clip
+setTransform 4320000 0 0 -4320000 5400000 9504000
+save
+save
+translate 0 0
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+fillStyle "#e4f1f7"
+fillRect -12500 0 25000 22000
+fillStyle "#ffffff"
+save
+translate -34500 19300
+beginPath
+moveTo -1800 0
+quadraticCurveTo -2500 0 -2400 700
+quadraticCurveTo -2300 1300 -1600 1200
+quadraticCurveTo -1400 2200 -400 2100
+quadraticCurveTo 400 2800 1100 1900
+quadraticCurveTo 2100 2000 2200 1000
+quadraticCurveTo 2500 100 1700 0
+closePath
+fill
+restore
+save
+translate -5500 17200
+beginPath
+moveTo -2700 0
+quadraticCurveTo -3750 0 -3600 1050
+quadraticCurveTo -3450 1950 -2400 1800
+quadraticCurveTo -2100 3300 -600 3150
+quadraticCurveTo 600 4200 1650 2850
+quadraticCurveTo 3150 3000 3300 1500
+quadraticCurveTo 3750 150 2550 0
+closePath
+fill
+restore
+save
+translate 23500 19300
+beginPath
+moveTo -1800 0
+quadraticCurveTo -2500 0 -2400 700
+quadraticCurveTo -2300 1300 -1600 1200
+quadraticCurveTo -1400 2200 -400 2100
+quadraticCurveTo 400 2800 1100 1900
+quadraticCurveTo 2100 2000 2200 1000
+quadraticCurveTo 2500 100 1700 0
+closePath
+fill
+restore
+fillStyle "#9ccb8b"
+globalAlpha 3000
+beginPath
+moveTo -14000 0
+lineTo -14000 13644
+lineTo -12000 13458
+lineTo -10000 13329
+lineTo -8000 13268
+lineTo -6000 13274
+lineTo -4000 13337
+lineTo -2000 13438
+lineTo 0 13551
+lineTo 2000 13648
+lineTo 4000 13700
+lineTo 6000 13682
+lineTo 8000 13576
+lineTo 10000 13374
+lineTo 12000 13077
+lineTo 14000 12695
+lineTo 14000 0
+fill
+globalAlpha 6200
+beginPath
+moveTo -14000 0
+lineTo -14000 4947
+lineTo -12000 5471
+lineTo -10000 6181
+lineTo -8000 7050
+lineTo -6000 8029
+lineTo -4000 9046
+lineTo -2000 10021
+lineTo 0 10876
+lineTo 2000 11550
+lineTo 4000 12004
+lineTo 6000 12230
+lineTo 8000 12247
+lineTo 10000 12095
+lineTo 12000 11827
+lineTo 14000 11497
+lineTo 14000 0
+fill
+strokeStyle "#8a7a63"
+lineCap "round"
+lineWidth 220
+save
+translate -60313 11891
+globalAlpha 10000
+beginPath
+moveTo 0 0
+lineTo 0 2000
+stroke
+globalAlpha 8500
+beginPath
+moveTo 0 1710
+quadraticCurveTo -1170 1620 -1080 2700
+quadraticCurveTo -1260 3870 -90 4140
+quadraticCurveTo 1080 4410 1170 2970
+quadraticCurveTo 1350 1710 0 1710
+closePath
+fill
+restore
+save
+translate 9500 12046
+globalAlpha 10000
+beginPath
+moveTo 0 0
+lineTo 0 2000
+stroke
+globalAlpha 8500
+beginPath
+moveTo 0 1710
+quadraticCurveTo -1170 1620 -1080 2700
+quadraticCurveTo -1260 3870 -90 4140
+quadraticCurveTo 1080 4410 1170 2970
+quadraticCurveTo 1350 1710 0 1710
+closePath
+fill
+restore
+save
+translate 79313 12301
+globalAlpha 10000
+beginPath
+moveTo 0 0
+lineTo 0 2000
+stroke
+globalAlpha 8500
+beginPath
+moveTo 0 1710
+quadraticCurveTo -1170 1620 -1080 2700
+quadraticCurveTo -1260 3870 -90 4140
+quadraticCurveTo 1080 4410 1170 2970
+quadraticCurveTo 1350 1710 0 1710
+closePath
+fill
+restore
+globalAlpha 10000
+fillRect -12500 -3000 25000 3000
+restore
+restore
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -12500 0
+lineTo 12500 0
+stroke
+restore
+save
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineCap "round"
+lineJoin "round"
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 6200
+lineTo 0 7600
+lineTo 0 8200
+stroke
+beginPath
+arc 0 9100 900 0 62832
+fillStyle "#ffffff"
+fill
+stroke
+fillStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -243 9172
+bezierCurveTo -243 9316 -117 9316 -117 9172
+bezierCurveTo -117 9028 -243 9028 -243 9172
+closePath
+fill
+stroke
+beginPath
+moveTo -54 9505
+lineTo -306 9505
+stroke
+beginPath
+moveTo 261 9172
+bezierCurveTo 261 9316 387 9316 387 9172
+bezierCurveTo 387 9028 261 9028 261 9172
+closePath
+fill
+stroke
+beginPath
+moveTo 198 9505
+lineTo 450 9505
+stroke
+beginPath
+moveTo -198 8740
+quadraticCurveTo 72 8740 342 8740
+quadraticCurveTo 72 8740 -198 8740
+closePath
+fill
+stroke
+lineWidth 250
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+restore
+restore"
+`;
+
+exports[`the samples > draws the backdrop night as recorded > frame 0 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 10800000
+clip
+setTransform 4320000 0 0 -4320000 5400000 9504000
+save
+save
+translate 0 0
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+createLinearGradient 0 22000 0 0
+addColorStop {"gradient":0} 0 "#2f3b6b"
+addColorStop {"gradient":0} 10000 "#96a5cc"
+fillStyle {"gradient":0}
+fillRect -12500 0 25000 22000
+fillStyle "#f6f1d3"
+globalAlpha 6685
+beginPath
+arc -12136 21351 156 0 62832
+fill
+globalAlpha 6206
+beginPath
+arc -9686 11523 118 0 62832
+fill
+globalAlpha 9722
+beginPath
+arc -7532 16048 100 0 62832
+fill
+globalAlpha 6987
+beginPath
+arc -6158 14058 124 0 62832
+fill
+globalAlpha 9095
+beginPath
+arc -5097 16739 77 0 62832
+fill
+globalAlpha 5790
+beginPath
+arc -2709 15246 83 0 62832
+fill
+globalAlpha 7666
+beginPath
+arc -411 19122 91 0 62832
+fill
+globalAlpha 6094
+beginPath
+arc 491 18211 152 0 62832
+fill
+globalAlpha 9189
+beginPath
+arc 3421 11636 89 0 62832
+fill
+globalAlpha 9348
+beginPath
+arc 4707 14748 150 0 62832
+fill
+globalAlpha 5912
+beginPath
+arc 6122 15354 157 0 62832
+fill
+globalAlpha 9288
+beginPath
+arc 11147 13604 110 0 62832
+fill
+globalAlpha 6709
+beginPath
+arc 14042 19710 147 0 62832
+fill
+globalAlpha 10000
+beginPath
+moveTo 8908 19364
+ellipse 8481 17789 1632 1632 0 13061 60376 false
+ellipse 8966 18073 1292 1292 0 -5555 -46673 true
+closePath
+fill
+fillStyle "#2f3b6b"
+globalAlpha 4500
+beginPath
+moveTo -12500 0
+lineTo -12500 2153
+lineTo -10000 2167
+lineTo -7500 2289
+lineTo -5000 2531
+lineTo -2500 2867
+lineTo 0 3241
+lineTo 2500 3583
+lineTo 5000 3819
+lineTo 7500 3900
+lineTo 10000 3805
+lineTo 12500 3556
+lineTo 12500 0
+fill
+globalAlpha 8000
+fillStyle "#96a5cc"
+fillRect -12500 -3000 25000 3000
+fillStyle "#2f3b6b"
+globalAlpha 5000
+fillRect -12500 -3000 25000 3000
+restore
+restore
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -12500 0
+lineTo 12500 0
+stroke
+restore
+save
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineCap "round"
+lineJoin "round"
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 6200
+lineTo 0 7600
+lineTo 0 8200
+stroke
+beginPath
+arc 0 9100 900 0 62832
+fillStyle "#ffffff"
+fill
+stroke
+fillStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -243 9172
+bezierCurveTo -243 9316 -117 9316 -117 9172
+bezierCurveTo -117 9028 -243 9028 -243 9172
+closePath
+fill
+stroke
+beginPath
+moveTo -54 9505
+lineTo -306 9505
+stroke
+beginPath
+moveTo 261 9172
+bezierCurveTo 261 9316 387 9316 387 9172
+bezierCurveTo 387 9028 261 9028 261 9172
+closePath
+fill
+stroke
+beginPath
+moveTo 198 9505
+lineTo 450 9505
+stroke
+beginPath
+moveTo -198 8740
+quadraticCurveTo 72 8740 342 8740
+quadraticCurveTo 72 8740 -198 8740
+closePath
+fill
+stroke
+lineWidth 250
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+restore
+restore"
+`;
+
+exports[`the samples > draws the backdrop office as recorded > frame 0 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 10800000
+clip
+setTransform 4320000 0 0 -4320000 5400000 9504000
+save
+save
+translate 0 0
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+fillStyle "#eceff0"
+fillRect -12500 0 25000 22000
+fillStyle "#d9d2c5"
+fillRect -12500 -3000 25000 3000
+strokeStyle "#aeb8bd"
+lineJoin "round"
+lineCap "round"
+lineWidth 80
+beginPath
+moveTo -12500 800
+lineTo 12500 800
+stroke
+fillStyle "#dcebf3"
+lineWidth 140
+beginPath
+rect -43600 10000 9600 8600
+fill
+fillStyle "#f7f7f3"
+fillRect -43600 13870 9600 4730
+save
+lineWidth 50
+beginPath
+moveTo -43600 14461
+lineTo -34000 14461
+moveTo -43600 15053
+lineTo -34000 15053
+moveTo -43600 15644
+lineTo -34000 15644
+moveTo -43600 16235
+lineTo -34000 16235
+moveTo -43600 16826
+lineTo -34000 16826
+moveTo -43600 17418
+lineTo -34000 17418
+moveTo -43600 18009
+lineTo -34000 18009
+stroke
+restore
+beginPath
+rect -43600 10000 9600 8600
+moveTo -38800 10000
+lineTo -38800 18600
+moveTo -44000 9800
+lineTo -33600 9800
+stroke
+fillStyle "#dcebf3"
+lineWidth 140
+beginPath
+rect -11600 10000 9600 8600
+fill
+fillStyle "#f7f7f3"
+fillRect -11600 13870 9600 4730
+save
+lineWidth 50
+beginPath
+moveTo -11600 14461
+lineTo -2000 14461
+moveTo -11600 15053
+lineTo -2000 15053
+moveTo -11600 15644
+lineTo -2000 15644
+moveTo -11600 16235
+lineTo -2000 16235
+moveTo -11600 16826
+lineTo -2000 16826
+moveTo -11600 17418
+lineTo -2000 17418
+moveTo -11600 18009
+lineTo -2000 18009
+stroke
+restore
+beginPath
+rect -11600 10000 9600 8600
+moveTo -6800 10000
+lineTo -6800 18600
+moveTo -12000 9800
+lineTo -1600 9800
+stroke
+fillStyle "#dcebf3"
+lineWidth 140
+beginPath
+rect 20400 10000 9600 8600
+fill
+fillStyle "#f7f7f3"
+fillRect 20400 13870 9600 4730
+save
+lineWidth 50
+beginPath
+moveTo 20400 14461
+lineTo 30000 14461
+moveTo 20400 15053
+lineTo 30000 15053
+moveTo 20400 15644
+lineTo 30000 15644
+moveTo 20400 16235
+lineTo 30000 16235
+moveTo 20400 16826
+lineTo 30000 16826
+moveTo 20400 17418
+lineTo 30000 17418
+moveTo 20400 18009
+lineTo 30000 18009
+stroke
+restore
+beginPath
+rect 20400 10000 9600 8600
+moveTo 25200 10000
+lineTo 25200 18600
+moveTo 20000 9800
+lineTo 30400 9800
+stroke
+fillStyle "#fbfbf8"
+lineWidth 140
+beginPath
+arc 8500 16000 1300 0 62832
+fill
+stroke
+strokeStyle "#8f9aa0"
+lineWidth 120
+beginPath
+moveTo 7980 16400
+lineTo 8500 16000
+lineTo 9200 16700
+stroke
+restore
+restore
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -12500 0
+lineTo 12500 0
+stroke
+restore
+save
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineCap "round"
+lineJoin "round"
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 6200
+lineTo 0 7600
+lineTo 0 8200
+stroke
+beginPath
+arc 0 9100 900 0 62832
+fillStyle "#ffffff"
+fill
+stroke
+fillStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -243 9172
+bezierCurveTo -243 9316 -117 9316 -117 9172
+bezierCurveTo -117 9028 -243 9028 -243 9172
+closePath
+fill
+stroke
+beginPath
+moveTo -54 9505
+lineTo -306 9505
+stroke
+beginPath
+moveTo 261 9172
+bezierCurveTo 261 9316 387 9316 387 9172
+bezierCurveTo 387 9028 261 9028 261 9172
+closePath
+fill
+stroke
+beginPath
+moveTo 198 9505
+lineTo 450 9505
+stroke
+beginPath
+moveTo -198 8740
+quadraticCurveTo 72 8740 342 8740
+quadraticCurveTo 72 8740 -198 8740
+closePath
+fill
+stroke
+lineWidth 250
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+restore
+restore"
+`;
+
+exports[`the samples > draws the backdrop plain as recorded > frame 0 1`] = `
+"reset
+fillStyle "#ffffff"
+fillRect 0 0 10800000 10800000
+save
+setTransform 10000 0 0 10000 0 0
+beginPath
+rect 0 0 10800000 10800000
+clip
+setTransform 4320000 0 0 -4320000 5400000 9504000
+save
+save
+translate 0 0
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+fillStyle "#f1ece2"
+fillRect -12500 0 25000 22000
+fillStyle "#e0d9cb"
+fillRect -12500 -3000 25000 3000
+restore
+restore
+save
+strokeStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -12500 0
+lineTo 12500 0
+stroke
+restore
+save
+strokeStyle "#111111"
+fillStyle "#111111"
+lineWidth 250
+lineCap "round"
+lineJoin "round"
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 4800
+lineTo 0 6200
+lineTo 0 7600
+lineTo 0 8200
+stroke
+beginPath
+arc 0 9100 900 0 62832
+fillStyle "#ffffff"
+fill
+stroke
+fillStyle "#111111"
+lineWidth 100
+beginPath
+moveTo -243 9172
+bezierCurveTo -243 9316 -117 9316 -117 9172
+bezierCurveTo -117 9028 -243 9028 -243 9172
+closePath
+fill
+stroke
+beginPath
+moveTo -54 9505
+lineTo -306 9505
+stroke
+beginPath
+moveTo 261 9172
+bezierCurveTo 261 9316 387 9316 387 9172
+bezierCurveTo 387 9028 261 9028 261 9172
+closePath
+fill
+stroke
+beginPath
+moveTo 198 9505
+lineTo 450 9505
+stroke
+beginPath
+moveTo -198 8740
+quadraticCurveTo 72 8740 342 8740
+quadraticCurveTo 72 8740 -198 8740
+closePath
+fill
+stroke
+lineWidth 250
+beginPath
+moveTo 0 4800
+lineTo 0 2400
+lineTo 0 0
+lineTo 800 0
+stroke
+beginPath
+moveTo 0 7600
+lineTo 0 5900
+lineTo 0 4300
+stroke
 restore
 restore"
 `;

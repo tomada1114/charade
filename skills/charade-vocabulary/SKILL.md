@@ -167,6 +167,12 @@ it.
 - The third argument is the moment: `moment.time` is scene time in seconds,
   `moment.progress` runs 0 to 1 over a shown `duration`, and `moment.random.float(i)` is
   a repeatable number in [0, 1) for each whole number `i`. That is how an effect moves.
+- `moment.view` is the row's visible area in the units the draw uses: `left`, `right`,
+  `bottom`, `top`. A row is 2.5 units high with 0.3 below the ground line, but its width
+  runs from 2.5 units (one square row) to about 17.8 (four rows of a 16:9 canvas). A
+  backdrop fills from `view.left` to `view.right` and repeats or extends what it shows
+  outwards from the origin, where the actor stands, so a wider row shows more of the
+  same picture. Keep it paler than the ink figure, and its detail above head height.
 
 ### The sample
 
@@ -174,9 +180,10 @@ it.
 and `catalog --images` draws it. It passes definitions, never names. For an action it is
 a short `wait`, the action with whatever prop it needs, and a `wait`.
 
-- A prop or a backdrop: put it in without a `duration`, twice if two settings look
-  different, and add `stage.actor().wait(1)` for scale and for the sample's length. The
-  image is the sample's last frame, which an item whose `duration` has ended is not in.
+- A prop or a backdrop: put it in without a `duration`, a prop twice if two settings
+  look different, and add `stage.actor().wait(1)` for scale and for the sample's length.
+  The image is the sample's last frame, which an item whose `duration` has ended is not
+  in.
 - An expression: `actor.express(item, { duration: 1 })`. An effect: a `duration`, beside
   an actor that waits as long.
 
@@ -194,8 +201,9 @@ In your own project, with the items in `wave.ts`:
    action or an effect, one frame for the others. Open every one.
 4. Look: is the figure whole, balanced and inside the frame? Are the feet on the ground?
    Would you name the motion without being told? Is the prop the right size beside a
-   figure? Fix and repeat from 1; a first attempt that passes `check` usually still
-   reads wrong.
+   figure? Is the figure still the clearest thing in front of a backdrop, in a scene of
+   one row and of four? Fix and repeat from 1; a first attempt that passes `check`
+   usually still reads wrong.
 5. Use it in a scene and look again there (`charade-scene`): an item that reads alone
    can still collide with a seat or leave the frame. Then commit the file.
 
