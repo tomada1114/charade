@@ -1,5 +1,5 @@
 import { facingOf } from "../draw/figure.js";
-import { drawTrack, idOf } from "../draw/frame.js";
+import { drawItem, drawTrack, idOf } from "../draw/frame.js";
 import { propPlacement } from "../draw/prop.js";
 import { GROUND_UNITS, type RowLayout, ROW_UNITS, rowLayout } from "../draw/layout.js";
 import {
@@ -452,12 +452,19 @@ function violationsAt(
         watched(() => {
           drawTrack(new RecordingContext(), timeline, row, track, frame);
         });
+      } else if (track.kind === "backdrop" || track.kind === "effect") {
+        watched(() => {
+          drawItem(new RecordingContext(), timeline, row, track, frame);
+        });
       } else if (track.kind === "prop") {
         // A held prop composes its holder's pose, which calls the holder's functions.
         // Their reads are the holder's, which its own track already reports.
         const placed = watched(() => propPlacement(timeline, row, track, frame), false);
         if (placed !== undefined) {
           found.push(...offFrame(area, placed.point, placed.point, row, id));
+          watched(() => {
+            drawItem(new RecordingContext(), timeline, row, track, frame, placed.point);
+          });
         }
       } else {
         const text = texts.get(id);

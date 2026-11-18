@@ -12,7 +12,7 @@ import {
   spreadFrames,
 } from "../src/check/sheet.js";
 import { drawFrame, FrameItemError } from "../src/draw/frame.js";
-import { scene } from "../src/index.js";
+import { defineBackdrop, defineEffect, scene } from "../src/index.js";
 
 describe("spreadFrames", () => {
   // R2: a 4 s scene at 30 fps has 121 frames, 0 to 120.
@@ -218,6 +218,58 @@ describe("ghosts", () => {
     expect(calls(ctx.log, "globalAlpha")).toEqual([
       { call: "globalAlpha", args: [10_000] },
     ]);
+  });
+
+  it("draws the row's backdrop at the last ghost's frame under the ghosts, and no effect", () => {
+    const built = scene({ duration: 2 }, (stage) => {
+      stage.actor();
+      stage.backdrop(
+        defineBackdrop({
+          name: "wall",
+          description: "A marker.",
+          draw(ctx) {
+            ctx.rect(6, 6, 1, 1);
+          },
+        }),
+        { at: 1 },
+      );
+      stage.effect(
+        defineEffect({
+          name: "spark",
+          description: "A marker.",
+          draw(ctx) {
+            ctx.rect(8, 8, 1, 1);
+          },
+        }),
+      );
+    });
+    const actor = findActor(built.timeline, "actor");
+    if (actor.kind !== "found") {
+      throw new Error("the actor was not found");
+    }
+    const ghosts = (frames: readonly number[]): readonly LogEntry[] => {
+      const ctx = new RecordingContext();
+      drawGhosts(
+        ctx,
+        built.timeline,
+        actor.row,
+        actor.track,
+        frames,
+        ghostLayout(1080, 1080, "x", frames),
+      );
+      return ctx.log;
+    };
+    const rects = (log: readonly LogEntry[]): unknown[] =>
+      calls(log, "rect").map(({ args }) => args[0]);
+    expect(rects(ghosts([0, 15]))).not.toContain(60_000);
+    const log = ghosts([0, 30]);
+    expect(rects(log)).toContain(60_000);
+    expect(rects(log)).not.toContain(80_000);
+    const wall = log.findIndex(
+      ({ call, args }) => call === "rect" && args[0] === 60_000,
+    );
+    const head = log.findIndex(({ call, args }) => call === "arc" && args[2] === 900);
+    expect(wall).toBeLessThan(head);
   });
 
   it("wraps a pose that cannot be composed in the frame drawer's error", () => {

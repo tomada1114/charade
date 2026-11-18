@@ -448,25 +448,34 @@ change to the shape raises the version.
 - The figure draws the far (`L`) arm and leg, then the back and the head, then the near
   (`R`) leg and arm, so the near limbs are in front.
 - Within a row the order is the five slots of `ROW_SLOTS`: backdrop, props behind,
-  actor, props in front, text. Each item runs between `save` and `restore`. Backdrops
-  have no vocabulary yet, so the backdrop slot holds the ground line, drawn across the
-  row's visible width at `y = 0`; a backdrop item will draw before it. A free drawing
-  (`row.draw`) goes in the props-in-front slot, in recorded order: with no layering
-  option yet, in front is the one place it cannot be hidden. Its callback starts with
-  ink as both styles and the figure's line width.
-- A prop is drawn while one of its `prop` segments covers the frame, with the context
-  translated to its ground point and the same starting state as a free drawing; its
-  `draw` gets the resolved params and the `Moment` of that segment. The definition is
-  the segment's own when it was passed as one and otherwise the built-in of its name; a
-  name this version lacks, or a parsed timeline's placeholder, draws nothing. Where the
-  ground point is comes from `propPlacement` in `src/draw/prop.ts`, a pure function of
-  the timeline and the frame.
+  actor, props in front, text. Each item runs between `save` and `restore`. The backdrop
+  slot holds the row's backdrops (`row.backdrop`) in the order their tracks were made,
+  then the ground line, drawn across the row's visible width at `y = 0`, so a backdrop
+  never hides the ground. The props-in-front slot holds the props in front, then the
+  row's effects (`row.effect`), then its free drawings (`row.draw`), each in the order
+  their tracks were made: an effect is an accent on the figure, so it is in front of the
+  actor, and with no layering option yet a free drawing is frontmost, the one place it
+  cannot be hidden. A free drawing's callback starts with ink as both styles and the
+  figure's line width.
+- A prop, backdrop or effect is drawn by `drawItem` in `src/draw/frame.ts` while one of
+  its segments of its own kind covers the frame, with the context translated to its
+  ground point and the same starting state as a free drawing; its `draw` gets the
+  resolved params and the `Moment` of that segment. The definition is the segment's own
+  when it was passed as one and otherwise the built-in of its name from the map of the
+  track's kind; a name that map lacks, or a parsed timeline's placeholder, draws
+  nothing. A backdrop's and an effect's ground point is the row's origin: neither has a
+  placement call yet. A prop's comes from `propPlacement` in `src/draw/prop.ts`, a pure
+  function of the timeline and the frame. A `draw` that throws is wrapped in
+  `FrameItemError` like a free drawing's, and `check` calls a prop's, backdrop's and
+  effect's `draw` at every frame on a recording context, as it does a free drawing's, so
+  a clock or random read or a failure is a finding named after the item; a held prop's
+  holder's reads stay the holder's.
 - With no layering option yet, a prop's slot follows what it is doing: behind the actor
   while it stands where it was placed or is carried by a far (`L`) hand or foot, in
   front while a near (`R`) one carries it or it is on a `move`, and after one. So a box
   to sit on is behind the figure and a ball in the throwing hand in front of it; an
   option can override this later without a break. Props in front draw before the row's
-  free drawings.
+  effects and free drawings.
 - The text slot holds the row's labels and bubbles, in the order their tracks were made.
   The default size is 0.16 units, a little under the head's 0.18: 17 px on four 1080 px
   rows, and 14 px in a contact sheet cell of a one-row 16:9 scene. A line is 1.35 sizes

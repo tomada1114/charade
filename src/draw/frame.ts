@@ -1,7 +1,7 @@
 import { CharadeError } from "../errors.js";
 import { poseAtFrame } from "../rig/compose.js";
 import type { Point } from "../rig/kinematics.js";
-import { builtinProps } from "../scene/builtins.js";
+import { builtinBackdrops, builtinEffects, builtinProps } from "../scene/builtins.js";
 import { randomSource } from "../timeline/random.js";
 import type { Moment } from "../timeline/segments.js";
 import { frameInSegment, frameSeconds, MICROS_PER_SECOND } from "../timeline/time.js";
@@ -16,10 +16,10 @@ import { isTextTrack, placedText, textFont } from "./text.js";
 const GROUND_LINE = 0.01;
 
 /**
- * The draw order within a row, back to front. Backdrops have no vocabulary yet, so the
- * drawer fills `backdrop` with the ground line; `text` holds the row's labels and
- * speech bubbles. A prop is behind the actor unless it is moving or in a near (`R`)
- * hand or foot; `propsInFront` holds those and then the row's free drawings.
+ * The draw order within a row, back to front. `backdrop` holds the row's backdrops and
+ * then the ground line; `text` holds the row's labels and speech bubbles. A prop is
+ * behind the actor unless it is moving or in a near (`R`) hand or foot;
+ * `propsInFront` holds those, then the row's effects, then its free drawings.
  */
 export const ROW_SLOTS = [
   "backdrop",
@@ -90,10 +90,17 @@ export class FrameItemError extends CharadeError {
 
 type DrawCallback = (ctx: ShapeContext, t: number, moment: Moment) => unknown;
 
-/** The built-in props as a record, which a map typed by its names is not. */
-const BUILTIN_PROPS: Readonly<Record<string, unknown>> = { ...builtinProps };
+/** The kinds of item drawn by their definition's `draw`. */
+type DrawnKind = "prop" | "backdrop" | "effect";
 
-type PropDraw = (ctx: ShapeContext, params: unknown, moment: Moment) => unknown;
+/** The built-in maps of the drawn kinds, as records, which a map typed by its names is not. */
+const BUILTIN_DRAWN: Readonly<Record<DrawnKind, Readonly<Record<string, unknown>>>> = {
+  prop: { ...builtinProps },
+  backdrop: { ...builtinBackdrops },
+  effect: { ...builtinEffects },
+};
+
+type ItemDraw = (ctx: ShapeContext, params: unknown, moment: Moment) => unknown;
 
 function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
   return typeof value === "object" && value !== null;
@@ -104,18 +111,20 @@ function isDrawCallback(value: unknown): value is DrawCallback {
 }
 
 /**
- * The `draw` of the prop a segment shows: its definition's when it was passed as one,
- * the built-in's of its name otherwise. A parsed timeline holds a placeholder where a
- * passed definition's function was, and a name may be one this version lacks; either
- * draws nothing.
+ * The `draw` of the item a segment shows: its definition's when it was passed as one,
+ * the built-in's of its name and kind otherwise. A parsed timeline holds a placeholder
+ * where a passed definition's function was, and a name may be one this version lacks;
+ * either draws nothing.
  */
-function propDraw(data: Readonly<Record<string, unknown>>): PropDraw | undefined {
+function itemDraw(
+  kind: DrawnKind,
+  data: Readonly<Record<string, unknown>>,
+): ItemDraw | undefined {
   const { definition, name } = data;
+  const builtins = BUILTIN_DRAWN[kind];
   const found =
-    definition === null &&
-    typeof name === "string" &&
-    Object.hasOwn(BUILTIN_PROPS, name)
-      ? BUILTIN_PROPS[name]
+    definition === null && typeof name === "string" && Object.hasOwn(builtins, name)
+      ? builtins[name]
       : definition;
   if (!isRecord(found)) {
     return undefined;
@@ -191,6 +200,59 @@ export function drawRow(
   }
 }
 
+/** `paint`, with what it throws wrapped in a `FrameItemError` naming `track`. */
+function guardedPainter(
+  timeline: Timeline,
+  row: number,
+  frame: number,
+  track: TimelineTrack,
+  paint: Painter,
+): Painter {
+  return (ctx) => {
+    try {
+      paint(ctx);
+    } catch (error) {
+      throw new FrameItemError(
+        row,
+        idOf(row, track),
+        frame,
+        frame / timeline.fps,
+        error,
+      );
+    }
+  };
+}
+
+/** A painter for each of row `row`'s backdrop or effect tracks, in track order. */
+function shownPainters(
+  timeline: Timeline,
+  row: number,
+  frame: number,
+  kind: "backdrop" | "effect",
+): Painter[] {
+  return (timeline.rows[row]?.tracks ?? [])
+    .filter((track) => track.kind === kind)
+    .map((track) =>
+      guardedPainter(timeline, row, frame, track, (ctx) => {
+        drawItem(ctx, timeline, row, track, frame);
+      }),
+    );
+}
+
+/** The backdrop slot of row `layout.index` at `frame`: its backdrops, then the ground line. */
+export function rowBackdrop(
+  timeline: Timeline,
+  layout: RowLayout,
+  frame: number,
+): readonly Painter[] {
+  return [
+    ...shownPainters(timeline, layout.index, frame, "backdrop"),
+    (ctx) => {
+      drawGround(ctx, layout);
+    },
+  ];
+}
+
 /** What row `layout.index` of `timeline` draws at `frame`. */
 export function rowContent(
   timeline: Timeline,
@@ -200,15 +262,8 @@ export function rowContent(
   const row = layout.index;
   const tracks = timeline.rows[row]?.tracks ?? [];
   const time = frame / timeline.fps;
-  const guarded =
-    (track: TimelineTrack, paint: Painter): Painter =>
-    (ctx) => {
-      try {
-        paint(ctx);
-      } catch (error) {
-        throw new FrameItemError(row, idOf(row, track), frame, time, error);
-      }
-    };
+  const guarded = (track: TimelineTrack, paint: Painter): Painter =>
+    guardedPainter(timeline, row, frame, track, paint);
   const actors = tracks
     .filter((track) => track.kind === "actor")
     .map((track) =>
@@ -245,7 +300,7 @@ export function rowContent(
       const { point } = placed;
       (placed.front ? propsInFront : propsBehind).push(
         guarded(track, (ctx) => {
-          drawProp(ctx, timeline, row, track, frame, point);
+          drawItem(ctx, timeline, row, track, frame, point);
         }),
       );
     }
@@ -256,14 +311,14 @@ export function rowContent(
     }),
   );
   return {
-    backdrop: [
-      (ctx) => {
-        drawGround(ctx, layout);
-      },
-    ],
+    backdrop: rowBackdrop(timeline, layout, frame),
     propsBehind,
     actor: actors,
-    propsInFront: [...propsInFront, ...drawings],
+    propsInFront: [
+      ...propsInFront,
+      ...shownPainters(timeline, row, frame, "effect"),
+      ...drawings,
+    ],
     text,
   };
 }
@@ -277,19 +332,30 @@ function drawGround(ctx: DrawingContext, layout: RowLayout): void {
   ctx.stroke();
 }
 
+const ORIGIN: Point = { x: 0, y: 0 };
+
+function isDrawnKind(kind: string): kind is DrawnKind {
+  return Object.hasOwn(BUILTIN_DRAWN, kind);
+}
+
 /**
- * Draws a prop with its ground point on `point`, once for each of its `prop` segments
- * shown at `frame`. Its `draw` starts as a free drawing's does: ink as both styles and
- * the figure's line width.
+ * Draws a prop, backdrop or effect with its ground point on `point`, the row's origin
+ * by default, once for each of its segments of its own kind shown at `frame`. Its
+ * `draw` starts as a free drawing's does: ink as both styles and the figure's line
+ * width.
  */
-function drawProp(
-  ctx: DrawingContext,
+export function drawItem(
+  ctx: ShapeContext,
   timeline: Timeline,
   row: number,
   track: TimelineTrack,
   frame: number,
-  point: Point,
+  point: Point = ORIGIN,
 ): void {
+  const { kind } = track;
+  if (!isDrawnKind(kind)) {
+    return;
+  }
   const { fps } = timeline;
   const random = randomSource({
     seed: timeline.seed,
@@ -302,12 +368,12 @@ function drawProp(
   for (const { data, start, end } of track.segments) {
     if (
       !isRecord(data) ||
-      data["kind"] !== "prop" ||
+      data["kind"] !== kind ||
       !frameInSegment(frame, start, end, fps)
     ) {
       continue;
     }
-    const draw = propDraw(data);
+    const draw = itemDraw(kind, data);
     if (draw === undefined) {
       continue;
     }
