@@ -82,7 +82,21 @@ recorded sample is written against; changing any of it changes all of them at on
   a minor change. `row.actor` and `row.draw` take an options bag rather than a
   positional name, so placement and layering can be added the same way.
 - An id is `row<i>` for a row and `row<i>/<kind>/<name>/<occurrence>` for an item; an
-  actor's default name is `actor` and a drawing's is `draw`.
+  actor's default name is `actor`, a drawing's is `draw` and a label's is `label`. An
+  actor's speech bubbles are one item of kind `bubble`, named after the actor.
+- Text is `row.label(text, options)` and `actor.say(text, options)`, with the option
+  types `LabelOptions` (`at`, `duration`, `x`, `y`, `size`, `align`, `width`, `name`)
+  and `SayOptions` (`at`, `duration`, `size`, `width`) and the alignment `TextAlign`
+  (`left`, `center`, `right`). Sizes and positions are in row units like everything
+  else, so text keeps its size relative to the figure at every row count. A label's time
+  is `at`, so its place is `x` and `y`: a point option would have been named `at` too.
+  Text that is not a string with a visible character is a finding
+  (`ERR_SCENE_INVALID_VALUE`) and records no text; a bad number is
+  `ERR_SCENE_OUT_OF_RANGE` and its default is used.
+- The `font` option is the path of a font file, relative to the scene file, not a family
+  name: a family resolves differently on every machine, and a file is what makes the
+  text the same on all of them. The scene keeps the string as written; the export layer
+  resolves and loads it.
 - A bad scene option is a finding and its default is used (`rows` is clamped into 1–4
   when it is a whole number), as is a missing `build`: the rest of the scene is still
   checked. `stage.actor()` or `stage.draw()` on a scene with more rows is also a
@@ -129,6 +143,14 @@ recorded sample is written against; changing any of it changes all of them at on
   pulls it back. `wait` records a segment of its own, which is what lets a trailing wait
   lengthen the scene. `sync()` returns the time it moved to, counts free drawings as
   well as actors, and does not give a cursor to an actor that has an open-ended track.
+- `say` occupies the actor as a `wait` does and records one on the actor's track, so the
+  next call follows the speech and a scene that ends on a line lasts until it has been
+  read; `{ at }` speaks during another call. Without a `duration` it lasts a reading
+  time, 1 s and 0.08 s for each character: long enough to read on first sight, and
+  bounded, since an open-ended bubble would take the actor's cursor away. A later `say`
+  on the same actor replaces an earlier one still showing: one head, one bubble. A label
+  has no cursor, like a drawing: without `at` it starts at 0 and without a `duration` it
+  is open-ended. `Clip` has no `say`; an action does not speak.
 - `Span` is generic in its mark names, `Span<Marks extends string = never>`, so an
   action can return `Span<"release">` later without a break; the calls of this layer
   state no marks. An open-ended call's `end` and `duration` are `Infinity`.
@@ -326,10 +348,12 @@ change to the shape raises the version.
   the channel names read at `t = 0`, mode, blend), `wait`, `draw` (the callback),
   `place` (a prop's ground point `x`, `y`), `hold` (the effector, the holding actor's
   track `name` and `occurrence`, the `offset`), `move` (where it arrives, `x`, `y`, and
-  its `arc`), or `prop`, `backdrop` and `effect` (name, definition or `null`, resolved
-  params). An action records its clip's calls on the actor's track as ordinary segments,
-  and an expression records a `pose`. These live in `src/timeline/segments.ts`. Nothing
-  is released yet, so this shape is still JSON version 1.
+  its `arc`), `label` (text, `x`, `y`, `size`, `align`, and `width` or `null`), `say`
+  (text, the speaking actor's track `name` and `occurrence`, `size`, `width`), or
+  `prop`, `backdrop` and `effect` (name, definition or `null`, resolved params). An
+  action records its clip's calls on the actor's track as ordinary segments, and an
+  expression records a `pose`. These live in `src/timeline/segments.ts`. Nothing is
+  released yet, so this shape is still JSON version 1.
 
 ## The drawing interface
 
@@ -378,6 +402,25 @@ change to the shape raises the version.
   4 callback is the same without the text members: with `y` up raw text would be
   mirrored, and it would bypass the text checks. A scene's text goes through labels,
   speech bubbles and the text helper.
+- The text helper is `drawText(ctx, text, options?)`, a root export with
+  `DrawTextOptions` (`x`, `y`, `size`, `align`, `width`) and its result `TextSize`. It
+  is named for what it does rather than `fillText`, which would read as the context
+  member the depth 4 type leaves out on purpose. It fills in the context's current fill
+  style, so a drawing colours text as it colours shapes, and returns the block's size so
+  a shape can be fitted around it. On a context without text members, which the engine
+  never hands out, it draws nothing: a thrown error would need a public code for a case
+  no scene can reach.
+- All text is drawn one way (`src/draw/text.ts`): translate to the block's middle, scale
+  by `(k, −k)`, and fill each line with `textBaseline` `middle`. The negated `y` undoes
+  the row's flip, so the text is not mirrored. `k` is the size in row units over the
+  pixel size of the context's font, which the text code reads and never writes: a font
+  of 0.16 px is not a size every rasteriser takes, so the font stays at a whole pixel
+  size and the scale does the rest.
+- The font reaches a frame as `FrameSource.textFont`, a CSS family list: `drawFrame`
+  sets `ctx.font` to `100px <list>` once, after the reset, and every item's `save` and
+  `restore` keep it. A source without one sets nothing, so the recording context stays
+  on its default `10px sans-serif` and a record of a frame without text has no `font`
+  line. The pure layers never choose a font; the export layer does.
 
 ## Drawing a frame
 
@@ -406,11 +449,11 @@ change to the shape raises the version.
   (`R`) leg and arm, so the near limbs are in front.
 - Within a row the order is the five slots of `ROW_SLOTS`: backdrop, props behind,
   actor, props in front, text. Each item runs between `save` and `restore`. Backdrops
-  and text have no vocabulary yet, so `text` is empty and the backdrop slot holds the
-  ground line, drawn across the row's visible width at `y = 0`; a backdrop item will
-  draw before it. A free drawing (`row.draw`) goes in the props-in-front slot, in
-  recorded order: with no layering option yet, in front is the one place it cannot be
-  hidden. Its callback starts with ink as both styles and the figure's line width.
+  have no vocabulary yet, so the backdrop slot holds the ground line, drawn across the
+  row's visible width at `y = 0`; a backdrop item will draw before it. A free drawing
+  (`row.draw`) goes in the props-in-front slot, in recorded order: with no layering
+  option yet, in front is the one place it cannot be hidden. Its callback starts with
+  ink as both styles and the figure's line width.
 - A prop is drawn while one of its `prop` segments covers the frame, with the context
   translated to its ground point and the same starting state as a free drawing; its
   `draw` gets the resolved params and the `Moment` of that segment. The definition is
@@ -424,6 +467,30 @@ change to the shape raises the version.
   to sit on is behind the figure and a ball in the throwing hand in front of it; an
   option can override this later without a break. Props in front draw before the row's
   free drawings.
+- The text slot holds the row's labels and bubbles, in the order their tracks were made.
+  The default size is 0.16 units, a little under the head's 0.18: 17 px on four 1080 px
+  rows, and 14 px in a contact sheet cell of a one-row 16:9 scene. A line is 1.35 sizes
+  high, which keeps kanji of two lines apart. `\n` breaks a line; with a wrapping width
+  a line also breaks between words and between wide characters (kana, kanji, hangul,
+  full-width forms), never before a closing mark or small kana and never after an
+  opening bracket. A piece wider than the width keeps a line of its own.
+- A label is ink text with a paper-coloured outline a quarter of its size wide, so it
+  stays readable over the ground line or a prop without a box that would read as a sign.
+  It has no colour option yet. `x` is the edge or centre `align` names (`center` by
+  default) and `y` the block's middle; by default it sits at `(0, 2)`, centred near the
+  top of the row, clear of a standing figure's two-line bubble.
+- A bubble is a rounded rectangle, paper inside and a 0.015 unit ink outline, lighter
+  than the figure's 0.025 so the figure stays the subject, with a triangular tail in the
+  same outline. Its text is centred and wraps at twelve sizes unless `width` says
+  otherwise. Padding is 0.6 sizes at the sides and 0.4 above and below, the corner
+  radius 0.6 sizes, the tail 0.8 sizes wide at its base.
+- The bubble sits straight above the speaker's head and follows it every frame: the
+  tail's tip is 0.04 units above the head circle and the body 0.12 above that, which a
+  standing figure's raised hand does not reach. Above, not beside, because a row is wide
+  and short and the side a figure faces is where the action is. The body is held 0.05
+  units inside the row's side edges, and the tail still points at the head, so a speaker
+  at the edge keeps its words in the frame. It is not held below the top: a bubble that
+  leaves there is a finding.
 - A free drawing is called for each of its segments that `frameInSegment` says frame `n`
   falls in, with `t` and the `Moment` of that segment; a parsed timeline's placeholder
   draws nothing.

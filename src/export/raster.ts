@@ -1,12 +1,14 @@
-import type { Canvas } from "skia-canvas";
+import type { Canvas, FontLibrary } from "skia-canvas";
 
 import type { DrawingContext } from "../draw/context.js";
 import { PAPER } from "../draw/figure.js";
 import { CharadeError } from "../errors.js";
+import type { FontLookup } from "./fonts.js";
 
 /** The part of skia-canvas the rasteriser uses. */
 export interface SkiaModule {
   readonly Canvas: typeof Canvas;
+  readonly FontLibrary: Pick<typeof FontLibrary, "has" | "use">;
 }
 
 /** Imports skia-canvas; injectable so a test can stand in for a missing binary. */
@@ -74,6 +76,13 @@ export interface Rasteriser {
     parts: readonly Part[],
     over: Drawing,
   ): Promise<Buffer>;
+  /** The fonts installed on this machine, and a way to add a font file. */
+  fonts(): Promise<FontLookup>;
+  /**
+   * A context that measures text in `font`, a CSS font shorthand, with the metrics
+   * frames are drawn with. It draws nowhere.
+   */
+  measurer(font: string): Promise<DrawingContext>;
 }
 
 const importSkia: SkiaLoader = () => import("skia-canvas");
@@ -162,5 +171,21 @@ export function createRasteriser(load: SkiaLoader = importSkia): Rasteriser {
         canvas.toBuffer("raw", { matte: PAPER, colorType: "rgba" }),
       ),
     composite,
+    fonts: async () => {
+      const { FontLibrary: library } = await loaded();
+      return {
+        has: (family) => library.has(family),
+        use: (alias, file) => {
+          library.use(alias, [file]);
+        },
+      };
+    },
+    measurer: async (font) => {
+      const { Canvas: SkiaCanvas } = await loaded();
+      // Kept for the life of the command, which measures with it at every frame.
+      const ctx = new SkiaCanvas(1, 1, { gpu: false }).getContext("2d");
+      ctx.font = font;
+      return ctx;
+    },
   };
 }

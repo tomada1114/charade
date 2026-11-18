@@ -67,6 +67,30 @@ export default scene({ rows: 2 }, (stage) => {
 - `stage.row(i)` names a row, 0 at the top; on a one-row scene the stage is the row.
   `stage.sync()` moves every actor's cursor to the latest end. `row.draw` records a free
   drawing on a `ShapeContext`.
+- `row.label(text)` shows free-standing text, to the end of the scene unless it has a
+  `duration`; `actor.say(text)` shows a speech bubble above the actor's head for a
+  reading time and occupies the actor like a `wait`. Sizes and positions are in row
+  units. Japanese and other non-Latin text is drawn in the first installed font of a
+  per-system list (macOS: Hiragino Sans; Windows: Yu Gothic; Linux: Noto Sans CJK), or
+  in the font file the scene names with its `font` option, relative to the scene file.
+  No font is bundled; without one, the text is drawn in a fallback font and `check` says
+  so (`ERR_ENV_FONT_MISSING`). `check` also warns about text below 12 px at the output
+  size (`ERR_CHECK_TEXT_TOO_SMALL`) and text that leaves its row
+  (`ERR_CHECK_OFF_FRAME`).
+
+```ts
+import { scene } from "charade";
+
+export default scene({ rows: 2 }, (stage) => {
+  stage.row(0).label("Before", { at: 0 });
+  stage.row(1).label("After", { x: -1, align: "left" });
+
+  const hero = stage.row(0).actor();
+  const hello = hero.say("こんにちは！");
+  hero.say("Shall we go for a walk?", { at: hello.end, width: 1.5 });
+});
+```
+
 - The result is frozen data: `kind: "charade.scene"`, the `timeline`, and the `findings`
   recorded while the scene ran. An unknown name or a bad value is a finding with a `fix`
   line, and the scene goes on with a placeholder, so one run reports every mistake.
@@ -148,6 +172,33 @@ export const leafProp = defineProp({
     svgPath(ctx, LEAF, { scale: 0.004, origin: { x: 50, y: 100 } });
     ctx.fillStyle = "#6a994e";
     ctx.fill();
+  },
+});
+```
+
+- `drawText(ctx, text, options)` draws text in a depth 4 drawing. A `ShapeContext` has
+  no text members, since its `y` points up and raw text would come out upside down;
+  `drawText` draws it the right way up, in the current fill style and the scene's font,
+  centred on `x`, `y`, and returns the block's `width` and `height` so a shape can be
+  fitted around it. `size` is the font size and `width` the width lines wrap at, both in
+  row units.
+
+```ts
+import { defineProp, drawText } from "charade";
+
+export const signProp = defineProp({
+  name: "sign",
+  description: "A board on a post, with a word on it.",
+  params: {
+    word: { type: "text", default: "止まれ", doc: "What the sign says." },
+  } as const,
+  draw(ctx, { word }) {
+    ctx.strokeRect(-0.35, 0.5, 0.7, 0.3);
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(0, 0.5);
+    ctx.stroke();
+    drawText(ctx, word, { y: 0.65, size: 0.12 });
   },
 });
 ```

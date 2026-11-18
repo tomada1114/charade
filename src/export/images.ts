@@ -23,6 +23,13 @@ export type FileWriter = (file: string, bytes: Buffer) => Promise<void>;
 export interface ImageEnvironment {
   readonly raster: Rasteriser;
   readonly write: FileWriter;
+  /** The operating system, as `process.platform` names it: it picks the default font. */
+  readonly platform: string;
+}
+
+/** A check image's rasteriser and writer, and the font family list its text is drawn in. */
+export interface ImageOutput extends Pick<ImageEnvironment, "raster" | "write"> {
+  readonly textFont: string;
 }
 
 /** The output file could not be written. The file system's error is the `cause`. */
@@ -60,10 +67,10 @@ export async function writeFrameImage(
   scene: Scene,
   frame: number,
   out: string,
-  { raster, write }: ImageEnvironment,
+  { raster, write, textFont }: ImageOutput,
 ): Promise<void> {
   const png = await raster.png(scene.width, scene.height, (ctx) => {
-    drawFrame(ctx, scene, frame);
+    drawFrame(ctx, { ...scene, textFont }, frame);
   });
   await write(out, png);
 }
@@ -78,7 +85,7 @@ export async function writeSheetImage(
   frames: readonly number[],
   row: number | undefined,
   out: string,
-  { raster, write }: ImageEnvironment,
+  { raster, write, textFont }: ImageOutput,
 ): Promise<void> {
   const { timeline } = scene;
   const aspect =
@@ -94,10 +101,10 @@ export async function writeSheetImage(
     draw:
       row === undefined
         ? (ctx: DrawingContext): void => {
-            drawFrame(ctx, { width, height, timeline }, frame);
+            drawFrame(ctx, { width, height, timeline, textFont }, frame);
           }
         : (ctx: DrawingContext): void => {
-            drawRowFrame(ctx, { width, height, timeline }, row, frame);
+            drawRowFrame(ctx, { width, height, timeline, textFont }, row, frame);
           },
   }));
   const png = await raster.composite(layout.width, layout.height, parts, (ctx) => {
@@ -113,7 +120,7 @@ export async function writeGhostImage(
   track: TimelineTrack,
   frames: readonly number[],
   out: string,
-  { raster, write }: ImageEnvironment,
+  { raster, write }: Pick<ImageEnvironment, "raster" | "write">,
 ): Promise<void> {
   const { timeline } = scene;
   const aspect = rowAspect(scene.width, scene.height, timeline.rows.length);

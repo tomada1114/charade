@@ -69,6 +69,21 @@ stay free of Node-only modules.
   installed, drawing continues with the rasteriser's fallback and `check` and `render`
   report it with how to fix it. Stopping would block the first video on a bare Linux
   machine.
+- The font is chosen by `chooseFont` in `src/export/fonts.ts`, from the scene, the scene
+  file's path, the platform and a `FontLookup` (`has(family)`, `use(alias, file)`),
+  which the rasteriser backs with skia-canvas's `FontLibrary` and a test replaces. A
+  font file the scene names is resolved from the scene file's folder, so the scene reads
+  the same from any working directory, and registered under the family
+  `charade scene font`; it wins whatever is installed. Otherwise the first installed
+  family of the platform's list is used: `Hiragino Sans` on `darwin`, `Yu Gothic` on
+  `win32`, and elsewhere `Noto Sans CJK JP`, `SC`, `TC`, `KR`, `HK` in that order, since
+  Noto Sans CJK installs one family per language and each draws them all. The result is
+  a CSS family list ending in `sans-serif`, the rasteriser's fallback.
+- The findings are `ERR_ENV_FONT_MISSING` (warning) and `ERR_ENV_FONT_UNREADABLE`
+  (error); `.claude/rules/checks.md` holds why. A command that draws looks the font up
+  always, so text a drawing draws with `drawText` is in it too; `check` only for a scene
+  with a label or a bubble. `Rasteriser.measurer(font)` is a context on a 1 px canvas of
+  its own, kept for the length of the command.
 - Every frame is painted on an opaque background; alpha is dropped when the frame is
   converted for the encoder. The rasteriser (`src/export/raster.ts`) exports with
   `matte` set to the paper colour, so a drawing that resets the context or makes no

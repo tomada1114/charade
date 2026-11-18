@@ -20,8 +20,12 @@ import {
   type DriveData,
   type HoldData,
   type ItemData,
+  type LabelData,
   type MoveData,
   type PlaceData,
+  type SayData,
+  TEXT_ALIGNS,
+  type TextAlign,
   isMotion,
 } from "../timeline/segments.js";
 import { randomSource } from "../timeline/random.js";
@@ -45,7 +49,14 @@ interface MutableSegment {
   readonly start: Micros;
   readonly end: Micros | null;
   readonly data:
-    ActorSegmentData | DrawData | ItemData | PlaceData | HoldData | MoveData;
+    | ActorSegmentData
+    | DrawData
+    | ItemData
+    | PlaceData
+    | HoldData
+    | MoveData
+    | LabelData
+    | SayData;
 }
 
 interface MutableTrack {
@@ -66,6 +77,8 @@ interface ActorState {
   readonly id: string;
   readonly row: number;
   readonly track: MutableTrack;
+  /** The track of the actor's speech bubbles, made at its first `say`. */
+  bubbles?: MutableTrack;
   /** The latest end of a bounded segment on this actor, or a later `sync()`. */
   cursor: Micros;
   /** Whether an open-ended segment was recorded: the actor then has no cursor. */
@@ -121,6 +134,18 @@ const ITEM_OPTIONS: readonly string[] = TIMING;
 const PLACE_OPTIONS = ["at"];
 const HOLD_OPTIONS = ["at", "offset"];
 const MOVE_OPTIONS = [...TIMING, "arc"];
+const LABEL_OPTIONS = [...TIMING, "x", "y", "size", "align", "width", "name"];
+const SAY_OPTIONS = [...TIMING, "size", "width"];
+
+/** The font size of a label or a bubble when the call does not say, in row units. */
+const DEFAULT_TEXT_SIZE = 0.16;
+/** Where a label sits when it is not placed: centred, near the top of its row. */
+const DEFAULT_LABEL_POINT = { x: 0, y: 2 };
+/** How wide a bubble's text runs before it wraps, in font sizes. */
+const BUBBLE_WRAP = 12;
+/** How long a bubble is shown when the call does not say: 1 s and 0.08 s a character. */
+const SAY_BASE_MICROS: Micros = 1_000_000;
+const SAY_CHARACTER_MICROS: Micros = 80_000;
 
 /** How long a prop's move takes when the call does not say: 0.5 s. */
 const DEFAULT_MOVE_MICROS: Micros = 500_000;
@@ -207,6 +232,15 @@ function isDrawFunction(value: unknown): value is DrawData["draw"] {
   return typeof value === "function";
 }
 
+function isTextAlign(value: unknown): value is TextAlign {
+  return TEXT_ALIGNS.some((align) => align === value);
+}
+
+/** Whether `value` is text that shows something: a string with a visible character. */
+function isShownText(value: unknown): value is string {
+  return typeof value === "string" && value.trim() !== "";
+}
+
 function isBlendMode(value: unknown): value is BlendMode {
   return BLEND_MODES.some((mode) => mode === value);
 }
@@ -274,6 +308,8 @@ export class SceneBuilder {
       actor: (options?: unknown) => this.#actor(this.#stageRow("actor"), options),
       draw: (draw: unknown, options?: unknown) =>
         this.#draw(this.#stageRow("draw"), draw, options),
+      label: (text: unknown, options?: unknown) =>
+        this.#label(this.#stageRow("label"), text, options),
       prop: (prop: unknown, options?: unknown) =>
         this.#prop(this.#stageRow("prop"), prop, options),
       backdrop: (backdrop: unknown, options?: unknown) =>
@@ -327,7 +363,9 @@ export class SceneBuilder {
   }
 
   /** Row 0 for a call made on the stage itself, which is only right on a one-row scene. */
-  #stageRow(call: "actor" | "draw" | "prop" | "backdrop" | "effect"): RowState {
+  #stageRow(
+    call: "actor" | "draw" | "label" | "prop" | "backdrop" | "effect",
+  ): RowState {
     this.#open();
     if (this.#settings.rows > 1 && !this.#rowRequiredReported) {
       // Once per scene, so a loop of stage calls cannot fill the findings cap.
@@ -353,6 +391,10 @@ export class SceneBuilder {
       draw: (draw: unknown, options?: unknown) => {
         this.#open();
         return this.#draw(row, draw, options);
+      },
+      label: (text: unknown, options?: unknown) => {
+        this.#open();
+        return this.#label(row, text, options);
       },
       prop: (prop: unknown, options?: unknown) => {
         this.#open();
@@ -487,6 +529,7 @@ export class SceneBuilder {
       drive: (motion: unknown, driveOptions?: unknown) =>
         this.#drive(state, motion, driveOptions),
       wait: (seconds: unknown) => this.#wait(state, seconds),
+      say: (text: unknown, sayOptions?: unknown) => this.#say(state, text, sayOptions),
       do: (action: unknown, doOptions?: unknown) => this.#do(state, action, doOptions),
       express: (expression: unknown, expressOptions?: unknown) =>
         this.#express(state, expression, expressOptions),
@@ -516,6 +559,128 @@ export class SceneBuilder {
     });
     this.#latest = Math.max(this.#latest, end ?? 0);
     return spanOf(start, end);
+  }
+
+  /** A number option that must be finite, and above 0 when `positive`; else a finding. */
+  #number(
+    value: unknown,
+    path: string,
+    positive: boolean,
+    where: Where,
+  ): number | undefined {
+    if (value === undefined) {
+      return undefined;
+    }
+    if (
+      typeof value === "number" &&
+      Number.isFinite(value) &&
+      (!positive || value > 0)
+    ) {
+      return value + 0;
+    }
+    const expected = positive ? "a finite number above 0" : "a finite number";
+    this.#report(
+      "ERR_SCENE_OUT_OF_RANGE",
+      `${path} is not ${expected}; its default was used.`,
+      `Give it ${expected} of row units, or leave it out.`,
+      where,
+    );
+    return undefined;
+  }
+
+  /** The text of a `label` or a `say`, or `undefined` with a finding. */
+  #text(value: unknown, call: string, where: Where): string | undefined {
+    if (isShownText(value)) {
+      return value;
+    }
+    this.#report(
+      "ERR_SCENE_INVALID_VALUE",
+      `${call} was not given text to show; no text was recorded.`,
+      "Pass a string with at least one visible character.",
+      where,
+    );
+    return undefined;
+  }
+
+  #label(row: RowState, text: unknown, options: unknown): Span {
+    const where: Where = { row: row.index };
+    const bag = this.#options(options, LABEL_OPTIONS, "label", where);
+    const name = this.#name(bag["name"], "label", "label", where);
+    const start = this.#seconds(bag["at"], "label's options.at", where) ?? 0;
+    const duration = this.#seconds(bag["duration"], "label's options.duration", where);
+    const end = duration === undefined ? null : start + duration;
+    const number = (key: string, positive: boolean): number | undefined =>
+      this.#number(bag[key], `label's options.${key}`, positive, where);
+    const { align = "center" } = bag;
+    if (!isTextAlign(align)) {
+      this.#report(
+        "ERR_SCENE_INVALID_VALUE",
+        "label's options.align is not an alignment; center was used.",
+        `Use one of: ${TEXT_ALIGNS.join(", ")}.`,
+        where,
+        { nearest: typeof align === "string" ? nearestNames(align, TEXT_ALIGNS) : [] },
+      );
+    }
+    const data: LabelData = {
+      kind: "label",
+      text: this.#text(text, "label", where) ?? "",
+      x: number("x", false) ?? DEFAULT_LABEL_POINT.x,
+      y: number("y", false) ?? DEFAULT_LABEL_POINT.y,
+      size: number("size", true) ?? DEFAULT_TEXT_SIZE,
+      align: isTextAlign(align) ? align : "center",
+      width: number("width", true) ?? null,
+    };
+    if (data.text !== "") {
+      this.#track(row, "label", name).segments.push({ start, end, data });
+      this.#latest = Math.max(this.#latest, end ?? 0);
+    }
+    return spanOf(start, end);
+  }
+
+  #say(actor: ActorState, text: unknown, options: unknown): Span {
+    this.#open();
+    const where: Where = { row: actor.row, target: actor.id };
+    const bag = this.#options(options, SAY_OPTIONS, "say", where);
+    const said = this.#text(text, "say", where);
+    const size =
+      this.#number(bag["size"], "say's options.size", true, where) ?? DEFAULT_TEXT_SIZE;
+    const width =
+      this.#number(bag["width"], "say's options.width", true, where) ??
+      BUBBLE_WRAP * size;
+    const duration =
+      this.#seconds(bag["duration"], "say's options.duration", where) ??
+      (said === undefined
+        ? 0
+        : SAY_BASE_MICROS + SAY_CHARACTER_MICROS * Array.from(said).length);
+    const { start, end } = this.#place(actor, "say", bag["at"], duration, where);
+    // The actor holds still while it speaks, as in a wait; the bubble is its own item.
+    actor.track.segments.push({ start, end, data: { kind: "wait" } });
+    const row = this.#rows[actor.row];
+    if (said !== undefined && row !== undefined) {
+      if (actor.bubbles === undefined) {
+        // The bubble shares its speaker's occurrence, so a second actor of the same
+        // name has `bubble/<name>/1` even when the first never speaks.
+        actor.bubbles = {
+          kind: "bubble",
+          name: actor.track.name,
+          occurrence: actor.track.occurrence,
+          segments: [],
+        };
+        row.tracks.push(actor.bubbles);
+      }
+      actor.bubbles.segments.push({
+        start,
+        end,
+        data: {
+          kind: "say",
+          text: said,
+          actor: { name: actor.track.name, occurrence: actor.track.occurrence },
+          size,
+          width,
+        },
+      });
+    }
+    return localSpan(actor, start, end);
   }
 
   /**

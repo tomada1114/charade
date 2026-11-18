@@ -121,3 +121,39 @@ export interface ItemData {
   readonly definition: object | null;
   readonly params: Readonly<Record<string, unknown>>;
 }
+
+/**
+ * Which part of a text block its `x` names: its left edge, its centre or its right
+ * edge.
+ *
+ * @public
+ */
+export type TextAlign = "left" | "center" | "right";
+
+export const TEXT_ALIGNS: readonly TextAlign[] = ["left", "center", "right"];
+
+/**
+ * A label while it is shown: its text, the point its block is centred on vertically
+ * and aligned to horizontally, the size of its font in row units, and the width its
+ * lines wrap at, `null` for none.
+ */
+export interface LabelData {
+  readonly kind: "label";
+  readonly text: string;
+  readonly x: number;
+  readonly y: number;
+  readonly size: number;
+  readonly align: TextAlign;
+  readonly width: number | null;
+}
+
+/** A speech bubble while it is shown, above the head of the actor that says it. */
+export interface SayData {
+  readonly kind: "say";
+  readonly text: string;
+  /** The key of the speaking actor's track in the bubble's row. */
+  readonly actor: { readonly name: string; readonly occurrence: number };
+  readonly size: number;
+  /** The width the text wraps at, in row units. */
+  readonly width: number;
+}

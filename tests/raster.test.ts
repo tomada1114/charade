@@ -91,9 +91,10 @@ describe("rasterising", () => {
 
   it("creates every canvas with GPU rendering off", async () => {
     const options: unknown[] = [];
-    const { Canvas } = await import("skia-canvas");
+    const { Canvas, FontLibrary } = await import("skia-canvas");
     const raster = createRasteriser(() =>
       Promise.resolve({
+        FontLibrary,
         Canvas: class extends Canvas {
           constructor(width?: number, height?: number, opts?: { gpu?: boolean }) {
             super(width, height, opts);
@@ -111,12 +112,43 @@ describe("rasterising", () => {
   });
 });
 
+describe("fonts", () => {
+  it("answers whether a family is installed", async () => {
+    const fonts = await createRasteriser().fonts();
+    expect(fonts.has("no such family 3f9a")).toBe(false);
+  });
+
+  it("throws for a font file that does not exist", async () => {
+    const fonts = await createRasteriser().fonts();
+    expect(() => {
+      fonts.use("charade test font", "/no/such/folder/font.otf");
+    }).toThrow();
+    expect(fonts.has("charade test font")).toBe(false);
+  });
+
+  it("measures text in the font it is given", async () => {
+    const ctx = await createRasteriser().measurer("100px sans-serif");
+    expect(ctx.font).toContain("100px");
+    expect(ctx.measureText("abc").width).toBeGreaterThan(0);
+    expect(ctx.measureText("").width).toBe(0);
+  });
+
+  it.each([
+    ["fonts", (r: ReturnType<typeof createRasteriser>) => r.fonts()],
+    ["measurer", (r: ReturnType<typeof createRasteriser>) => r.measurer("10px serif")],
+  ] as const)("reports a missing rasteriser from %s", async (_name, run) => {
+    const raster = createRasteriser(() => Promise.reject(new Error("no binary")));
+    await expect(run(raster)).rejects.toThrow(SkiaUnavailableError);
+  });
+});
+
 describe("compositing", () => {
   it("draws each part on a canvas of its own and the overlay on top", async () => {
     const sizes: (readonly [number | undefined, number | undefined])[] = [];
-    const { Canvas } = await import("skia-canvas");
+    const { Canvas, FontLibrary } = await import("skia-canvas");
     const raster = createRasteriser(() =>
       Promise.resolve({
+        FontLibrary,
         Canvas: class extends Canvas {
           constructor(width?: number, height?: number, opts?: { gpu?: boolean }) {
             super(width, height, opts);

@@ -26,7 +26,10 @@ export interface SceneOptions {
   readonly rows?: number;
   /** Seed of the scene's random source, a whole number. Defaults to 0. */
   readonly seed?: number;
-  /** The font family for the scene's text. Defaults to a system font. */
+  /**
+   * The path of a font file (`.ttf`, `.otf` or `.ttc`) for the scene's text, relative
+   * to the scene file; it is then used on every machine. Defaults to a system font.
+   */
   readonly font?: string;
   /**
    * The scene's length in seconds. Defaults to the end of the last call that has
@@ -53,7 +56,7 @@ export interface Scene {
   readonly width: number;
   /** Canvas height in pixels. */
   readonly height: number;
-  /** The font family the scene named, or `null` for a system font. */
+  /** The font file the scene named, as written, or `null` for a system font. */
   readonly font: string | null;
   /** Every recorded call. The frame rate, seed and rows are in here. */
   readonly timeline: Timeline;
@@ -150,7 +153,7 @@ function resolveOptions(raw: unknown, findings: FindingCollector): Settings {
       severity: "error",
       message:
         "The scene option font is not a non-empty string; a system font was used.",
-      fix: "Set font to a font family name, or leave it out.",
+      fix: "Set font to the path of a font file, relative to the scene file, or leave it out.",
     });
   }
 

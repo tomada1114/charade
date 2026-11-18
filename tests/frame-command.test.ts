@@ -51,6 +51,16 @@ const broken = scene({ duration: 2, width: 320, height: 180 }, (stage) => {
     .pose({ kneeR: -0.4 }, { at: 1.2, duration: 0.3, mode: "add", blend: 0 });
 });
 
+const captioned = (text: boolean): Scene =>
+  scene({ duration: 1, width: 320, height: 180 }, (stage) => {
+    const hero = stage.actor();
+    hero.wait(1);
+    if (text) {
+      stage.label("Before");
+      hero.say("こんにちは", { at: 0 });
+    }
+  });
+
 const twoRows = scene({ duration: 2, width: 400, height: 400, rows: 2 }, (stage) => {
   stage.row(0).actor({ name: "ada" }).pose({ pelvisX: 1 }, { duration: 2 });
   stage.row(1).actor({ name: "bob" }).wait(2);
@@ -66,6 +76,33 @@ beforeEach(() => {
 
 afterEach(() => {
   rmSync(folder, { recursive: true, force: true });
+});
+
+describe("text", () => {
+  it("draws a label and a bubble with the real rasteriser, the same twice", async () => {
+    const pngs: Buffer[] = [];
+    for (const built of [captioned(true), captioned(true), captioned(false)]) {
+      const out = path.join(folder, `${String(pngs.length)}.png`);
+      const result = await runCli(
+        ["frame", sceneFile, "--at", "0", "-o", out, "--json"],
+        loading(built),
+      );
+      expect(result.exitCode).toBe(0);
+      pngs.push(readFileSync(out));
+    }
+    expect(pngs[0]?.equals(pngs[1] ?? Buffer.alloc(0))).toBe(true);
+    expect(pngs[0]?.equals(pngs[2] ?? Buffer.alloc(0))).toBe(false);
+  });
+
+  it("checks a scene with text against the real font metrics", async () => {
+    const result = await runCli(
+      ["check", sceneFile, "--json"],
+      loading(captioned(true)),
+    );
+    // The font installed here decides whether the fallback warning is among them.
+    expect(result.exitCode).toBe(0);
+    expect(document(result).summary.errors).toBe(0);
+  });
 });
 
 describe("frame", () => {
