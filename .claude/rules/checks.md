@@ -124,11 +124,68 @@ recorded sample is how an unintended change in appearance fails a test.
   code, row, target and time. It is never swallowed.
 - Leaving the frame is a warning. A figure that walks off is ordinary acting, and the
   first README video ends with one.
+- The computed checks are `checkScene` in `src/check/check.ts`, internal: it takes a
+  built scene and returns the findings frozen into it followed by the computed ones. It
+  composes every actor's pose and calls every free drawing at every frame, drawing on a
+  recording context, so it needs no rasteriser. A scene with no countable length has no
+  frames; it reports its authoring findings alone.
+- The computed codes are `ERR_CHECK_JOINT_LIMIT` (error; `joint`, and `measured` holds
+  `value`, `min`, `max`), `ERR_CHECK_OFF_FRAME` (warning; `measured.overshoot` in
+  units), `ERR_CHECK_TEXT_OVERLAP` (warning), `ERR_CHECK_CLOCK_READ` and
+  `ERR_CHECK_UNSEEDED_RANDOM` (errors). A function that throws at a frame is the error
+  `ERR_SCENE_DRAWING_FAILED`, keeping the code the frame drawer throws with. Each
+  carries `row` and the item's id as `target`.
+- Contiguous frames of one violation (same check, item and joint) are one finding, which
+  describes its worst frame. `frames` is the first and last frame, both included; `time`
+  runs from the first frame's time to where the last frame's ends, `(last + 1) / fps`,
+  half-open as a segment is. So a violation on frames 36 to 44 at 30 fps is 1.2 to 1.5
+  s. A gap of one clean frame starts a new finding.
+- The limit is checked on the composed angle, not on the call that set it: a `replace`
+  pose is held after its call ends, so its finding runs until something moves the joint
+  back, and it starts at the first frame the blend has left the limit, not at the call's
+  first frame.
+- Leaving the frame is measured on the figure's joints and its head circle against the
+  row's visible area (`width / scale` units across, −0.3 to 2.2 up), with any part
+  outside counting; line width is ignored. A prop is measured at its ground point while
+  it is shown, since its drawing has no extent the check can read. A free drawing is not
+  measured.
+- An actor over text is a warning, not an error. Text is the top slot, so what is hidden
+  is part of the figure, which a hand passing behind a label does on purpose; an error
+  would stop `render` on a question of looks; and a warning can be raised to an error
+  later only as a breaking change, so the weaker one is chosen while no text exists to
+  tune it on. The test is exact for the skeleton, not a bounding box: a bone's line or
+  the head circle touching the text's box. The box is a `TextBox` (`id`, `row`, and `x`,
+  `y`, `width`, `height` in row units from its lower left corner), which `checkScene` is
+  given per frame through `textBoxes`; nothing supplies one until text exists.
+- A report is capped at `FINDING_CAP` like a scene's findings, authoring findings first
+  and computed ones in order of their first frame. When the cap cuts, a warning gives
+  way to an error: a dropped error would turn a failing run into exit 0.
 - Reading the clock or an unseeded random number is detected by replacing `Date`,
   `performance.now` and `Math.random` while the scene callback and every frame's
-  functions run, in every command. The replacement is done by the export layer, which is
-  what runs them; the pure layers never touch those globals. A scan of the source would
-  flag comments and miss indirect calls; a parser would be a second dependency.
+  functions run, in every command. A scan of the source would flag comments and miss
+  indirect calls; a parser would be a second dependency.
+- The replacement itself is `watchGlobals` in `src/export/watch.ts`: the export layer is
+  the one that may name those globals. The pure layers reach it through a seam,
+  `src/check/reads.ts`: the CLI calls `installReadWatch(watchGlobals)` for the length of
+  a scene command, and `scene()` and `checkScene` run author functions inside
+  `watchReads`, which with nothing installed just runs them. So the ESLint ban on the
+  clock and `Math.random` in the pure layers stays as it is, with no disable comment:
+  pure code names a function it was handed, never a global.
+- The wrap is in `scene()`, around the build callback, not around loading the file.
+  Loading is an `await`, so a replacement held across it would also catch whatever else
+  runs meanwhile and every imported package's start-up; the build callback is
+  synchronous, so the globals are back before `scene()` returns. A read at a module's
+  top level, outside the callback, is therefore not seen.
+- A watched global still answers as the real one does, so the scene runs on and one
+  check reports every read. Only reading the current time counts: `Date.now()`,
+  `new Date()` and `Date()`, not `new Date(2020, 0, 1)` or `Date.UTC`. A nested watch
+  keeps its reads to itself.
+- A read in the build callback is a finding frozen into the scene, with no row or
+  target. A read at a frame names the track. Both use the `ERR_CHECK_` codes, also the
+  one recorded while authoring: it is one failure with one fix, and a caller should not
+  need two codes for it. The call a `drive` gets at `t = 0` while it is recorded drops
+  its reads, since the frame check meets the same read at every frame and names the
+  track; kept, one mistake would be reported twice.
 
 ## Output
 
@@ -144,5 +201,15 @@ recorded sample is how an unintended change in appearance fails a test.
 - The text description of state — who is where, in which pose, facing which way — is
   printed by `frame` and `sheet` for the frames they drew, and by `check --at` for given
   times without drawing. It is not a command of its own.
-- Text checks need real font metrics, so `check` loads the rasteriser; it never needs
-  ffmpeg.
+- Text checks need real font metrics, so `check` loads the rasteriser once a scene can
+  have text; until then it loads nothing. It never needs ffmpeg.
+- The text is `formatReport` in `src/check/check.ts`: per finding
+  `<severity> <code>: <message>`, an `at:` line with the place (row, target, joint,
+  seconds, frames) when there is one, and a `fix:` line; then `<n> errors, <m> warnings`
+  and a line saying so when findings were dropped. It goes to stdout.
+- `check --at` prints the findings first and the description after them; under `--json`
+  the description is a fifth key, `state`. The description is `describeState` in
+  `src/check/describe.ts`: per row, each actor's facing, the positions of its pelvis,
+  head, hands and feet in row units, and the channels away from rest; each shown prop's
+  ground point; each shown free drawing's id. Numbers are rounded to three decimals. It
+  composes poses, which calls `drive` functions, and never calls a drawing callback.

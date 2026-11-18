@@ -42,7 +42,7 @@ export interface SourceLocation {
  *   row: 0,
  *   joint: "kneeR",
  *   time: [1.2, 1.5],
- *   frames: [36, 45],
+ *   frames: [36, 44],
  * };
  * ```
  *
@@ -63,7 +63,7 @@ export interface Finding {
   readonly target?: string;
   /** Name of the joint the finding applies to. */
   readonly joint?: string;
-  /** Start and end of the affected time, in seconds. */
+  /** Start and end of the affected time, in seconds; the end is not included. */
   readonly time?: readonly [start: number, end: number];
   /** First and last affected frame, matching `time`. */
   readonly frames?: readonly [first: number, last: number];

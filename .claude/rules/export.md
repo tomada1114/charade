@@ -106,7 +106,10 @@ stay free of Node-only modules.
 - `--at` takes seconds, as a scene does: `1.5` and `1.5s` are seconds, `45f` is a frame.
   One parser, `parseAt` in `src/cli.ts`, takes ASCII digits only: no sign, exponent,
   leading or trailing dot, and no frame past the safe integers; anything else is
-  `ERR_CLI_INVALID_AT`.
+  `ERR_CLI_INVALID_AT`. Seconds name the frame on screen at that time, the last one at
+  or before it (`frameAt`), so `0.99` at 30 fps is frame 29. A frame after the scene's
+  last one is `ERR_CLI_AT_PAST_END`, exit 2, naming the last frame: describing a frame
+  the video does not have would mislead.
 - The command comes first. A usage error is `ERR_CLI_NO_COMMAND`,
   `ERR_CLI_UNKNOWN_COMMAND`, `ERR_CLI_UNKNOWN_FLAG` (the flag's dotted path, named from
   `parseArgs` tokens), `ERR_CLI_MISSING_VALUE`, `ERR_CLI_UNEXPECTED_VALUE`,
