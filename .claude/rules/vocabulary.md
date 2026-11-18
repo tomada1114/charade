@@ -7,10 +7,10 @@ paths:
 # Built-in vocabulary
 
 How an item is written — its shape, its parameters, its sample, and the loop of check,
-catalog, look and fix — is stated once, in the shipped skill for adding vocabulary under
-the repository's skills directory. That skill serves both a user defining items in their
-own project and a contributor adding a built-in, so it is the source and this rule never
-repeats it. This rule holds only what is true inside this repository.
+catalog, look and fix — is stated once, in the shipped skill
+`skills/charade-vocabulary/SKILL.md`. That skill serves both a user defining items in
+their own project and a contributor adding a built-in, so it is the source and this rule
+never repeats it. This rule holds only what is true inside this repository.
 
 ## How an item reaches a scene
 
@@ -179,11 +179,8 @@ repeats it. This rule holds only what is true inside this repository.
 
 These set the conventions the later items follow.
 
-- An action scales its own timing by `clip.duration` over its natural length, and gives
-  every call its `at`, `blend` and `duration`, so the asked duration is what it lasts.
-- Feet that stay on the ground are `reach` calls recorded after the action's body poses,
-  since a reach is solved over what was recorded before it. An ankle angle is set beside
-  them where the shin tips, so the foot lies flat.
+- How an action scales its timing, plants its feet and composes with another is in the
+  skill; what follows is what these items chose.
 - A mood an action lists changes timing and body through `clip.mood`; the face is the
   mood's own and an action does not set it. `sitDown` lists `dejected` (drops, then
   sags, head hanging); `slump` lists `dejected` (deeper and slower); `throw` lists
