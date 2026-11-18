@@ -233,16 +233,25 @@ describe("--json (R2)", () => {
 });
 
 describe("commands", () => {
-  it("passes the built scene to render, which is not implemented yet", async () => {
-    const { options, files } = fakeLoader();
-    const result = await runCli(["render", "s.ts", "-o", "out.mp4", "--json"], options);
+  it("passes the built scene to render, which rejects an odd width first", async () => {
+    const files: string[] = [];
+    const odd = scene({ width: 1081 }, () => undefined);
+    const result = await runCli(["render", "s.ts", "-o", "out.mp4", "--json"], {
+      nodeVersion: "24.22.1",
+      load: (file) => {
+        files.push(file);
+        return Promise.resolve(odd);
+      },
+      spawn: () => {
+        throw new Error("ffmpeg must not be spawned");
+      },
+    });
     expect(files).toEqual(["s.ts"]);
     expect(result.exitCode).toBe(2);
     expect(parseOne(result.stdout)).toMatchObject({
       ok: false,
-      error: { code: "ERR_CLI_NOT_IMPLEMENTED" },
+      error: { code: "ERR_RENDER_ODD_SIZE" },
     });
-    expect(result.stdout).toContain("render");
   });
 
   it("runs catalog without loading a scene", async () => {
@@ -252,8 +261,7 @@ describe("commands", () => {
   });
 
   it("reports a stub as text without --json", async () => {
-    const { options } = fakeLoader();
-    const result = await runCli(["render", "s.ts"], options);
+    const result = await runCli(["catalog"], quiet);
     expect(result.stdout).toBe("");
     expect(result.stderr).toMatch(/^error ERR_CLI_NOT_IMPLEMENTED: .+\n {2}fix: .+\n$/);
   });
