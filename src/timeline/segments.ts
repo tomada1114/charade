@@ -146,16 +146,27 @@ export interface MoveData {
   readonly arc: number;
 }
 
+/** An effect's origin on a part of an actor of its row, followed every frame. */
+export interface AnchorData {
+  /** The key of the actor's track in the effect's row. */
+  readonly actor: { readonly name: string; readonly occurrence: number };
+  readonly part: string;
+  /** The origin's offset from the part, `x` the way the actor faces. */
+  readonly offset: { readonly x: number; readonly y: number };
+}
+
 /**
  * A prop, backdrop or effect while it is shown: its name, its definition when it was
  * passed as one (`null` for a built-in named by a string), and its resolved
- * parameters.
+ * parameters. An effect also records `on`, where its origin is: a point of the row, a
+ * part of an actor, or `null` for the row's origin.
  */
 export interface ItemData {
   readonly kind: "prop" | "backdrop" | "effect";
   readonly name: string;
   readonly definition: object | null;
   readonly params: Readonly<Record<string, unknown>>;
+  readonly on?: { readonly x: number; readonly y: number } | AnchorData | null;
 }
 
 /**

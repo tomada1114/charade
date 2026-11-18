@@ -210,8 +210,8 @@ export const signProp = defineProp({
   built-in by name (`builtinActions` and its siblings list them). A parameter without a
   `default` is required, and its type is derived from the specification. A malformed
   definition throws `InvalidDefinitionError`, `ReservedParameterError` (a parameter
-  named `at`, `duration`, `mood`, `blend` or `mode`) or `InvalidDefaultError`; a bad
-  value in a scene is a finding.
+  named `at`, `duration`, `mood`, `blend` or `mode`, or an effect's named `on`) or
+  `InvalidDefaultError`; a bad value in a scene is a finding.
 
 ```ts
 import { type ActionDefinition, defineAction, scene } from "charade";
@@ -276,6 +276,32 @@ export default scene({ rows: 2 }, (stage) => {
   stage.row(0).actor().do("sitDown");
   stage.row(1).backdrop(duskBackdrop);
   stage.row(1).actor().do("slump");
+});
+```
+
+- The built-in effects are `sweat`, `impact`, `speedLines` and `sparkle`: accents drawn
+  in front of the actor. `row.effect(name, { on })` says where, and `on` is the one
+  option it takes beside `at`, `duration` and the effect's own parameters: an actor (the
+  centre of its head), `{ actor, part, offset }` for its `head`, `pelvis`, `handL`,
+  `handR`, `footL` or `footR`, or a point `{ x, y }` of the row. An effect on an actor
+  follows that part every frame; without `on` it sits on the row's origin. Its scatter
+  comes from the scene's `seed`.
+
+```ts
+import { scene } from "charade";
+
+export default scene((stage) => {
+  const hero = stage.actor();
+  const ball = stage.prop("ball");
+  const thrown = hero.do("throw", { ball, bounce: false });
+  // The default throw lands at (1, 0), sqrt(8 × 0.3 / 12) s after the release.
+  stage.effect("impact", {
+    on: { x: 1, y: 0.06 },
+    at: thrown.marks.release + Math.sqrt(0.2),
+    duration: 0.4,
+  });
+  const slump = hero.do("slump", { mood: "dejected" });
+  stage.effect("sweat", { on: hero, at: slump.start, duration: slump.duration });
 });
 ```
 

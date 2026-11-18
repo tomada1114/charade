@@ -1,5 +1,12 @@
 import { poseAtInstant } from "../rig/compose.js";
-import { forwardKinematics, mirrorSkeleton, type Point } from "../rig/kinematics.js";
+import {
+  ANCHOR_PARTS,
+  forwardKinematics,
+  isAnchorPart,
+  mirrorSkeleton,
+  type Point,
+  type PointName,
+} from "../rig/kinematics.js";
 import { isEffectorName } from "../rig/rig.js";
 import { frameInSegment, MICROS_PER_SECOND } from "../timeline/time.js";
 import type { Timeline, TimelineTrack } from "../timeline/timeline.js";
@@ -99,6 +106,40 @@ function placementAt(
   };
 }
 
+/**
+ * Where the actor keyed `actor` in `row` has its skeleton point `name` at `now` (frame
+ * units), moved by `offset` with `x` the way the actor faces, and whether it faces
+ * left; `undefined` without such an actor.
+ */
+function actorPoint(
+  timeline: Timeline,
+  row: number,
+  actor: unknown,
+  name: PointName,
+  offset: unknown,
+  now: number,
+): { readonly point: Point; readonly left: boolean } | undefined {
+  if (!isRecord(actor)) {
+    return undefined;
+  }
+  const track = timeline.rows[row]?.tracks.find(
+    (candidate) =>
+      candidate.kind === "actor" &&
+      candidate.name === actor["name"] &&
+      candidate.occurrence === actor["occurrence"],
+  );
+  if (track === undefined) {
+    return undefined;
+  }
+  const skeleton = forwardKinematics(poseAtInstant(timeline, row, track, now));
+  const left = facingOf(track) === "left";
+  const at = (left ? mirrorSkeleton(skeleton) : skeleton)[name];
+  const by = isRecord(offset) ? offset : {};
+  const dx = isFiniteNumber(by["x"]) ? by["x"] : 0;
+  const dy = isFiniteNumber(by["y"]) ? by["y"] : 0;
+  return { point: { x: at.x + (left ? -dx : dx), y: at.y + dy }, left };
+}
+
 /** Where the actor a hold names has the effector at `now`, or `undefined` without one. */
 function held(
   timeline: Timeline,
@@ -106,30 +147,20 @@ function held(
   data: Readonly<Record<string, unknown>>,
   now: number,
 ): PropPlacement | undefined {
-  const { effector, actor } = data;
-  if (!isEffectorName(effector) || !isRecord(actor)) {
+  const { effector } = data;
+  if (!isEffectorName(effector)) {
     return undefined;
   }
-  const holder = timeline.rows[row]?.tracks.find(
-    (candidate) =>
-      candidate.kind === "actor" &&
-      candidate.name === actor["name"] &&
-      candidate.occurrence === actor["occurrence"],
+  const at = actorPoint(
+    timeline,
+    row,
+    data["actor"],
+    HELD_AT[effector],
+    data["offset"],
+    now,
   );
-  if (holder === undefined) {
-    return undefined;
-  }
-  const skeleton = forwardKinematics(poseAtInstant(timeline, row, holder, now));
-  const left = facingOf(holder) === "left";
-  const at = (left ? mirrorSkeleton(skeleton) : skeleton)[HELD_AT[effector]];
-  const offset = isRecord(data["offset"]) ? data["offset"] : {};
-  const dx = isFiniteNumber(offset["x"]) ? offset["x"] : 0;
-  const dy = isFiniteNumber(offset["y"]) ? offset["y"] : 0;
-  return {
-    point: { x: at.x + (left ? -dx : dx), y: at.y + dy },
-    // The far (L) limbs draw behind the body, and so does what they carry.
-    front: !effector.endsWith("L"),
-  };
+  // The far (L) limbs draw behind the body, and so does what they carry.
+  return at && { point: at.point, front: !effector.endsWith("L") };
 }
 
 /**
@@ -152,4 +183,53 @@ export function propPlacement(
   return shown
     ? placementAt(timeline, row, track, new Set(), frame * MICROS_PER_SECOND)
     : undefined;
+}
+
+/** Where a shown effect's origin is at one frame. */
+export interface EffectPlacement {
+  /** The effect's origin, in row units. */
+  readonly point: Point;
+  /** Whether it is drawn mirrored, as the left-facing actor it is on is. */
+  readonly mirrored: boolean;
+}
+
+const EFFECT_ORIGIN: EffectPlacement = { point: { x: 0, y: 0 }, mirrored: false };
+
+/**
+ * Where an effect's origin is at `frame`, by the `on` of its segment shown there (the
+ * last recorded of several): a point of the row, or a part of an actor, composed from
+ * the timeline at that frame. Without one, or when it names no actor or part of the
+ * row, the origin is the row's.
+ */
+export function effectPlacement(
+  timeline: Timeline,
+  row: number,
+  track: TimelineTrack,
+  frame: number,
+): EffectPlacement {
+  const shown = track.segments.findLast(
+    ({ data, start, end }) =>
+      isRecord(data) &&
+      data["kind"] === "effect" &&
+      frameInSegment(frame, start, end, timeline.fps),
+  );
+  const on = isRecord(shown?.data) ? shown.data["on"] : undefined;
+  if (!isRecord(on)) {
+    return EFFECT_ORIGIN;
+  }
+  const { part, x, y } = on;
+  if (isAnchorPart(part)) {
+    const at = actorPoint(
+      timeline,
+      row,
+      on["actor"],
+      ANCHOR_PARTS[part],
+      on["offset"],
+      frame * MICROS_PER_SECOND,
+    );
+    return at ? { point: at.point, mirrored: at.left } : EFFECT_ORIGIN;
+  }
+  return isFiniteNumber(x) && isFiniteNumber(y)
+    ? { point: { x, y }, mirrored: false }
+    : EFFECT_ORIGIN;
 }

@@ -9,7 +9,7 @@ import type { Timeline, TimelineTrack } from "../timeline/timeline.js";
 import type { DrawingContext, ShapeContext } from "./context.js";
 import { drawFigure, facingOf, FIGURE_LINE, INK, PAPER } from "./figure.js";
 import { type RowLayout, rowLayout, rowTransform, rowView } from "./layout.js";
-import { propPlacement } from "./prop.js";
+import { effectPlacement, propPlacement } from "./prop.js";
 import { isTextTrack, placedText, textFont } from "./text.js";
 
 /** The width of the ground line, in units. */
@@ -234,7 +234,17 @@ function shownPainters(
     .filter((track) => track.kind === kind)
     .map((track) =>
       guardedPainter(timeline, layout.index, frame, track, (ctx) => {
-        drawItem(ctx, timeline, layout, track, frame);
+        if (kind === "effect") {
+          const { point, mirrored } = effectPlacement(
+            timeline,
+            layout.index,
+            track,
+            frame,
+          );
+          drawItem(ctx, timeline, layout, track, frame, point, mirrored);
+        } else {
+          drawItem(ctx, timeline, layout, track, frame);
+        }
       }),
     );
 }
@@ -343,6 +353,7 @@ function isDrawnKind(kind: string): kind is DrawnKind {
  * by default, once for each of its segments of its own kind shown at `frame`. Its
  * `draw` starts as a free drawing's does: ink as both styles and the figure's line
  * width, and its moment's `view` is the row's visible area as seen from `point`.
+ * `mirrored` flips the drawing left to right about `point`, and its `view` with it.
  */
 export function drawItem(
   ctx: ShapeContext,
@@ -351,13 +362,15 @@ export function drawItem(
   track: TimelineTrack,
   frame: number,
   point: Point = ORIGIN,
+  mirrored = false,
 ): void {
   const { kind } = track;
   if (!isDrawnKind(kind)) {
     return;
   }
   const row = layout.index;
-  const view = rowView(layout, point.x, point.y);
+  const seen = rowView(layout, point.x, point.y);
+  const view = mirrored ? { ...seen, left: -seen.right, right: -seen.left } : seen;
   const { fps } = timeline;
   const random = randomSource({
     seed: timeline.seed,
@@ -384,6 +397,9 @@ export function drawItem(
     ctx.save();
     try {
       ctx.translate(point.x, point.y);
+      if (mirrored) {
+        ctx.scale(-1, 1);
+      }
       ctx.strokeStyle = INK;
       ctx.fillStyle = INK;
       ctx.lineWidth = FIGURE_LINE;

@@ -2,6 +2,7 @@ import type { Finding, FindingCollector, Severity } from "../check/findings.js";
 import { nearestNames } from "../check/nearest.js";
 import { watchReads } from "../check/reads.js";
 import { type ItemKind, SceneClosedError, UnknownRowError } from "../errors.js";
+import { ANCHOR_PART_NAMES, isAnchorPart } from "../rig/kinematics.js";
 import {
   ANGLE_NAMES,
   CHANNEL_NAMES,
@@ -131,6 +132,8 @@ const ACTOR_OPTIONS = ["name"];
 const ACTION_OPTIONS = [...TIMING, "mood", "blend", "mode"];
 const EXPRESS_OPTIONS = [...TIMING, "blend", "mode"];
 const ITEM_OPTIONS: readonly string[] = TIMING;
+const EFFECT_OPTIONS = [...TIMING, "on"];
+const ANCHOR_OPTIONS = ["actor", "part", "offset"];
 const PLACE_OPTIONS = ["at", "layer"];
 const PROP_LAYERS = ["behind", "front"] as const;
 const HOLD_OPTIONS = ["at", "offset"];
@@ -189,6 +192,22 @@ function clamp(
 
 function capitalised(kind: string): string {
   return `${kind.charAt(0).toUpperCase()}${kind.slice(1)}`;
+}
+
+/** `value` as a point with finite `x` and `y`, `-0` stored as `0`, or `undefined`. */
+function finitePoint(
+  value: unknown,
+): { readonly x: number; readonly y: number } | undefined {
+  if (!isRecord(value)) {
+    return undefined;
+  }
+  const { x, y } = value;
+  return typeof x === "number" &&
+    typeof y === "number" &&
+    Number.isFinite(x) &&
+    Number.isFinite(y)
+    ? { x: x + 0, y: y + 0 }
+    : undefined;
 }
 
 /** Whether `value` has the shape `define…` gives a definition of `kind`. */
@@ -279,6 +298,8 @@ export class SceneBuilder {
   readonly #vocabulary: Vocabulary;
   /** The prop handles this scene made, and the views an action's `build` is given. */
   readonly #props = new WeakMap<object, PropState>();
+  /** The actor handles this scene made, which an effect's `on` names an actor by. */
+  readonly #actorHandles = new WeakMap<object, ActorState>();
   #latest: Micros = 0;
   #closed = false;
   #rowRequiredReported = false;
@@ -521,7 +542,7 @@ export class SceneBuilder {
       defaults: { blend: undefined, mode: undefined },
     };
     this.#actors.push(state);
-    return Object.freeze({
+    const handle: Actor = Object.freeze({
       id,
       pose: (channels: unknown, poseOptions?: unknown) =>
         this.#pose(state, channels, poseOptions),
@@ -535,6 +556,8 @@ export class SceneBuilder {
       express: (expression: unknown, expressOptions?: unknown) =>
         this.#express(state, expression, expressOptions),
     });
+    this.#actorHandles.set(handle, state);
+    return handle;
   }
 
   #draw(row: RowState, draw: unknown, options: unknown): Span {
@@ -916,19 +939,12 @@ export class SceneBuilder {
 
   #point(
     target: unknown,
-    call: "reach" | "place" | "move" | "hold",
+    call: "reach" | "place" | "move" | "hold" | "effect",
     where: Where,
   ): { readonly x: number; readonly y: number } | undefined {
-    if (isRecord(target)) {
-      const { x, y } = target;
-      if (
-        typeof x === "number" &&
-        typeof y === "number" &&
-        Number.isFinite(x) &&
-        Number.isFinite(y)
-      ) {
-        return { x: x + 0, y: y + 0 };
-      }
+    const point = finitePoint(target);
+    if (point !== undefined) {
+      return point;
     }
     this.#report(
       "ERR_SCENE_OUT_OF_RANGE",
@@ -936,7 +952,9 @@ export class SceneBuilder {
         ? "The target of reach is not a point with finite x and y; the call was recorded as a wait."
         : call === "hold"
           ? "hold's options.offset is not a point with finite x and y; the prop was not moved."
-          : `The point given to ${call} is not a point with finite x and y; the prop was not moved.`,
+          : call === "effect"
+            ? "The offset of effect's options.on is not a point with finite x and y; no offset was used."
+            : `The point given to ${call} is not a point with finite x and y; the prop was not moved.`,
       "Pass { x, y } in row units: the origin is on the ground at the row's centre, y up.",
       where,
     );
@@ -1565,7 +1583,12 @@ export class SceneBuilder {
     const call = ITEM_METHODS[kind];
     const definition = this.#definition(kind, item, call, where);
     const keys = knownKeys(definition, options);
-    const bag = this.#options(options, [...ITEM_OPTIONS, ...keys], call, where);
+    const bag = this.#options(
+      options,
+      [...(kind === "effect" ? EFFECT_OPTIONS : ITEM_OPTIONS), ...keys],
+      call,
+      where,
+    );
     const start = this.#seconds(bag["at"], `${call}'s options.at`, where) ?? 0;
     const duration = this.#seconds(
       bag["duration"],
@@ -1581,19 +1604,106 @@ export class SceneBuilder {
     const id = `row${String(row.index)}/${kind}/${definition.name}/${String(track.occurrence)}`;
     const params =
       this.#resolve(definition, bag, 0, { row: row.index, target: id }) ?? {};
+    const data: ItemData = {
+      kind,
+      name: definition.name,
+      // A built-in named by a string is found again by its name; nothing to keep.
+      definition: typeof item === "string" ? null : definition,
+      params,
+    };
     track.segments.push({
       start,
       end,
-      data: {
-        kind,
-        name: definition.name,
-        // A built-in named by a string is found again by its name; nothing to keep.
-        definition: typeof item === "string" ? null : definition,
-        params,
-      },
+      data:
+        kind === "effect"
+          ? {
+              ...data,
+              on: this.#anchor(bag["on"], row, { row: row.index, target: id }),
+            }
+          : data,
     });
     this.#latest = Math.max(this.#latest, end ?? 0);
     return { track, span };
+  }
+
+  /** What an effect's `on` records: a point, a part of an actor of `row`, or `null`. */
+  #anchor(
+    on: unknown,
+    row: RowState,
+    where: Where,
+  ): Exclude<ItemData["on"], undefined> {
+    if (on === undefined) {
+      return null;
+    }
+    const given = isRecord(on) ? on : {};
+    const direct = this.#actorHandles.get(given);
+    if (direct === undefined && !Object.hasOwn(given, "actor")) {
+      const point = finitePoint(given);
+      if (point !== undefined) {
+        return point;
+      }
+      if (typeof given["x"] === "number" && typeof given["y"] === "number") {
+        this.#report(
+          "ERR_SCENE_OUT_OF_RANGE",
+          "effect's options.on is a point that is not finite; the row's origin was used.",
+          "Give x and y as finite numbers in row units.",
+          where,
+        );
+        return null;
+      }
+      this.#report(
+        "ERR_SCENE_INVALID_VALUE",
+        "effect's options.on is not a point, an actor or a part of one; the row's origin was used.",
+        "Pass { x, y } in row units, the handle row.actor() returned, or { actor, part, offset }.",
+        where,
+      );
+      return null;
+    }
+    const bag =
+      direct === undefined
+        ? this.#options(given, ANCHOR_OPTIONS, "effect's options.on", where)
+        : {};
+    const actor =
+      direct ?? this.#actorHandles.get(isRecord(bag["actor"]) ? bag["actor"] : {});
+    if (actor === undefined) {
+      this.#report(
+        "ERR_SCENE_INVALID_VALUE",
+        "The actor of effect's options.on is not an actor handle of this scene; the row's origin was used.",
+        "Pass the handle row.actor() returned.",
+        where,
+      );
+      return null;
+    }
+    if (actor.row !== row.index) {
+      // An anchor names its actor by track key within the effect's row, as a hold does.
+      this.#report(
+        "ERR_SCENE_NO_ACTOR",
+        `effect's options.on names an actor of row ${String(actor.row)}, not of row ${String(row.index)}, the effect's row; the row's origin was used.`,
+        "Call effect on the actor's own row.",
+        where,
+      );
+      return null;
+    }
+    const { part = "head" } = bag;
+    if (!isAnchorPart(part)) {
+      this.#report(
+        "ERR_SCENE_INVALID_VALUE",
+        "The part of effect's options.on is not a part of an actor; head was used.",
+        `Use one of: ${ANCHOR_PART_NAMES.join(", ")}.`,
+        where,
+        {
+          nearest:
+            typeof part === "string" ? nearestNames(part, ANCHOR_PART_NAMES) : [],
+        },
+      );
+    }
+    return {
+      actor: { name: actor.track.name, occurrence: actor.track.occurrence },
+      part: isAnchorPart(part) ? part : "head",
+      offset: (bag["offset"] === undefined
+        ? undefined
+        : this.#point(bag["offset"], "effect", where)) ?? { x: 0, y: 0 },
+    };
   }
 
   #prop(row: RowState, item: unknown, options: unknown): Prop {

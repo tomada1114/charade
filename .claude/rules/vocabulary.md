@@ -41,8 +41,10 @@ never repeats it. This rule holds only what is true inside this repository.
   to the general type. The export is named for the item and its kind, since a name such
   as `throw` is a reserved word.
 - Options and timing share one bag, so a parameter may not be named `at`, `duration`,
-  `mood`, `blend` or `mode`. The types do not catch that, nor a default outside the
-  allowed values; the `define…` function rejects both when it runs.
+  `mood`, `blend` or `mode`, and an effect's may not be named `on`, which only
+  `row.effect` takes: a prop keeps the name, since `on` is what a lamp's switch would be
+  called. The types do not catch that, nor a default outside the allowed values; the
+  `define…` function rejects both when it runs.
 - An action's `build` receives a clip with an actor's depth 2 and 3 calls, time 0 at the
   action's start, and the resolved parameters. It records and returns nothing. An action
   states its marks, and built-in actions stay free of functions on the timeline so that
@@ -95,6 +97,23 @@ never repeats it. This rule holds only what is true inside this repository.
   scene's own code does. `express` takes `at`, `duration`, `blend` and `mode` and
   records a pose of the face channels `build` returns. A prop, backdrop or effect takes
   `at` (default 0) and `duration` (default open-ended).
+- `row.effect` also takes `on`, where the effect's origin is (`EffectOptions`): a point
+  of the row, an actor of the row, which is the centre of its head, or an `EffectAnchor`
+  `{ actor, part, offset }` whose `part` (`AnchorPart`) is `head`, `pelvis`, `handL`,
+  `handR`, `footL` or `footR`, the points a state description prints, a foot being its
+  ankle point. On an actor the origin follows that part every frame
+  (`.claude/rules/engine.md` § Drawing a frame). It is one option whose value has three
+  shapes, not `on`, `part` and `offset` side by side: each option name is taken from
+  every effect's parameters, and the object can take a member later, or `on` a prop's
+  handle, without another. It is on `row.effect` and not on a handle, as a prop's
+  `layer` is on `place`, because an effect has no handle: the call returns its span,
+  which a scene needs to time the next thing. A value that is none of the three, or an
+  actor that is not a handle of the scene, is `ERR_SCENE_INVALID_VALUE` and an actor of
+  another row `ERR_SCENE_NO_ACTOR`, either leaving the effect on the row's origin; a
+  part that is not one is `ERR_SCENE_INVALID_VALUE` with the nearest names and `head` is
+  used; an offset that is not a point is `ERR_SCENE_OUT_OF_RANGE` and none is used, and
+  so is a point of numbers that are not finite, which leaves the effect on the row's
+  origin: a bad number is out of range everywhere else, `place` and `offset` included.
 - A prop handle has three calls, and the one that started last says where the prop is (a
   later-recorded one wins a tie; before any, the row's origin).
   `place(point, { at, layer })` is an open-ended segment that puts the prop's ground
@@ -133,7 +152,9 @@ never repeats it. This rule holds only what is true inside this repository.
   undocumented type, and `charade catalog` is where parameters are read. `define.ts`
   never imports the maps. A prop, backdrop or effect segment records its `name`, its
   `params`, and its `definition` only when it was passed as one (`null` for a built-in
-  named by a string), so a depth 1 scene of built-ins serialises without loss.
+  named by a string), so a depth 1 scene of built-ins serialises without loss. An effect
+  segment also records `on`: `null`, the point, or the actor's track key with the part
+  and the offset, all data.
 
 ## Inside this repository
 
@@ -172,16 +193,19 @@ never repeats it. This rule holds only what is true inside this repository.
 - Re-recording a sample is done after looking at its check images, never to make a test
   pass.
 - A sample is recorded by `tests/vocabulary-samples.test.ts`: the drawing calls of seven
-  frames spread over an action's sample, and of one frame of an expression's or a
-  prop's, one call a line. That one frame is the one `catalog --images` draws
-  (`sampleFrames` in `src/check/catalog.ts`). An expression's is the sample's last: it
-  blends in from the resting face, so frame 0 is the same resting face for every
-  expression and pins nothing. A prop's is frame 0: a prop with a moving part (`lever`,
-  `cart`) shows its start state there, and a sample that gives the prop a `duration`
-  ending with the sample has no prop in its last frame, so that image and record would
-  be empty. The same file runs every action alone at the ends of its parameters, under
-  every mood and at a short and a long `duration`, and fails on any finding but leaving
-  the frame; a joint limit met by a built-in is a defect of the built-in.
+  frames spread over an action's or an effect's sample, and of one frame of an
+  expression's or a prop's, one call a line. An effect is recorded like an action
+  because it moves: its frame 0 is the start of its first droplet or star, which shows
+  nothing, and `catalog --images` draws both as a contact sheet. That one frame is the
+  one `catalog --images` draws (`sampleFrames` in `src/check/catalog.ts`). An
+  expression's is the sample's last: it blends in from the resting face, so frame 0 is
+  the same resting face for every expression and pins nothing. A prop's is frame 0: a
+  prop with a moving part (`lever`, `cart`) shows its start state there, and a sample
+  that gives the prop a `duration` ending with the sample has no prop in its last frame,
+  so that image and record would be empty. The same file runs every action alone at the
+  ends of its parameters, under every mood and at a short and a long `duration`, and
+  fails on any finding but leaving the frame; a joint limit met by a built-in is a
+  defect of the built-in.
 
 ## The first three actions
 
@@ -240,3 +264,32 @@ These set the conventions the later items follow.
 - An expression other than `neutral` takes `intensity`, 0 to 1, and scales every
   channel's distance from rest by it. `neutral` sets all eight channels, which is what
   lets it clear another expression.
+
+## The four effects
+
+- An effect draws around its origin and its description says what that origin is, which
+  is what a scene's `on` should name: the centre of a head for `sweat` and `sparkle`
+  (`on: actor`), the middle of what moves for `speedLines` (an actor's `pelvis`, or a
+  hand or foot with a smaller `spread` and `length`), the point of contact for `impact`
+  (a point of the row, or a hand or foot).
+- `sweat`, `sparkle` and `speedLines` repeat for as long as they are shown: each
+  droplet, star or streak lives one period (0.6 s, 0.8 s, 0.36 s) and the next takes its
+  place. Their time is `progress × duration`, counted from the effect's start, and scene
+  time when the effect is open-ended and has no progress. `impact` plays once over its
+  duration, about 0.4 s, and without one is a still burst.
+- The things of a repeating effect start staggered by a fraction of the period each, and
+  one that would have started before the effect did is not drawn: the effect builds up
+  over its first period from nothing, which is what its progress 0 shows, instead of
+  appearing with droplets already in mid-air.
+- Scatter is `moment.random.float` at `(cycle × count + i) × 3` and the two after it,
+  for thing `i` in its `cycle`-th life: a pure function of the frame's time, so frame
+  `n` needs no other frame, and every life is scattered afresh. Each thing keeps to its
+  own slice of the fan, ring or band, so two never draw on each other. `impact` reads
+  one number for its turn and one for each point and line.
+- An effect is an accent: thinner than the figure's line (0.007 to 0.018 against 0.025),
+  no larger than a head unless a parameter asks, and clear of the face. `sparkle`'s ring
+  starts 0.75 of its `radius` out, past the head's edge at the default; `sweat` leaves
+  from the head's edge upwards; `speedLines` starts a `gap` behind its origin.
+- An effect that faces a way is written facing right, as an action is: `speedLines`
+  trails to the left. On a left-facing actor the engine mirrors it with the figure;
+  `moving` is for a subject that moves the other way than it faces, or a point.

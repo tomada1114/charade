@@ -788,6 +788,156 @@ describe("backdrops and effects", () => {
     expect(seen[0]?.top).toBeCloseTo(2, 9);
   });
 
+  describe("an effect's place", () => {
+    /** Where the effect's context was moved to before its one marker call. */
+    function placedAt(source: FrameSource, frame: number): readonly LogEntry[] {
+      const log = record(source, frame);
+      const marker = rectIndex(log, 80000);
+      const moved = log.findLastIndex(
+        (entry, index) => index < marker && entry.call === "translate",
+      );
+      return log.slice(moved, moved + 2);
+    }
+
+    it("puts the origin on a point of the row", () => {
+      const built = scene({ duration: 1 }, (stage) => {
+        stage.effect(sweat, { on: { x: 0.5, y: 0.25 } });
+      });
+      expect(placedAt(built, 0)[0]).toEqual({ call: "translate", args: [5000, 2500] });
+    });
+
+    it("follows the head of the actor it is on, frame by frame", () => {
+      const built = scene({ duration: 2 }, (stage) => {
+        const hero = stage.actor();
+        stage.effect(sweat, { on: hero });
+        hero.pose({ pelvisX: 0.3, pelvisY: -0.1 }, { blend: 1, duration: 1 });
+      });
+      // A rest figure's head is centred 0.91 above the ground.
+      expect(placedAt(built, 0)[0]).toEqual({ call: "translate", args: [0, 9100] });
+      expect(placedAt(built, 15)[0]).toEqual({
+        call: "translate",
+        args: [1500, 8600],
+      });
+      expect(placedAt(built, 30)[0]).toEqual({
+        call: "translate",
+        args: [3000, 8100],
+      });
+      // Not mirrored for a figure that faces right.
+      expect(placedAt(built, 30)[1]?.call).toBe("strokeStyle");
+    });
+
+    it.each([
+      ["pelvis", 0, 4800],
+      ["handR", 0, 4300],
+      ["handL", 0, 4300],
+      ["footR", 0, 0],
+      ["footL", 0, 0],
+      ["head", 0, 9100],
+    ] as const)("puts it on the %s of a rest figure", (part, x, y) => {
+      const built = scene({ duration: 1 }, (stage) => {
+        stage.effect(sweat, { on: { actor: stage.actor(), part } });
+      });
+      expect(placedAt(built, 0)[0]).toEqual({ call: "translate", args: [x, y] });
+    });
+
+    it("moves it by the offset, x the way the actor faces, and mirrors it with the actor", () => {
+      const seen: RowView[] = [];
+      const seer = defineEffect({
+        name: "seer",
+        description: "An effect that notes the view.",
+        draw(ctx, _params, { view }) {
+          seen.push(view);
+          ctx.rect(8, 8, 1, 1);
+        },
+      });
+      const built = scene({ duration: 1 }, (stage) => {
+        const hero = stage.actor();
+        hero.pose({ pelvisX: 0.3 }, { blend: 0, duration: 1 });
+        stage.effect(seer, {
+          on: { actor: hero, part: "pelvis", offset: { x: 0.1, y: 0.2 } },
+        });
+      });
+      expect(placedAt(built, 0)).toEqual([
+        { call: "translate", args: [4000, 6800] },
+        { call: "strokeStyle", args: ["#111111"] },
+      ]);
+      // The row runs from -1.25 to 1.25; the effect is 0.4 right of its centre.
+      expect(seen[0]?.left).toBeCloseTo(-1.65, 9);
+      expect(seen[0]?.right).toBeCloseTo(0.85, 9);
+      const left = { ...built, timeline: facingLeft(built.timeline) };
+      expect(placedAt(left, 0)).toEqual([
+        { call: "translate", args: [-4000, 6800] },
+        { call: "scale", args: [-10000, 10000] },
+      ]);
+      // Mirrored, the drawing's +x points at the row's left edge, 0.85 away.
+      expect(seen[1]?.left).toBeCloseTo(-1.65, 9);
+      expect(seen[1]?.right).toBeCloseTo(0.85, 9);
+      expect(seen[1]?.top).toBeCloseTo(2.2 - 0.68, 9);
+    });
+
+    it.each([
+      [
+        "an actor the row lacks",
+        { actor: { name: "ghost", occurrence: 0 }, part: "head" },
+      ],
+      ["an actor that is not a key", { actor: 3, part: "head" }],
+      [
+        "a part that is not one",
+        { actor: { name: "actor", occurrence: 0 }, part: "tail" },
+      ],
+      ["a point that is not finite", { x: 1, y: "2" }],
+      ["a place that is not an object", 7],
+    ])("stays at the row's origin for %s", (_label, on) => {
+      const built = scene({ duration: 1 }, (stage) => {
+        stage.actor();
+        stage.effect(sweat, { on: { x: 1, y: 1 } });
+      });
+      const source: FrameSource = {
+        ...built,
+        timeline: {
+          ...built.timeline,
+          rows: built.timeline.rows.map((row) => ({
+            tracks: row.tracks.map((track) =>
+              track.kind === "effect"
+                ? {
+                    ...track,
+                    segments: track.segments.map((segment) => ({
+                      ...segment,
+                      data: { ...(segment.data as object), on },
+                    })),
+                  }
+                : track,
+            ),
+          })),
+        },
+      };
+      expect(placedAt(source, 0)[0]).toEqual({ call: "translate", args: [0, 0] });
+    });
+
+    it("draws an effect on an actor the same from the parsed timeline", () => {
+      const built = scene({ duration: 1 }, (stage) => {
+        const hero = stage.actor();
+        hero.pose({ spine: 0.5 }, { duration: 1 });
+        stage.effect("sweat", { on: { actor: hero, part: "handR" } });
+      });
+      const parsed = parseTimeline(serializeTimeline(built.timeline));
+      if (!parsed.ok) {
+        throw new Error(parsed.reason);
+      }
+      expect(record({ ...built, timeline: parsed.document.timeline }, 20)).toEqual(
+        record(built, 20),
+      );
+      expect(record(built, 20)).not.toEqual(
+        record(
+          scene({ duration: 1 }, (stage) => {
+            stage.actor().pose({ spine: 0.5 }, { duration: 1 });
+          }),
+          20,
+        ),
+      );
+    });
+  });
+
   it("gives a backdrop its parameters and draws it only while its segment covers the frame", () => {
     const built = scene({ duration: 2 }, (stage) => {
       stage.backdrop(sky, { size: 0.5, at: 1, duration: 1 });

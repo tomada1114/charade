@@ -26,6 +26,10 @@ import { hillBackdrop } from "./backdrops/hill.js";
 import { nightBackdrop } from "./backdrops/night.js";
 import { officeBackdrop } from "./backdrops/office.js";
 import { plainBackdrop } from "./backdrops/plain.js";
+import { impactEffect } from "./effects/impact.js";
+import { sparkleEffect } from "./effects/sparkle.js";
+import { speedLinesEffect } from "./effects/speedLines.js";
+import { sweatEffect } from "./effects/sweat.js";
 
 /**
  * The built-in actions by name: what `a.do("name")` accepts.
@@ -180,16 +184,29 @@ export const builtinBackdrops: BuiltinBackdrops = Object.freeze({
  * The built-in effects by name: what `row.effect("name")` accepts.
  *
  * @remarks
- * There is no built-in effect yet.
+ * They are `impact`, `sparkle`, `speedLines`, `sweat`.
  *
  * @public
  */
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type -- no built-in effect yet
-export interface BuiltinEffects {}
+export interface BuiltinEffects {
+  /** @hidden */
+  readonly impact: typeof impactEffect;
+  /** @hidden */
+  readonly sparkle: typeof sparkleEffect;
+  /** @hidden */
+  readonly speedLines: typeof speedLinesEffect;
+  /** @hidden */
+  readonly sweat: typeof sweatEffect;
+}
 
 /**
  * The built-in effects, by name.
  *
  * @public
  */
-export const builtinEffects: BuiltinEffects = Object.freeze({});
+export const builtinEffects: BuiltinEffects = Object.freeze({
+  impact: impactEffect,
+  sparkle: sparkleEffect,
+  speedLines: speedLinesEffect,
+  sweat: sweatEffect,
+});

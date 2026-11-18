@@ -15,6 +15,7 @@ import {
   builtinExpressions,
   builtinProps,
   type Definition,
+  type EffectDefinition,
   type ExpressionDefinition,
   type Finding,
   type Row,
@@ -26,7 +27,7 @@ import {
 import { parseTimeline, serializeTimeline } from "../src/timeline/json.js";
 
 /** How many frames of a sample are recorded, spread from its first to its last. */
-const RECORDED_FRAMES = { action: 7, effect: 1 };
+const RECORDED_FRAMES = { action: 7, effect: 7 };
 
 /**
  * The frames of a sample that are recorded. What moves is spread over the sample; what
@@ -118,7 +119,7 @@ function segmentsOf(built: Scene, kind: string, row = 0): readonly unknown[] {
 }
 
 describe("the built-in vocabulary", () => {
-  it("is the three actions, the six expressions, the ten props and the five backdrops", () => {
+  it("is the three actions, six expressions, ten props, five backdrops and four effects", () => {
     expect(ITEMS.map(([kind, name]) => `${kind} ${name}`)).toEqual([
       "action sitDown",
       "action slump",
@@ -144,6 +145,10 @@ describe("the built-in vocabulary", () => {
       "backdrop night",
       "backdrop office",
       "backdrop plain",
+      "effect impact",
+      "effect sparkle",
+      "effect speedLines",
+      "effect sweat",
     ]);
   });
 
@@ -675,6 +680,285 @@ describe("a built-in backdrop", () => {
     const tree = square.findIndex((entry) => entry.startsWith("translate 9500 "));
     expect(tree).toBeGreaterThan(-1);
     expect(wide).toContain(square[tree]);
+  });
+});
+
+describe("a built-in effect", () => {
+  const EFFECTS: readonly (readonly [string, EffectDefinition])[] =
+    Object.entries(builtinEffects);
+
+  /** `row.effect` as a scene file calls it once its types are erased. */
+  function effectOf(row: Row, name: string, options?: object): Span {
+    return (row as unknown as { effect(name: string, options?: object): Span }).effect(
+      name,
+      options,
+    );
+  }
+
+  /** The effect `name` alone, 1.2 units up a one-row scene, for one second. */
+  function alone(name: string, options: object = {}, seed = 0): Scene {
+    return scene({ seed }, (stage) => {
+      effectOf(stage, name, { on: { x: 0, y: 1.2 }, duration: 1, ...options });
+    });
+  }
+
+  /** What an effect draws in a frame: the calls from its fill colour's line on. */
+  function drawnBy(built: Scene, frame: number, colour: string): string[] {
+    const log = record(built, frame).split("\n");
+    const first = log.indexOf(`fillStyle "${colour}"`);
+    return first === -1 ? [] : log.slice(first);
+  }
+
+  // #25 R2
+  it.each(EFFECTS)(
+    "draws frame n of %s the same alone as after frames 0 to n − 1",
+    (_name, definition) => {
+      const built = sampleOf(definition);
+      const frames = recordedFrames("effect", built);
+      expect(frames).toHaveLength(7);
+      const ctx = new RecordingContext();
+      for (let frame = 0; frame <= (frames.at(-1) ?? 0); frame += 1) {
+        const before = ctx.log.length;
+        drawFrame(ctx, built, frame);
+        if (frames.includes(frame)) {
+          expect(ctx.log.slice(before).map(line).join("\n")).toBe(record(built, frame));
+        }
+      }
+    },
+  );
+
+  // #25 R3
+  it.each(EFFECTS)(
+    "scatters %s by the scene's seed, the same again with the same seed",
+    (_name, definition) => {
+      const frames = recordedFrames("effect", sampleOf(definition));
+      const drawn = (seed: number): string => {
+        const built = scene({ seed }, (stage) => {
+          definition.sample?.(stage);
+        });
+        return frames.map((frame) => record(built, frame)).join("\n");
+      };
+      expect(drawn(1)).toBe(drawn(1));
+      expect(drawn(1)).not.toBe(drawn(2));
+    },
+  );
+
+  // #25 R4
+  it.each(EFFECTS)(
+    "reads no clock and no unseeded random number in the sample of %s",
+    (_name, definition) => {
+      const codes = checkScene(sampleOf(definition)).findings.map(({ code }) => code);
+      expect(codes).not.toContain("ERR_CHECK_CLOCK_READ");
+      expect(codes).not.toContain("ERR_CHECK_UNSEEDED_RANDOM");
+      expect(codes).toEqual([]);
+    },
+  );
+
+  it.each(EFFECTS)(
+    "shows %s in the frames its sample is recorded at",
+    (name, definition) => {
+      const built = sampleOf(definition);
+      const bare = scene((stage) => {
+        definition.sample?.(stage);
+      });
+      // The same sample without its effect track draws less where the effect shows.
+      const without: Scene = {
+        ...bare,
+        timeline: {
+          ...bare.timeline,
+          rows: bare.timeline.rows.map((row) => ({
+            tracks: row.tracks.filter((track) => track.kind !== "effect"),
+          })),
+        },
+      };
+      const shownIn = recordedFrames("effect", built).filter(
+        (frame) => record(built, frame) !== record(without, frame),
+      );
+      // An impact is over in 0.4 s, so one recorded frame catches it; the others loop.
+      expect(shownIn.length).toBeGreaterThanOrEqual(name === "impact" ? 1 : 4);
+      expect(
+        sampleFrames("effect", built).filter(
+          (frame) => record(built, frame) !== record(without, frame),
+        ).length,
+      ).toBeGreaterThanOrEqual(2);
+    },
+  );
+
+  it.each(EFFECTS)(
+    "draws %s at the ends of its parameters without a finding",
+    (name, definition) => {
+      for (const [key, spec] of Object.entries(definition.params)) {
+        const ends =
+          spec.type === "number"
+            ? [spec.min, spec.max]
+            : spec.type === "enum"
+              ? spec.values
+              : [];
+        for (const value of ends) {
+          for (const options of [{ [key]: value }, { [key]: value, duration: 0 }]) {
+            const built = scene({ duration: 1 }, (stage) => {
+              stage.actor();
+              effectOf(stage, name, { on: { x: 0, y: 1.2 }, ...options });
+            });
+            expect(built.findings).toEqual([]);
+            expect(checkScene(built).findings).toEqual([]);
+          }
+        }
+      }
+    },
+  );
+
+  it.each(EFFECTS)("draws %s at progress 0 and in its last frame", (name) => {
+    const built = alone(name);
+    // One second at 30 fps is frames 0 to 29; the segment is half-open.
+    expect(record(built, 0)).toContain("translate 0 12000");
+    expect(record(built, 29)).toContain("translate 0 12000");
+    expect(record(built, 30)).not.toContain("translate 0 12000");
+    expect(record(built, 29)).not.toBe(record(built, 0));
+  });
+
+  it.each(EFFECTS)("puts no function on the timeline: %s", (name) => {
+    const built = scene({ duration: 1 }, (stage) => {
+      effectOf(stage, name, { on: stage.actor() });
+    });
+    expect(built.findings).toEqual([]);
+    expect(serializeTimeline(built.timeline)).toContain('"lossy":false');
+  });
+
+  // #25 Examples, normal
+  it("draws sweat near the head across a dejected slump", () => {
+    const built = scene((stage) => {
+      const actor = stage.actor();
+      const slump = loosely(actor)("slump", { mood: "dejected" });
+      effectOf(stage, "sweat", { on: actor, duration: slump.duration });
+    });
+    expect(built.findings).toEqual([]);
+    expect(checkScene(built).findings).toEqual([]);
+    const last = lastFrameOf(built.timeline) ?? 0;
+    const heads: string[] = [];
+    for (const frame of spreadFrames(0, last, 6).slice(1, -1)) {
+      const log = record(built, frame).split("\n");
+      // The head is the one circle of radius 0.09; the effect's origin is its centre.
+      const head = /^arc (-?\d+) (-?\d+) 900 /.exec(
+        log.find((entry) => /^arc -?\d+ -?\d+ 900 /.test(entry)) ?? "",
+      );
+      expect(head).not.toBeNull();
+      const origin = `translate ${head?.[1] ?? ""} ${head?.[2] ?? ""}`;
+      const drops = log.slice(log.lastIndexOf(origin));
+      expect(drops[0]).toBe(origin);
+      expect(drops).toContain('fillStyle "#8fd0f5"');
+      expect(drops.filter((entry) => entry === "fill").length).toBeGreaterThan(0);
+      // Each droplet is drawn within 0.35 units of the head's centre.
+      for (const entry of drops.slice(1)) {
+        const moved = /^translate (-?\d+) (-?\d+)$/.exec(entry);
+        if (moved !== null) {
+          expect(Math.hypot(Number(moved[1]), Number(moved[2]))).toBeLessThan(3500);
+        }
+      }
+      heads.push(origin);
+    }
+    // The head drops through the slump, and the droplets go with it.
+    expect(new Set(heads).size).toBeGreaterThan(1);
+  });
+
+  // #25 Examples, boundary
+  it("does not reshuffle the first sparkle when a second is added", () => {
+    const one = alone("sparkle");
+    const two = scene((stage) => {
+      effectOf(stage, "sparkle", { on: { x: 0, y: 1.2 }, duration: 1 });
+      effectOf(stage, "sparkle", { on: { x: 0.6, y: 1.2 }, duration: 1 });
+    });
+    for (const frame of [5, 14, 23]) {
+      const [first, both] = [
+        drawnBy(one, frame, "#ffd84d"),
+        drawnBy(two, frame, "#ffd84d"),
+      ];
+      expect(first.length).toBeGreaterThan(8);
+      // Row 0's closing restore is the first log's last line; the rest is the same.
+      expect(both.slice(0, first.length - 1)).toEqual(first.slice(0, -1));
+      // The second is its own occurrence, so it is scattered differently.
+      expect(both.slice(first.length - 1).join("\n")).not.toContain(
+        first.slice(0, 12).join("\n"),
+      );
+    }
+  });
+
+  // #25 Examples, error
+  it("reports an effect named spakle as unknown, nearest sparkle", () => {
+    const built = scene({ duration: 1 }, (stage) => {
+      effectOf(stage, "spakle");
+    });
+    expect(built.findings).toHaveLength(1);
+    expect(built.findings[0]).toMatchObject({
+      code: "ERR_SCENE_UNKNOWN_EFFECT",
+      severity: "error",
+      nearest: ["sparkle"],
+    });
+  });
+
+  it("plays the impact once over its duration, and holds a still burst without one", () => {
+    const timed = alone("impact");
+    expect(record(timed, 3)).not.toBe(record(timed, 20));
+    // It fades from 0.55 of the way on: at 29/30, (1 − 29/30) / 0.45 = 0.0741 is left.
+    expect(record(timed, 16)).toContain("globalAlpha 10000");
+    expect(record(timed, 29)).toContain("globalAlpha 741");
+    const still = scene({ duration: 1 }, (stage) => {
+      effectOf(stage, "impact");
+    });
+    expect(record(still, 3)).toBe(record(still, 20));
+    expect(record(still, 3)).toContain("globalAlpha 10000");
+  });
+
+  it.each(["sweat", "sparkle", "speedLines"])(
+    "keeps %s going on scene time when it has no duration",
+    (name) => {
+      const built = scene({ duration: 2 }, (stage) => {
+        effectOf(stage, name);
+      });
+      expect(checkScene(built).findings).toEqual([]);
+      expect(record(built, 20)).not.toBe(record(built, 50));
+      expect(record(built, 50)).not.toBe(
+        record(
+          scene({ duration: 2 }, () => undefined),
+          50,
+        ),
+      );
+    },
+  );
+
+  it("trails the speed lines to the left, or to the right of something moving left", () => {
+    const xs = (options: object): number[] =>
+      record(alone("speedLines", options), 12)
+        .split("\n")
+        .flatMap((entry) => {
+          const point = /^(?:moveTo|lineTo) (-?\d+) /.exec(entry);
+          return point === null ? [] : [Number(point[1])];
+        });
+    // Past the ground line's two points, every streak lies behind the origin.
+    const streaks = xs({}).slice(2);
+    expect(streaks.length).toBeGreaterThan(4);
+    expect(Math.max(...streaks)).toBeLessThanOrEqual(-2200);
+    expect(record(alone("speedLines", { moving: "left" }), 12)).toContain(
+      "scale -10000 10000",
+    );
+    expect(record(alone("speedLines"), 12)).not.toContain("scale -10000 10000");
+  });
+
+  it("draws as many droplets, stars, streaks and spikes as it is asked for", () => {
+    const count = (name: string, options: object, call: string): number =>
+      // The last frame: by then every one has begun, however they are staggered.
+      record(alone(name, options), 29)
+        .split("\n")
+        .filter((entry) => entry === call).length;
+    expect(count("sweat", { drops: 5 }, "fill")).toBe(5);
+    expect(count("sparkle", { stars: 7 }, "fill")).toBe(7);
+    // The ground line, then one stroke a streak.
+    expect(count("speedLines", { lines: 9 }, "stroke") - 1).toBe(9);
+    const spikes = record(alone("impact", { spikes: 9 }), 20)
+      .split("\n")
+      .filter((entry) => entry.startsWith("lineTo ")).length;
+    // The ground line's one, two for each point of the star, one for each flying line.
+    expect(spikes - 1).toBe(9 * 3);
   });
 });
 

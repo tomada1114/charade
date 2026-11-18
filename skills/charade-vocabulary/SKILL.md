@@ -121,9 +121,9 @@ A key without `default` is required. Every key has a `doc` line.
 | `text`    |                                  | a string                       |
 | `prop`    | no `default`; actions only       | the handle `row.prop` returned |
 
-A parameter may not be named `at`, `duration`, `mood`, `blend` or `mode`: a scene passes
-those in the same bag. A default must be a value the parameter allows. `define…` checks
-both when it runs; the types do not.
+A parameter may not be named `at`, `duration`, `mood`, `blend` or `mode`, nor an
+effect's `on`: a scene passes those in the same bag. A default must be a value the
+parameter allows. `define…` checks both when it runs; the types do not.
 
 ### An action's build
 
@@ -173,6 +173,13 @@ it.
   backdrop fills from `view.left` to `view.right` and repeats or extends what it shows
   outwards from the origin, where the actor stands, so a wider row shows more of the
   same picture. Keep it paler than the ink figure, and its detail above head height.
+- An effect draws around its origin, which the scene puts on a point or on a part of an
+  actor with `on` and which then follows that part; say in the description which part it
+  is drawn for. It is in front of the figure, so keep it an accent: small, beside the
+  face rather than on it. What repeats runs on `moment.progress × moment.duration`, or
+  on `moment.time` when the duration is `Infinity`; what is scattered takes
+  `moment.random.float(i)`, one `i` for each thing and each repeat, so no frame depends
+  on another.
 
 ### The sample
 
@@ -184,8 +191,8 @@ a short `wait`, the action with whatever prop it needs, and a `wait`.
   look different, and add `stage.actor().wait(1)` for scale and for the sample's length.
   The image is the sample's last frame, which an item whose `duration` has ended is not
   in.
-- An expression: `actor.express(item, { duration: 1 })`. An effect: a `duration`, beside
-  an actor that waits as long.
+- An expression: `actor.express(item, { duration: 1 })`. An effect: a `duration` and the
+  `on` it is meant for, on an actor doing something it goes with for as long.
 
 ## The loop
 

@@ -309,6 +309,12 @@ describe("the rig listing (R2)", () => {
     expect(stdout).toContain("\n  ball: prop, required — ");
     expect(stdout).toContain("\n  to: point, default (1, 0) — ");
     expect(stdout).toContain('\n  color: color, default "#e4572e" — ');
+    // How an effect is placed is said once, where its use is.
+    expect(stdout).toMatch(
+      /\n {2}effect: stage\.effect\("name", \{ …, at, duration, on \}\) — on .*\{ actor, part, offset \}.* head, pelvis, handL, handR, footL, footR/,
+    );
+    expect(stdout).toContain("\neffect sweat — Droplets");
+    expect(stdout).toContain('\n  side: enum (back | front | both), default "back" — ');
     expect(stdout).toContain("\n  marks: release\n");
     expect(stdout).toContain("\n  moods that change the body: focused, dejected\n");
     const rig = stdout.indexOf("\nrig\n");
@@ -660,6 +666,10 @@ describe("catalog --images (R4)", () => {
       "backdrop.night.png",
       "backdrop.office.png",
       "backdrop.plain.png",
+      "effect.impact.png",
+      "effect.sparkle.png",
+      "effect.speedLines.png",
+      "effect.sweat.png",
       "expression.angry.png",
       "expression.dejected.png",
       "expression.focused.png",
@@ -683,8 +693,8 @@ describe("catalog --images (R4)", () => {
     expect(document.images?.map((image) => image.path).sort()).toEqual(
       names.map((name) => path.join(out, name)),
     );
-    expect(document.images?.at(-1)?.path).toBe(path.join(out, "backdrop.plain.png"));
-    expect(document.items).toHaveLength(24);
+    expect(document.images?.at(-1)?.path).toBe(path.join(out, "effect.sweat.png"));
+    expect(document.items).toHaveLength(28);
     // An action is a contact sheet; an expression is one frame at the sample's size.
     expect(sizeOf(readFileSync(path.join(out, "action.throw.png")))[0]).toBe(1568);
     expect(sizeOf(readFileSync(path.join(out, "expression.dejected.png")))).toEqual([

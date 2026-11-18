@@ -389,8 +389,8 @@ export interface ExpressOptions {
 }
 
 /**
- * Options of `row.prop`, `row.backdrop` and `row.effect`, in the same bag as the
- * item's parameters.
+ * Options of `row.prop` and `row.backdrop`, in the same bag as the item's parameters;
+ * `row.effect` takes them too, as part of {@link EffectOptions}.
  *
  * @public
  */
@@ -399,6 +399,45 @@ export interface ItemOptions {
   readonly at?: number;
   /** How long the item is shown, in seconds. Without it, to the end of the scene. */
   readonly duration?: number;
+}
+
+/**
+ * A part of an actor an effect can be on: the centre of the head, the pelvis, a hand,
+ * or a foot (its ankle point).
+ *
+ * @public
+ */
+export type AnchorPart = "head" | "pelvis" | "handL" | "handR" | "footL" | "footR";
+
+/**
+ * A part of an actor as the place of an effect.
+ *
+ * @public
+ */
+export interface EffectAnchor {
+  /** The actor, of the effect's own row. */
+  readonly actor: Actor;
+  /** Which part of the actor the effect's origin follows. Defaults to `"head"`. */
+  readonly part?: AnchorPart;
+  /**
+   * The origin's offset from the part, in row units; `x` is the way the actor
+   * faces. Defaults to none.
+   */
+  readonly offset?: Point;
+}
+
+/**
+ * Options of `row.effect`, in the same bag as the effect's parameters.
+ *
+ * @public
+ */
+export interface EffectOptions extends ItemOptions {
+  /**
+   * Where the effect's origin is: a point of the row, an actor of the row (the centre
+   * of its head, followed every frame), or a part of that actor with an offset.
+   * Defaults to the row's origin.
+   */
+  readonly on?: Point | Actor | EffectAnchor;
 }
 
 /**
@@ -665,24 +704,24 @@ export interface Row {
    * Show an effect in the row, given as its definition.
    *
    * @param effect - The effect's definition.
-   * @param options - The effect's parameters, and when it is shown.
+   * @param options - The effect's parameters, when it is shown, and what it is on.
    * @returns When the effect is shown.
    */
   effect<P extends ParamSpec>(
     effect: EffectDefinition<P>,
-    ...options: ItemArgs<P, ItemOptions>
+    ...options: ItemArgs<P, EffectOptions>
   ): Span;
   /**
    * Show a built-in effect in the row, given by name.
    *
    * @param name - The built-in effect's name.
-   * @param options - The effect's parameters, and when it is shown.
+   * @param options - The effect's parameters, when it is shown, and what it is on.
    * @returns When the effect is shown.
    */
   effect<N extends BuiltinName<BuiltinEffects>>(
     name: N,
     ...options: BuiltinEffects[N] extends EffectDefinition<infer P>
-      ? ItemArgs<P, ItemOptions>
+      ? ItemArgs<P, EffectOptions>
       : never
   ): Span;
 }
