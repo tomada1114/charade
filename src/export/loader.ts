@@ -1,4 +1,4 @@
-import { statSync } from "node:fs";
+import { readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
@@ -170,10 +170,14 @@ export class DuplicateDefinitionError extends SceneLoadError {
 /** Any other failure while the scene file loaded or ran; the original error is the `cause`. */
 export class SceneFailedError extends SceneLoadError {
   readonly code = "ERR_LOAD_FAILED" as const;
-  readonly fix = "Fix what the message names, then run the command again.";
+  readonly fix: string;
 
-  constructor(cause: unknown) {
+  constructor(
+    cause: unknown,
+    fix = "Fix what the message names, then run the command again.",
+  ) {
     super(`The scene could not be loaded: ${describe(cause)}`, { cause });
+    this.fix = fix;
   }
 }
 
@@ -245,12 +249,82 @@ export function packageNameOf(specifier: string): string {
   return (specifier.startsWith("@") ? parts.slice(0, 2) : parts.slice(0, 1)).join("/");
 }
 
+/** Why Node reads a file as CommonJS. */
+export interface CommonJSScope {
+  /** The file Node reads as CommonJS. */
+  readonly file: string;
+  /** The `package.json` whose `"type": "commonjs"` decides it; undefined for a `.cts` or `.cjs` file. */
+  readonly packageJson: string | undefined;
+}
+
+function readText(file: string): string | undefined {
+  try {
+    return readFileSync(file, "utf8");
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Why Node reads `file` as CommonJS, or undefined when it reads it as an ES module or
+ * detects its syntax: a `.cts` or `.cjs` extension, or a `.ts` or `.js` file whose
+ * nearest `package.json` sets `"type": "commonjs"`, which is what `npm init -y` writes
+ * from npm 11. A typeless `package.json` is not one: Node reparses a file with `import`
+ * as an ES module.
+ */
+export function commonJSScope(
+  file: string,
+  read: (file: string) => string | undefined = readText,
+): CommonJSScope | undefined {
+  const extension = path.extname(file);
+  if (extension === ".cts" || extension === ".cjs") {
+    return { file, packageJson: undefined };
+  }
+  if (extension !== ".ts" && extension !== ".js") {
+    return undefined;
+  }
+  // Node's lookup for the package scope stops at a node_modules folder, as this does.
+  for (
+    let folder = path.dirname(file);
+    path.basename(folder) !== "node_modules";
+    folder = path.dirname(folder)
+  ) {
+    const packageJson = path.join(folder, "package.json");
+    const text = read(packageJson);
+    if (text !== undefined) {
+      return packageType(text) === "commonjs" ? { file, packageJson } : undefined;
+    }
+    if (path.dirname(folder) === folder) {
+      return undefined;
+    }
+  }
+  return undefined;
+}
+
+function packageType(text: string): string | undefined {
+  try {
+    return stringProperty(JSON.parse(text), "type");
+  } catch {
+    return undefined;
+  }
+}
+
+function commonJSFix({ file, packageJson }: CommonJSScope): string {
+  const extension = path.extname(file);
+  const renamed = `${path.basename(file, extension)}.mts`;
+  return packageJson === undefined
+    ? `Node always reads a ${extension} file as CommonJS, where import and export are errors: name the file ${renamed}.`
+    : `Node reads ${path.basename(file)} as CommonJS because ${packageJson} sets "type": "commonjs": set "type": "module" in that package.json, or name the file ${renamed} and each .ts helper it imports .mts as well.`;
+}
+
 /** What {@link classifyLoadError} needs beyond the error itself. */
 export interface ClassifyContext {
   /** The resolutions the hook saw fail. */
   readonly failures: readonly ResolveFailure[];
   /** Whether a file exists. */
   readonly exists: (file: string) => boolean;
+  /** Why Node reads the scene file as CommonJS, asked only for a codeless `SyntaxError`. */
+  readonly commonJS?: () => CommonJSScope | undefined;
 }
 
 /**
@@ -291,9 +365,15 @@ export function classifyLoadError(
       const missing =
         error instanceof SyntaxError ? MISSING_EXPORT.exec(error.message) : null;
       const name = missing?.[1];
-      return name === undefined
+      if (name !== undefined) {
+        return new MissingExportError(name, error);
+      }
+      // Node gives "Cannot use import statement outside a module" no code either, so the
+      // format is worked out from the scene file instead of read from the message.
+      const scope = error instanceof SyntaxError ? context.commonJS?.() : undefined;
+      return scope === undefined
         ? new SceneFailedError(error)
-        : new MissingExportError(name, error);
+        : new SceneFailedError(error, commonJSFix(scope));
     }
     default:
       return new SceneFailedError(error);
@@ -410,7 +490,11 @@ async function loadModule(file: string, options: LoadOptions): Promise<unknown> 
   try {
     return await importModule(pathToFileURL(absolute).href);
   } catch (error) {
-    throw classifyLoadError(error, { failures: hook.failures, exists });
+    throw classifyLoadError(error, {
+      failures: hook.failures,
+      exists,
+      commonJS: () => commonJSScope(absolute),
+    });
   }
 }
 

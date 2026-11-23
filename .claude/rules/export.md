@@ -54,6 +54,15 @@ stay free of Node-only modules.
   is `ERR_LOAD_SCENE_NOT_FOUND`, a default export without `kind: "charade.scene"` is
   `ERR_LOAD_NOT_A_SCENE`, and anything else, a scene that throws included, is
   `ERR_LOAD_FAILED` with the original as `cause`. All are internal and carry `fix`.
+- A scene Node reads as CommonJS fails with a codeless `SyntaxError` ("Cannot use import
+  statement outside a module"). The loader does not read that message: for a codeless
+  `SyntaxError` it works out the scene file's format itself (`commonJSScope`), and a
+  `.cts`/`.cjs` file, or a `.ts`/`.js` file whose nearest `package.json` sets
+  `"type": "commonjs"`, keeps `ERR_LOAD_FAILED` with a fix naming `"type": "module"` in
+  that `package.json` and the `.mts` name, for its helpers too, since a `.ts` helper
+  beside an `.mts` scene is still CommonJS (only the name for `.cts`). npm 11's
+  `npm init -y` writes `"type": "commonjs"`; a typeless `package.json` is not this case,
+  since Node reparses a file with `import` as a module (Node 24.22.3, 2026-11-23).
 
 ## Rasterising
 
