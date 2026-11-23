@@ -3,14 +3,26 @@ import type { Finding } from "./findings.js";
 /** A global whose value differs from one run to the next. */
 export type GlobalRead = "Date" | "performance.now" | "Math.random";
 
-/** What a watched function returned, and the globals it read. */
-export interface Watched<T> {
+/** A watched function that returned `value`. */
+export interface WatchedValue<T> {
+  readonly ok: true;
   readonly value: T;
   readonly reads: readonly GlobalRead[];
 }
 
+/** A watched function that threw `error`; the reads it made before it threw are kept. */
+export interface WatchedError {
+  readonly ok: false;
+  readonly error: unknown;
+  readonly reads: readonly GlobalRead[];
+}
+
+/** How a watched function ended, and the globals it read either way. */
+export type Watched<T> = WatchedValue<T> | WatchedError;
+
 /**
- * Runs a function and says which of the clock and the unseeded random it read. A
+ * Runs a function and says which of the clock and the unseeded random it read. What
+ * the function throws is returned, not rethrown, so its reads are not lost with it. A
  * nested watch keeps its reads to itself.
  */
 export type ReadWatch = <T>(run: () => T) => Watched<T>;
@@ -33,7 +45,22 @@ export function installReadWatch(watch: ReadWatch | undefined): ReadWatch | unde
 
 /** Runs `run` under the installed watch; with none installed it reports no reads. */
 export function watchReads<T>(run: () => T): Watched<T> {
-  return installed === undefined ? { value: run(), reads: [] } : installed(run);
+  if (installed !== undefined) {
+    return installed(run);
+  }
+  try {
+    return { ok: true, value: run(), reads: [] };
+  } catch (error) {
+    return { ok: false, error, reads: [] };
+  }
+}
+
+/** What the watched function returned, or what it threw, thrown again. */
+export function valueOf<T>(watched: Watched<T>): T {
+  if (!watched.ok) {
+    throw watched.error;
+  }
+  return watched.value;
 }
 
 /** Where a read happened: `subject` begins the message, the rest locates the finding. */

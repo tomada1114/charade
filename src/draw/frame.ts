@@ -4,7 +4,12 @@ import type { Point } from "../rig/kinematics.js";
 import { builtinBackdrops, builtinEffects, builtinProps } from "../scene/builtins.js";
 import { randomSource } from "../timeline/random.js";
 import type { DrawMoment } from "../timeline/segments.js";
-import { frameInSegment, frameSeconds, MICROS_PER_SECOND } from "../timeline/time.js";
+import {
+  frameInSegment,
+  frameSeconds,
+  type Micros,
+  MICROS_PER_SECOND,
+} from "../timeline/time.js";
 import type { Timeline, TimelineTrack } from "../timeline/timeline.js";
 import type { DrawingContext, ShapeContext } from "./context.js";
 import { drawFigure, facingOf, FIGURE_LINE, INK, PAPER } from "./figure.js";
@@ -392,7 +397,7 @@ export function drawItem(
     if (draw === undefined) {
       continue;
     }
-    const t = time - start / MICROS_PER_SECOND;
+    const t = sinceStart(frame, start, fps);
     const duration = end === null ? Infinity : (end - start) / MICROS_PER_SECOND;
     ctx.save();
     try {
@@ -408,6 +413,7 @@ export function drawItem(
           time,
           duration,
           progress: end === null ? 0 : t / duration,
+          t,
           random,
           view,
         });
@@ -416,6 +422,15 @@ export function drawItem(
       ctx.restore();
     }
   }
+}
+
+/**
+ * Seconds from a segment's start to frame `frame`, from the difference in frame units:
+ * `frame / fps − start` in floats would let the same distance from the start round two
+ * ways at two starts, and a repeating effect then differ by where it was placed.
+ */
+function sinceStart(frame: number, start: Micros, fps: number): number {
+  return (frame * MICROS_PER_SECOND - start * fps) / (fps * MICROS_PER_SECOND);
 }
 
 /**
@@ -470,7 +485,7 @@ export function drawTrack(
     if (!isDrawCallback(draw) || !frameInSegment(frame, start, end, fps)) {
       continue;
     }
-    const t = time - start / MICROS_PER_SECOND;
+    const t = sinceStart(frame, start, fps);
     const duration = end === null ? Infinity : (end - start) / MICROS_PER_SECOND;
     ctx.strokeStyle = INK;
     ctx.fillStyle = INK;
@@ -480,6 +495,7 @@ export function drawTrack(
         time,
         duration,
         progress: end === null ? 0 : t / duration,
+        t,
         random,
         view,
       });

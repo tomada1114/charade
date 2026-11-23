@@ -109,10 +109,16 @@ recorded sample is how an unintended change in appearance fails a test.
   resize it quietly and the raw output would lose its `width × height × 4` length.
 - An unknown name or a bad parameter while a scene runs is recorded as a finding and
   authoring continues with a placeholder, so one run reports every mistake instead of
-  the first. Recording stops at twenty findings (`FINDING_CAP`), keeping the first ones;
-  the report says when later ones were dropped. A structural mistake — a row the scene
-  does not have, a callback that returns a promise — is thrown instead, since there is
-  no placeholder to continue with.
+  the first. Recording stops at twenty findings (`FINDING_CAP`), keeping the first ones,
+  except that a warning gives way to an error: at the cap a later warning is dropped and
+  a later error evicts the last warning kept, never an error, so the kept findings are
+  the first errors and, in the room left, the first warnings, in the order added. The
+  cap lives in `FindingCollector` rather than in a separate place for late findings,
+  because the scene's clock and random reads are recorded only after its build callback
+  returns, and `checkScene` never sees what the scene dropped: a dropped error would
+  turn a failing run into exit 0. The report says when findings were dropped. A
+  structural mistake — a row the scene does not have, a callback that returns a promise
+  — is thrown instead, since there is no placeholder to continue with.
 - The public names are `Finding` (the plain data), `Severity` (`"error" | "warning"`),
   `SourceLocation` (`file`, `line`, `column`), and `FindingCollector`, which records up
   to the cap. A finding's location fields are `row`, `target`, `joint`, `time` (seconds)
@@ -241,7 +247,9 @@ recorded sample is how an unintended change in appearance fails a test.
 - A watched global still answers as the real one does, so the scene runs on and one
   check reports every read. Only reading the current time counts: `Date.now()`,
   `new Date()` and `Date()`, not `new Date(2020, 0, 1)` or `Date.UTC`. A nested watch
-  keeps its reads to itself.
+  keeps its reads to itself. A watch returns what its function throws, with the reads
+  made before the throw, instead of rethrowing it: a frame whose function reads and then
+  throws reports both the read and the failure, and the caller rethrows when it must.
 - A read in the build callback is a finding frozen into the scene, with no row or
   target. A read at a frame names the track. Both use the `ERR_CHECK_` codes, also the
   one recorded while authoring: it is one failure with one fix, and a caller should not

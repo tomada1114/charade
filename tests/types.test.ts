@@ -678,7 +678,7 @@ describe("handle types", () => {
     expectTypeOf<RandomSource["uint32"]>().toEqualTypeOf<(draw?: number) => number>();
   });
 
-  it("gives a drawing function the moment and the row's visible area", () => {
+  it("gives a drawing function the moment, its time in the segment and the row's visible area", () => {
     expectTypeOf<RowView>().toEqualTypeOf<{
       readonly left: number;
       readonly right: number;
@@ -687,9 +687,11 @@ describe("handle types", () => {
     }>();
     expectTypeOf<DrawMoment>().toExtend<Moment>();
     expectTypeOf<DrawMoment["view"]>().toEqualTypeOf<RowView>();
-    expectTypeOf<keyof DrawMoment>().toEqualTypeOf<keyof Moment | "view">();
-    // A drive has no row to see: its moment is the plain one.
+    expectTypeOf<DrawMoment["t"]>().toEqualTypeOf<number>();
+    expectTypeOf<keyof DrawMoment>().toEqualTypeOf<keyof Moment | "t" | "view">();
+    // A drive has no row to see and its `t` as an argument: its moment is the plain one.
     expectTypeOf<Parameters<MotionFunction>[1]>().not.toHaveProperty("view");
+    expectTypeOf<Parameters<MotionFunction>[1]>().not.toHaveProperty("t");
     defineBackdrop({
       name: "wide",
       description: "A backdrop that reads the row's edges.",

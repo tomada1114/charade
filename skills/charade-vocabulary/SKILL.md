@@ -170,9 +170,10 @@ it.
   images. Text is `drawText(ctx, text, { x, y, size })`; a shape from an SVG editor is
   its path's `d` string through `svgPath(ctx, d, { scale, origin })`, `origin` being the
   SVG point that lands on the ground point. Both are imported from `charade`.
-- The third argument is the moment: `moment.time` is scene time in seconds,
-  `moment.progress` runs 0 to 1 over a shown `duration`, and `moment.random.float(i)` is
-  a repeatable number in [0, 1) for each whole number `i`. That is how an effect moves.
+- The third argument is the moment: `moment.time` is scene time in seconds, `moment.t`
+  the seconds since the item began to show, `moment.progress` runs 0 to 1 over a shown
+  `duration` (and stays 0 without one), and `moment.random.float(i)` is a repeatable
+  number in [0, 1) for each whole number `i`. That is how an effect moves.
 - `moment.view` is the row's visible area in the units the draw uses: `left`, `right`,
   `bottom`, `top`. A row is 2.5 units high with 0.3 below the ground line, but its width
   runs from 2.5 units (one square row) to about 17.8 (four rows of a 16:9 canvas). A
@@ -182,10 +183,9 @@ it.
 - An effect draws around its origin, which the scene puts on a point or on a part of an
   actor with `on` and which then follows that part; say in the description which part it
   is drawn for. It is in front of the figure, so keep it an accent: small, beside the
-  face rather than on it. What repeats runs on `moment.progress × moment.duration`, or
-  on `moment.time` when the duration is `Infinity`; what is scattered takes
-  `moment.random.float(i)`, one `i` for each thing and each repeat, so no frame depends
-  on another.
+  face rather than on it. What repeats runs on `moment.t`, so it starts with the effect
+  with or without a duration; what is scattered takes `moment.random.float(i)`, one `i`
+  for each thing and each repeat, so no frame depends on another.
 
 ### The sample
 

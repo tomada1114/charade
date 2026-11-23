@@ -379,6 +379,27 @@ describe("free drawings", () => {
     expect(moments[2]?.[0]).toBeCloseTo(0.966667, 6);
   });
 
+  it("hands the same t in the moment as in the argument", () => {
+    const seen: [number, number][] = [];
+    const built = scene({ duration: 2 }, (stage) => {
+      stage.draw(
+        (_ctx, t, moment) => {
+          seen.push([t, moment.t]);
+        },
+        { at: 0.5 },
+      );
+    });
+    for (const frame of [15, 27, 60]) {
+      record(built, frame);
+    }
+    // Frames 15, 27 and 60 at 30 fps are 0, 0.4 and 1.5 s after 0.5 s.
+    expect(seen).toEqual([
+      [0, 0],
+      [0.4, 0.4],
+      [1.5, 1.5],
+    ]);
+  });
+
   it("draws nothing for a segment whose function was omitted or is not a drawing", () => {
     const built = scene((stage) => {
       stage.actor().wait(1);
@@ -798,6 +819,28 @@ describe("backdrops and effects", () => {
   function headIndex(log: readonly LogEntry[]): number {
     return log.findIndex((entry) => entry.call === "arc" && entry.args[2] === 900);
   }
+
+  it("tells an open-ended effect how long its segment has been shown", () => {
+    const seen: [number, number, number][] = [];
+    const clock = defineEffect({
+      name: "clock",
+      description: "An effect that notes its moment.",
+      draw(_ctx, _params, { t, time, progress }) {
+        seen.push([t, time, progress]);
+      },
+    });
+    const built = scene({ duration: 4 }, (stage) => {
+      stage.effect(clock, { at: 3 });
+    });
+    for (const frame of [89, 90, 102]) {
+      record(built, frame);
+    }
+    // Shown from 3 s, frame 90 at 30 fps; frame 102 is 0.4 s on, with progress still 0.
+    expect(seen).toEqual([
+      [0, 3, 0],
+      [0.4, 3.4, 0],
+    ]);
+  });
 
   it("draws a backdrop before the ground line and an effect after the actor", () => {
     const built = scene({ duration: 1 }, (stage) => {

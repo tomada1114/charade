@@ -360,9 +360,10 @@ These set the conventions the later items follow.
   (a point of the row, or a hand or foot).
 - `sweat`, `sparkle` and `speedLines` repeat for as long as they are shown: each
   droplet, star or streak lives one period (0.6 s, 0.8 s, 0.36 s) and the next takes its
-  place. Their time is `progress × duration`, counted from the effect's start, and scene
-  time when the effect is open-ended and has no progress. `impact` plays once over its
-  duration, about 0.4 s, and without one is a still burst.
+  place. Their time is the moment's `t`, counted from the effect's start whether it has
+  a duration or is open-ended, so an open-ended effect builds up from its `at` as a
+  bounded one does, and what it shows does not depend on `at`. `impact` plays once over
+  its duration, about 0.4 s, and without one is a still burst.
 - The things of a repeating effect start staggered by a fraction of the period each, and
   one that would have started before the effect did is not drawn: the effect builds up
   over its first period from nothing, which is what its progress 0 shows, instead of

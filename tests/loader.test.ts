@@ -24,6 +24,7 @@ import {
 } from "../src/export/hook.js";
 import {
   classifyLoadError,
+  commonJSScope,
   loadScene,
   packageNameOf,
   sceneFrom,
@@ -308,6 +309,53 @@ describe("classifyLoadError", () => {
     });
   });
 
+  it.each([
+    {
+      label: "a package.json that sets type commonjs",
+      scope: { file: "/s/idea.ts", packageJson: "/s/package.json" },
+      fix: ['"type": "module"', "/s/package.json", "idea.mts"],
+    },
+    {
+      label: "a .cts extension",
+      scope: { file: "/s/idea.cts", packageJson: undefined },
+      fix: ["idea.mts"],
+    },
+  ])("names the remedy for a scene read as CommonJS by $label", ({ scope, fix }) => {
+    const error = new SyntaxError("message wording is not read");
+    const classified = classifyLoadError(error, {
+      failures: [],
+      exists: () => false,
+      commonJS: () => scope,
+    });
+    expect(classified.code).toBe("ERR_LOAD_FAILED");
+    expect(classified.cause).toBe(error);
+    for (const part of fix) {
+      expect(classified.fix).toContain(part);
+    }
+  });
+
+  it.each([
+    {
+      label: "a SyntaxError outside a CommonJS scope",
+      error: new SyntaxError("x"),
+      scope: undefined,
+    },
+    {
+      label: "an error that is not a SyntaxError",
+      error: new Error("thrown by the scene"),
+      scope: { file: "/s/idea.ts", packageJson: "/s/package.json" },
+    },
+  ])("keeps the generic fix for $label", ({ error, scope }) => {
+    const generic = classifyLoadError(error, { failures: [], exists: () => false });
+    const classified = classifyLoadError(error, {
+      failures: [],
+      exists: () => false,
+      commonJS: () => scope,
+    });
+    expect(classified.code).toBe("ERR_LOAD_FAILED");
+    expect(classified.fix).toBe(generic.fix);
+  });
+
   it("wraps an error the scene throws, keeping it as the cause", () => {
     let caught: unknown;
     try {
@@ -320,6 +368,58 @@ describe("classifyLoadError", () => {
     const classified = classifyLoadError(caught, { failures: [], exists: () => false });
     expect(classified.code).toBe("ERR_LOAD_FAILED");
     expect(classified.cause).toBe(caught);
+  });
+});
+
+describe("commonJSScope", () => {
+  const reads =
+    (files: Record<string, string>) =>
+    (file: string): string | undefined =>
+      files[file];
+
+  it.each([".cts", ".cjs"])("reads a %s file as CommonJS by its extension", (ext) => {
+    expect(commonJSScope(`/s/scene${ext}`, reads({}))).toEqual({
+      file: `/s/scene${ext}`,
+      packageJson: undefined,
+    });
+  });
+
+  it("names the nearest package.json that sets type commonjs", () => {
+    const read = reads({
+      "/s/package.json": '{ "type": "commonjs" }',
+      "/package.json": '{ "type": "module" }',
+    });
+    expect(commonJSScope("/s/a/scene.ts", read)).toEqual({
+      file: "/s/a/scene.ts",
+      packageJson: "/s/package.json",
+    });
+  });
+
+  it.each([
+    { label: "a typeless package.json", text: '{ "name": "x" }' },
+    { label: "type module", text: '{ "type": "module" }' },
+    { label: "an unreadable package.json", text: "{ not json" },
+    { label: "a package.json that is not an object", text: "null" },
+  ])("reads a .ts file under $label as no CommonJS scope", ({ text }) => {
+    const read = reads({
+      "/s/package.json": text,
+      "/package.json": '{ "type": "commonjs" }',
+    });
+    expect(commonJSScope("/s/scene.ts", read)).toBeUndefined();
+  });
+
+  it("finds no scope with no package.json up to the root", () => {
+    expect(commonJSScope("/s/a/scene.js", reads({}))).toBeUndefined();
+  });
+
+  it("stops at a node_modules folder, as Node does", () => {
+    const read = reads({ "/s/package.json": '{ "type": "commonjs" }' });
+    expect(commonJSScope("/s/node_modules/scene.ts", read)).toBeUndefined();
+  });
+
+  it.each([".mts", ".mjs", ".json"])("gives a %s file no CommonJS scope", (ext) => {
+    const read = reads({ "/s/package.json": '{ "type": "commonjs" }' });
+    expect(commonJSScope(`/s/scene${ext}`, read)).toBeUndefined();
   });
 });
 
@@ -721,6 +821,42 @@ describe("the built CLI in a child process", () => {
       expect(document.error.fix).toContain(fix);
     },
   );
+
+  it.each([
+    {
+      label: "a package.json that sets type commonjs, as npm init -y writes",
+      manifest: { name: "work", version: "1.0.0", type: "commonjs" },
+      file: "scene.ts",
+      fix: ['"type": "module"', "package.json", "scene.mts"],
+    },
+    {
+      label: "a .cts scene",
+      manifest: { name: "work", version: "1.0.0" },
+      file: "scene.cts",
+      fix: ["scene.mts"],
+    },
+  ])(
+    "names the remedy for a scene Node reads as CommonJS: $label",
+    ({ manifest, file, fix }) => {
+      write(work, "package.json", JSON.stringify(manifest));
+      write(work, file, SCENE);
+      const result = run("check", file, "--json");
+      expect(result.status).toBe(2);
+      const document = JSON.parse(result.stdout) as {
+        error: { code: string; fix: string };
+      };
+      expect(document.error.code).toBe("ERR_LOAD_FAILED");
+      for (const part of fix) {
+        expect(document.error.fix).toContain(part);
+      }
+    },
+  );
+
+  it("loads a .ts scene beside a typeless package.json, which Node detects as a module", () => {
+    write(work, "package.json", JSON.stringify({ name: "work", version: "1.0.0" }));
+    write(work, "scene.ts", SCENE);
+    expect(check("scene.ts").code).toBe("ERR_SCENE_NO_DURATION");
+  });
 
   it("reports a default export that is not a scene", () => {
     write(work, "scene.ts", "export default { kind: 'other' };\n");
