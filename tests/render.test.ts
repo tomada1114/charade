@@ -63,6 +63,8 @@ interface EncodeBehaviour {
   readonly stderr?: string;
   /** Called with the number of whole frames received so far. */
   readonly onFrame?: (received: number) => void;
+  /** Milliseconds it takes over each chunk of a frame. */
+  readonly delay?: number;
 }
 
 interface FakeBehaviour {
@@ -162,7 +164,11 @@ function fakeFfmpeg(behaviour: FakeBehaviour = {}): Fake {
               });
               return;
             }
-            setImmediate(callback);
+            if (encode.delay === undefined) {
+              setImmediate(callback);
+            } else {
+              setTimeout(callback, encode.delay);
+            }
           },
           final(callback) {
             const received = Math.floor(self.bytes / frameBytes);
@@ -519,6 +525,27 @@ describe("encoding", () => {
     const result = await render(small(), fakeFfmpeg(), {}, ["--json"]);
     expect(result.stderr).toContain("render: 11/11 frames\n");
     expect(document(result).ok).toBe(true);
+  });
+
+  it("writes progress to the stderr sink while the render is still running", async () => {
+    const seen: { line: string; received: number }[] = [];
+    let received = 0;
+    const stderr = {
+      write: (chunk: string) => seen.push({ line: chunk, received }),
+    };
+    const fake = fakeFfmpeg({
+      encode: {
+        delay: 1,
+        onFrame: (count) => {
+          received = count;
+        },
+      },
+    });
+    const result = await render(small(), fake, { stderr });
+    const progress = seen.filter(({ line }) => line.startsWith("render: "));
+    expect(progress.length).toBeGreaterThan(0);
+    expect(progress[0]?.received).toBeLessThan(11);
+    expect(seen.map(({ line }) => line).join("")).toBe(result.stderr);
   });
 
   // R4
