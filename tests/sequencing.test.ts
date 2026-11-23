@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import {
   type Actor,
+  defineAction,
+  defineExpression,
   type Moment,
   type Scene,
   scene,
@@ -686,6 +688,203 @@ describe("continuity", () => {
       a.pose({ shoulderR: 0.2, elbowR: 0.1 }, { duration: 0.5 });
     });
     expect(at(300)).toEqual({ ...REST, shoulderR: 0.2, elbowR: 0.1 });
+  });
+});
+
+describe("an express inside an action that has a mood", () => {
+  /** What the built-in `focused` and `happy` return at full intensity. */
+  const FOCUSED = {
+    eyeOpen: 0.55,
+    gazeX: 0.8,
+    gazeY: 0,
+    browHeight: -0.9,
+    browTilt: -0.1,
+    mouthCurve: 0,
+    mouthOpen: 0,
+    mouthWidth: 0.6,
+  };
+  const HAPPY = {
+    eyeOpen: 0.85,
+    gazeX: 0,
+    gazeY: 0,
+    browHeight: 0.6,
+    browTilt: 0,
+    mouthCurve: 1,
+    mouthOpen: 0.5,
+    mouthWidth: 1.3,
+  };
+
+  /** Three seconds with an arm up, and the mark `turn` one second in. */
+  const hold = defineAction({
+    name: "hold",
+    description: "",
+    marks: ["turn"],
+    build(clip) {
+      clip.pose({ shoulderR: 1 }, { duration: 3 });
+      clip.mark("turn", 1);
+    },
+  });
+
+  /** A one-actor scene at 100 fps; the face of its pose at a frame. */
+  function face(act: (actor: Actor) => void): (frame: number) => typeof HAPPY {
+    const at = play(act);
+    return (frame) => {
+      const pose = at(frame);
+      return {
+        eyeOpen: pose.eyeOpen,
+        gazeX: pose.gazeX,
+        gazeY: pose.gazeY,
+        browHeight: pose.browHeight,
+        browTilt: pose.browTilt,
+        mouthCurve: pose.mouthCurve,
+        mouthOpen: pose.mouthOpen,
+        mouthWidth: pose.mouthWidth,
+      };
+    };
+  }
+
+  it("keeps the face shown at a mark of a push after the push has ended", () => {
+    let end = 0;
+    const built = scene({ fps: 100, duration: 10 }, (stage) => {
+      const rock = stage.prop("rock");
+      rock.place({ x: 0.6, y: 0 });
+      const presser = stage.actor();
+      const pressed = presser.do("push", {
+        by: "lever",
+        prop: rock,
+        distance: 0.15,
+        mood: "focused",
+      });
+      presser.express("happy", { at: pressed.marks.stop });
+      presser.wait(2);
+      end = pressed.end;
+    });
+    const row = built.timeline.rows[0];
+    const index = row?.tracks.findIndex((track) => track.kind === "actor") ?? -1;
+    for (const seconds of [end, end + 0.1, end + 0.2, end + 1.3]) {
+      expect(poseOf(built.timeline, Math.round(seconds * 100), 0, index)).toMatchObject(
+        HAPPY,
+      );
+    }
+  });
+
+  it("shows the mood up to the mark and the express from its blend on", () => {
+    const at = face((a) => {
+      const held = a.do(hold, { mood: "focused" });
+      a.express("happy", { at: held.marks.turn });
+    });
+    expect(at(100)).toEqual(FOCUSED);
+    expect(at(110).mouthCurve).toBeCloseTo(0.5, 12);
+    for (const frame of [120, 130, 140, 200, 299, 300, 320, 900]) {
+      expect(at(frame)).toEqual(HAPPY);
+    }
+  });
+
+  it("leaves the mood on the channels the express does not name", () => {
+    const grin = defineExpression({
+      name: "grin",
+      description: "",
+      build: () => ({ mouthCurve: 0.8 }),
+    });
+    const at = face((a) => {
+      const held = a.do(hold, { mood: "focused" });
+      a.express(grin, { at: held.marks.turn });
+    });
+    for (const frame of [120, 250, 300, 900]) {
+      expect(at(frame)).toEqual({ ...FOCUSED, mouthCurve: 0.8 });
+    }
+  });
+
+  it("takes over a mood it starts with, and one that has not arrived yet", () => {
+    const from = face((a) => {
+      a.do(hold, { mood: "focused" });
+      a.express("happy", { at: 0 });
+    });
+    const early = face((a) => {
+      a.do(hold, { mood: "focused" });
+      a.express("happy", { at: 0.1 });
+    });
+    // The express blends in from the face before the action, not from the mood.
+    expect(from(0)).toMatchObject({ mouthWidth: 1, browHeight: 0, eyeOpen: 1 });
+    expect(from(5).mouthWidth).toBeGreaterThan(1);
+    for (const frame of [30, 300, 900]) {
+      expect(from(frame)).toEqual(HAPPY);
+      expect(early(frame)).toEqual(HAPPY);
+    }
+  });
+
+  it("is the face after an open-ended action as well", () => {
+    const sway = defineAction({
+      name: "sway",
+      description: "",
+      build(clip) {
+        clip.cycle([{ at: 0, channels: { spine: 0.1 } }], { period: 1 });
+      },
+    });
+    const at = face((a) => {
+      a.do(sway, { mood: "focused" });
+      a.express("happy", { at: 1 });
+    });
+    expect(at(100)).toEqual(FOCUSED);
+    expect(at(900)).toEqual(HAPPY);
+  });
+
+  it("still adds to the mood and fades in add mode", () => {
+    const at = face((a) => {
+      const held = a.do(hold, { mood: "focused" });
+      a.express("happy", { at: held.marks.turn, mode: "add", duration: 1 });
+    });
+    expect(at(150).mouthCurve).toBe(1);
+    expect(at(150).browHeight).toBeCloseTo(-0.3, 12);
+    expect(at(250)).toEqual(FOCUSED);
+    expect(at(900)).toEqual(FOCUSED);
+  });
+
+  it("leaves a mood alone when the express starts before it or after it", () => {
+    const before = face((a) => {
+      a.do(hold, { mood: "focused", at: 1 });
+      a.express("happy", { at: 0.5 });
+    });
+    expect(before(60).mouthCurve).toBeCloseTo(0.5, 12);
+    expect(before(300)).toEqual(FOCUSED);
+    const after = face((a) => {
+      const held = a.do(hold, { mood: "focused" });
+      a.express("happy", { at: held.end });
+    });
+    expect(after(300)).toEqual(FOCUSED);
+    expect(after(320)).toEqual(HAPPY);
+  });
+
+  it("puts a later action's mood beneath that action's calls when its build ends an earlier mood", () => {
+    const grin = defineExpression({
+      name: "grin",
+      description: "",
+      build: () => ({ mouthCurve: 0.8 }),
+    });
+    let actor: Actor | undefined;
+    const frown = defineAction({
+      name: "frown",
+      description: "",
+      build(clip) {
+        actor?.express(grin, { at: 1 });
+        clip.pose({ mouthCurve: -0.5 }, { duration: 1 });
+      },
+    });
+    const brows = defineExpression({
+      name: "brows",
+      description: "",
+      build: () => ({ browHeight: 0.2 }),
+    });
+    const at = face((a) => {
+      actor = a;
+      a.do(hold, { mood: "focused" });
+      a.express(brows, { at: 2.5, duration: 2 });
+      a.do(frown, { mood: "happy", at: 3 });
+    });
+    expect(at(120)).toEqual({ ...FOCUSED, mouthCurve: 0.8 });
+    // The mood is recorded after the brows, so it wins over them while both run.
+    expect(at(350)).toEqual({ ...HAPPY, mouthCurve: -0.5 });
+    expect(at(900)).toEqual({ ...HAPPY, mouthCurve: -0.5, browHeight: 0.2 });
   });
 });
 

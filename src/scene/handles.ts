@@ -407,8 +407,9 @@ export interface ActionOptions {
    */
   readonly duration?: number;
   /**
-   * The expression the face shows while the action plays. An action lists the moods
-   * that also change its body.
+   * The expression the face shows while the action plays, or, on the face channels it
+   * names, until a `replace` `express` that starts during the action. An action lists
+   * the moods that also change its body.
    */
   readonly mood?: BuiltinName<BuiltinExpressions> | ExpressionDefinition;
   /** The blend of the action's calls that do not set their own, in seconds. */

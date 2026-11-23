@@ -188,6 +188,21 @@ recorded sample is written against; changing any of it changes all of them at on
   held hand stays on its point when an earlier-recorded call still moves the back. A
   call recorded later than the reach that moves the body is not seen by it: the hand
   then leaves the point, and the reach is recorded again after that call.
+- A `replace` `express` recorded after a `do` and starting inside its span ends that
+  action's mood at the express's start, on the face channels the express names: the
+  builder cuts the mood's segment there (its blend no longer than what is left of it)
+  and keeps a second mood segment, recorded right after it, for the channels the express
+  leaves alone. One that starts with the action takes those channels from the mood
+  altogether, since a mood cut at its start would be held at full from that frame.
+  Composed as recorded, the mood would be the earlier-recorded call still running, so
+  the express would fade back to it after its own blend, and the mood, ending last,
+  would be the face held after the action: a face changed at a mark would show for a
+  fifth of a second. A mood is the one segment the engine records for a scene rather
+  than the scene itself, so where it stops is the builder's to say, and the composition
+  rules stay as they are. It is `express` alone: `mode: "add"` still adds and fades, an
+  express that starts before the action or at its end changes nothing here, and a `pose`
+  of face channels inside a mood still gives way to it, as any ended pose does to an
+  earlier call still running.
 - A full-body call is a `replace` pose that names all fourteen angles. One that starts
   while an earlier one is still playing is the warning `ERR_SCENE_FULL_BODY_CUT`.
 - The composed pose at a frame is `poseAtFrame` in `src/rig/compose.ts`, internal. It
@@ -203,8 +218,9 @@ recorded sample is written against; changing any of it changes all of them at on
   track's segments, not their square; `check`, `sheet` and `render` compose every frame,
   and a long walk is over a thousand segments. A pose is still a function of the
   timeline and the frame alone. A segment replaced in place without the count changing
-  would be composed stale, which nothing does: a built or parsed timeline is not changed
-  again.
+  would be composed stale, which nothing does: the builder's in-place edits (an
+  `express` ending a mood) happen before anything composes the track, and a built or
+  parsed timeline is not changed again.
 - `drive` takes one function of time that returns a map of channel values, as in
   `a.drive(t => ({ spine: Math.sin(t * 3) * 0.1 }))`. The channels it names are the keys
   it returns when it is called once with `t = 0` as the call is recorded: an unknown
