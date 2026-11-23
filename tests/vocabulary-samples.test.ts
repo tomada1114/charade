@@ -936,7 +936,7 @@ describe("a built-in effect", () => {
   });
 
   it.each(["sweat", "sparkle", "speedLines"])(
-    "keeps %s going on scene time when it has no duration",
+    "keeps %s going when it has no duration",
     (name) => {
       const built = scene({ duration: 2 }, (stage) => {
         effectOf(stage, name);
@@ -949,6 +949,37 @@ describe("a built-in effect", () => {
           50,
         ),
       );
+    },
+  );
+
+  it("draws an open-ended sparkle at 3 s as a bounded one starting at 0 draws at 0 s", () => {
+    const on = { x: 0, y: 1.2 };
+    const bounded = scene({ duration: 1 }, (stage) => {
+      effectOf(stage, "sparkle", { on, duration: 1 });
+    });
+    const late = scene({ duration: 4 }, (stage) => {
+      effectOf(stage, "sparkle", { on, at: 3 });
+    });
+    // 3 s is frame 90 at 30 fps.
+    expect(record(late, 90)).toBe(record(bounded, 0));
+  });
+
+  it.each(["sweat", "sparkle", "speedLines"])(
+    "builds %s up from its own start when it has no duration, whatever its at",
+    (name) => {
+      const on = { x: 0, y: 1.2 };
+      const bounded = scene({ duration: 1 }, (stage) => {
+        effectOf(stage, name, { on, duration: 1 });
+      });
+      const late = (at: number): Scene =>
+        scene({ duration: 4 }, (stage) => {
+          effectOf(stage, name, { on, at });
+        });
+      // 1.5 s and 2.2 s are frames 45 and 66 at 30 fps.
+      for (const frame of [6, 12, 29]) {
+        expect(record(late(1.5), 45 + frame)).toBe(record(bounded, frame));
+        expect(record(late(2.2), 66 + frame)).toBe(record(bounded, frame));
+      }
     },
   );
 

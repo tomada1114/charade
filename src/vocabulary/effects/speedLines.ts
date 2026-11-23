@@ -54,13 +54,7 @@ export const speedLinesEffect: EffectDefinition<typeof speedLinesParams> = defin
     description:
       "Horizontal streaks trailing behind something that moves fast: each starts a little behind the origin, shoots backwards and is gone, and the next follows for as long as the effect is shown. Its origin is the middle of what moves, so on a running figure give on the actor's pelvis (on: { actor, part: \"pelvis\" }, with an offset upwards if a trailing leg is in the way) and on a fast arm or leg its hand or foot with a smaller spread and length; the streaks trail to the left unless moving says left, and are mirrored with a left-facing actor. The streaks are scattered from the scene's seed.",
     params: speedLinesParams,
-    draw(
-      ctx,
-      { lines, length, spread, gap, moving, color },
-      { time, duration, progress, random },
-    ) {
-      // An open-ended effect has no progress, so it runs on scene time.
-      const t = Number.isFinite(duration) ? progress * duration : time;
+    draw(ctx, { lines, length, spread, gap, moving, color }, { t, random }) {
       const count = Math.round(lines);
       if (moving === "left") {
         ctx.scale(-1, 1);
