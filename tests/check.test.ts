@@ -26,6 +26,24 @@ function act(play: (actor: Actor, stage: Stage) => void): Scene {
   });
 }
 
+/** A pose of every joint at angles within their limits: a full-body call. */
+const FULL_BODY_POSE = {
+  pelvis: 0,
+  spine: 0.2,
+  chest: 0.1,
+  neck: 0,
+  shoulderL: 0.3,
+  shoulderR: 0.3,
+  elbowL: 0.2,
+  elbowR: 0.2,
+  hipL: 1.4,
+  hipR: 1.4,
+  kneeL: 1.5,
+  kneeR: 1.5,
+  ankleL: 0,
+  ankleR: 0,
+};
+
 function codes(findings: readonly Finding[]): string[] {
   return findings.map((finding) => finding.code);
 }
@@ -473,6 +491,30 @@ describe("clock and random reads", () => {
     });
     expect(built.findings[0]?.target).toBeUndefined();
     expect(codes(checkScene(built).findings)).toEqual(["ERR_CHECK_UNSEEDED_RANDOM"]);
+  });
+
+  it("keeps the build function's read when twenty warnings came before it", () => {
+    const body = FULL_BODY_POSE;
+    const built = act((a) => {
+      // Each pose starts while the one before is still playing: twenty cuts.
+      for (let n = 0; n < 21; n += 1) {
+        a.pose(body, { at: n * 0.1, duration: 0.15 });
+      }
+      a.pose({ spine: Math.random() * 0.1 }, { at: 2.5, duration: 0.1 });
+    });
+    expect(built.findings).toHaveLength(20);
+    expect(built.truncated).toBe(true);
+    expect(
+      codes(built.findings).filter((code) => code === "ERR_SCENE_FULL_BODY_CUT"),
+    ).toHaveLength(19);
+    expect(built.findings.at(-1)).toMatchObject({
+      code: "ERR_CHECK_UNSEEDED_RANDOM",
+      severity: "error",
+    });
+    const { findings, truncated } = checkScene(built);
+    expect(codes(findings)).toContain("ERR_CHECK_UNSEEDED_RANDOM");
+    expect(exitCodeFor(findings)).toBe(1);
+    expect(checkReport(findings, { truncated }).ok).toBe(false);
   });
 
   it("does not count a date built from given numbers", () => {

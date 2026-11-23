@@ -469,6 +469,48 @@ describe("check", () => {
   });
 });
 
+describe("check, when the scene's findings reach the cap", () => {
+  it("exits 1 on a build read made after twenty warnings", async () => {
+    const body = {
+      pelvis: 0,
+      spine: 0.2,
+      chest: 0.1,
+      neck: 0,
+      shoulderL: 0.3,
+      shoulderR: 0.3,
+      elbowL: 0.2,
+      elbowR: 0.2,
+      hipL: 1.4,
+      hipR: 1.4,
+      kneeL: 1.5,
+      kneeR: 1.5,
+      ankleL: 0,
+      ankleR: 0,
+    };
+    const result = await runCli(["check", "s.ts", "--json"], {
+      nodeVersion: "24.22.1",
+      load: () =>
+        Promise.resolve(
+          scene({ duration: 3 }, (stage) => {
+            const a = stage.actor();
+            // Each pose starts while the one before is still playing: twenty cuts.
+            for (let n = 0; n < 21; n += 1) {
+              a.pose(body, { at: n * 0.1, duration: 0.15 });
+            }
+            a.pose({ spine: Math.random() * 0.1 }, { at: 2.5, duration: 0.1 });
+          }),
+        ),
+    });
+    expect(result.exitCode).toBe(1);
+    const report = JSON.parse(result.stdout) as Report;
+    expect(report.ok).toBe(false);
+    expect(report.summary.truncated).toBe(true);
+    expect(report.findings.map(({ code }) => code)).toContain(
+      "ERR_CHECK_UNSEEDED_RANDOM",
+    );
+  });
+});
+
 describe("parseAt", () => {
   it.each([
     { text: "1.5", at: { unit: "seconds", value: 1.5 } },
