@@ -403,16 +403,41 @@ export function drawItem(
       ctx.strokeStyle = INK;
       ctx.fillStyle = INK;
       ctx.lineWidth = FIGURE_LINE;
-      draw(ctx, data["params"], {
-        time,
-        duration,
-        progress: end === null ? 0 : t / duration,
-        random,
-        view,
+      withoutReset(ctx, () => {
+        draw(ctx, data["params"], {
+          time,
+          duration,
+          progress: end === null ? 0 : t / duration,
+          random,
+          view,
+        });
       });
     } finally {
       ctx.restore();
     }
+  }
+}
+
+/**
+ * Calls `draw` with `ctx`'s `reset` shadowed by a no-op. `ShapeContext` has no `reset`,
+ * but a plain-JS drawing could still call the real context's, which would clear the frame
+ * drawn so far and the row's save stack under it. The shadow is an own property, removed
+ * afterwards; a context that cannot take one is handed over as it is.
+ */
+function withoutReset(ctx: ShapeContext, draw: () => void): void {
+  if (!Object.isExtensible(ctx) || Object.hasOwn(ctx, "reset")) {
+    draw();
+    return;
+  }
+  Object.defineProperty(ctx, "reset", {
+    configurable: true,
+    writable: true,
+    value: () => undefined,
+  });
+  try {
+    draw();
+  } finally {
+    Reflect.deleteProperty(ctx, "reset");
   }
 }
 
@@ -450,12 +475,14 @@ export function drawTrack(
     ctx.strokeStyle = INK;
     ctx.fillStyle = INK;
     ctx.lineWidth = FIGURE_LINE;
-    draw(ctx, t, {
-      time,
-      duration,
-      progress: end === null ? 0 : t / duration,
-      random,
-      view,
+    withoutReset(ctx, () => {
+      draw(ctx, t, {
+        time,
+        duration,
+        progress: end === null ? 0 : t / duration,
+        random,
+        view,
+      });
     });
   }
 }

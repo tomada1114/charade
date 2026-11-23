@@ -76,14 +76,22 @@ export interface Finding {
 }
 
 /**
- * The number of findings one run records; later findings are dropped.
+ * The number of findings one run records; past it, later warnings are dropped and a
+ * later error takes the place of the last warning kept, or is dropped when none is.
  *
  * @public
  */
 export const FINDING_CAP = 20;
 
 /**
- * Collects findings up to {@link FINDING_CAP}, keeping the first ones.
+ * Collects findings up to {@link FINDING_CAP}, keeping the first ones, except that a
+ * warning gives way to an error.
+ *
+ * @remarks
+ * Once the cap is reached, a further warning is dropped, and a further error evicts
+ * the most recently kept warning; an error is never evicted. So the kept findings are
+ * the first errors and, in the room left, the first warnings, in the order they were
+ * added. A dropped error would turn a failing run into a passing one.
  *
  * @example
  * ```ts
@@ -111,22 +119,35 @@ export class FindingCollector {
     return [...this.#findings];
   }
 
-  /** Whether at least one finding was dropped because the cap was reached. */
+  /** Whether a finding was dropped or evicted because the cap was reached. */
   get truncated(): boolean {
     return this.#truncated;
   }
 
   /**
-   * Record a finding unless the cap has been reached.
+   * Record a finding unless the cap has been reached. At the cap, an error is still
+   * recorded in place of the last warning kept, when one is kept.
    *
    * @param finding - The finding to record.
-   * @returns Whether it was recorded.
+   * @returns Whether it was recorded. A warning recorded now may still be evicted by a
+   * later error.
    */
   add(finding: Finding): boolean {
-    if (this.#findings.length >= FINDING_CAP) {
-      this.#truncated = true;
+    if (this.#findings.length < FINDING_CAP) {
+      this.#findings.push(finding);
+      return true;
+    }
+    this.#truncated = true;
+    if (finding.severity !== "error") {
       return false;
     }
+    const lastWarning = this.#findings.findLastIndex(
+      (kept) => kept.severity !== "error",
+    );
+    if (lastWarning === -1) {
+      return false;
+    }
+    this.#findings.splice(lastWarning, 1);
     this.#findings.push(finding);
     return true;
   }
