@@ -133,9 +133,10 @@ console.log(checkReport(findings).summary);
 
 - `DrawingContext` is the drawing context the engine draws a frame on: the standard
   Canvas 2D members whose arguments and results are numbers, strings or this package's
-  own `Gradient` and `TextMeasurement`. `ShapeContext` is the same without the text
-  members, and is what a depth 4 drawing callback receives. Both are receive-only: you
-  are handed one, never implement it.
+  own `Gradient` and `TextMeasurement`. `ShapeContext` is the same without `reset` and
+  the text members, and is what a depth 4 drawing callback receives: a drawing shares
+  the frame's context, so it cannot clear what was drawn before it. Both are
+  receive-only: you are handed one, never implement it.
 
 ```ts
 import type { ShapeContext } from "charade";
