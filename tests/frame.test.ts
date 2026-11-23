@@ -436,6 +436,114 @@ describe("free drawings", () => {
   });
 });
 
+/** Calls `ctx.reset` the way a plain-JS drawing would, past the type that leaves it out. */
+function callReset(ctx: object): void {
+  const reset: unknown = Reflect.get(ctx, "reset");
+  if (typeof reset === "function") {
+    Reflect.apply(reset, ctx, []);
+  }
+}
+
+describe("a drawing that calls reset", () => {
+  const background = [
+    { call: "reset", args: [] },
+    { call: "fillStyle", args: ["#ffffff"] },
+    { call: "fillRect", args: [0, 0, 10800000, 10800000] },
+  ];
+  const resetting = scene((stage) => {
+    stage.draw((ctx) => {
+      ctx.rect(1, 1, 1, 1);
+    });
+    stage.draw((ctx) => {
+      callReset(ctx);
+    });
+    stage.draw((ctx) => {
+      ctx.rect(2, 2, 2, 2);
+    });
+    stage.actor().wait(1);
+  });
+
+  it("keeps the background and the items drawn before a free drawing that resets", () => {
+    const log = record(resetting, 30);
+    expect(log.slice(0, 3)).toEqual(background);
+    expect(log.filter((entry) => entry.call === "reset")).toHaveLength(1);
+    const before = log.findIndex(
+      (entry) => entry.call === "rect" && entry.args[0] === 10000,
+    );
+    const after = log.findIndex(
+      (entry) => entry.call === "rect" && entry.args[0] === 20000,
+    );
+    expect(before).toBeGreaterThan(-1);
+    expect(after).toBeGreaterThan(before);
+  });
+
+  it("keeps the frame's state for the items after a free drawing that resets", () => {
+    const fonts: unknown[] = [];
+    const built = scene((stage) => {
+      stage.draw((ctx) => {
+        callReset(ctx);
+      });
+      stage.draw((ctx) => {
+        fonts.push(Reflect.get(ctx, "font"));
+      });
+      stage.actor().wait(1);
+    });
+    record({ ...built, textFont: "Charade Test" }, 30);
+    expect(fonts).toEqual(["100px Charade Test"]);
+  });
+
+  it("keeps the background and the actor drawn before a prop that resets", () => {
+    const wiping = defineProp({
+      name: "wiping",
+      description: "Resets the context it is handed.",
+      draw(ctx) {
+        callReset(ctx);
+      },
+    });
+    const built = scene({ duration: 1 }, (stage) => {
+      stage.actor();
+      stage.prop(wiping).place({ x: 0.5, y: 0 }, { layer: "front" });
+    });
+    const log = record(built, 0);
+    expect(log.slice(0, 3)).toEqual(background);
+    expect(log.filter((entry) => entry.call === "reset")).toHaveLength(1);
+    expect(log.some((entry) => entry.call === "arc" && entry.args[2] === 900)).toBe(
+      true,
+    );
+  });
+
+  it("gives the context its own reset back once the drawing returns", () => {
+    const ctx = new RecordingContext();
+    drawFrame(ctx, resetting, 30);
+    expect(Object.hasOwn(ctx, "reset")).toBe(false);
+    ctx.reset();
+    expect(ctx.log.at(-1)).toEqual({ call: "reset", args: [] });
+  });
+
+  // The residual cases: the drawing's reset reaches the context.
+  it.each([
+    [
+      "one that is not extensible",
+      () => Object.preventExtensions(new RecordingContext()),
+    ],
+    [
+      "one with a reset of its own",
+      () => {
+        const ctx = new RecordingContext();
+        Object.defineProperty(ctx, "reset", {
+          configurable: true,
+          value: RecordingContext.prototype.reset.bind(ctx),
+        });
+        return ctx;
+      },
+    ],
+  ])("hands %s over as it is", (_, make) => {
+    const ctx = make();
+    drawFrame(ctx, resetting, 30);
+    expect(ctx.log.filter((entry) => entry.call === "reset")).toHaveLength(2);
+  });
+});
+
 describe("the figure's strokes", () => {
   const rest = scene({ duration: 1 }, (stage) => {
     stage.actor().wait(1);

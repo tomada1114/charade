@@ -416,10 +416,10 @@ change to the shape raises the version.
   interface. `imageSmoothingEnabled` and `imageSmoothingQuality` belong to the image
   family: they only govern how an image is resampled.
 - The names are `DrawingContext` (the full interface) and `ShapeContext` (the depth 4
-  type); `DrawingContext extends ShapeContext` with the text members. The handles and
-  shapes they return are `Gradient` (only `addColorStop`, structural so a real context's
-  gradient satisfies it) and `TextMeasurement` (`width` and the six bounding box
-  distances both real contexts report). All four are root exports.
+  type); `DrawingContext extends ShapeContext` with `reset` and the text members. The
+  handles and shapes they return are `Gradient` (only `addColorStop`, structural so a
+  real context's gradient satisfies it) and `TextMeasurement` (`width` and the six
+  bounding box distances both real contexts report). All four are root exports.
 - Properties are declared with a wide getter and a narrow setter. A plain writable
   property rejects one of the two real contexts (same spike). The pair differs only
   where the two contexts differ: `fillStyle` and `strokeStyle` read as `string | object`
@@ -436,9 +436,20 @@ change to the shape raises the version.
   it, so adding a member is a minor change. The recording context in this repository
   implements every member.
 - There are two types. The engine draws on the full interface. The one handed to a depth
-  4 callback is the same without the text members: with `y` up raw text would be
-  mirrored, and it would bypass the text checks. A scene's text goes through labels,
-  speech bubbles and the text helper.
+  4 callback is the same without the text members (and `reset`, below): with `y` up raw
+  text would be mirrored, and it would bypass the text checks. A scene's text goes
+  through labels, speech bubbles and the text helper.
+- `reset` is on `DrawingContext` only, the one member of the rule the depth 4 type drops
+  besides text. A drawing is handed the frame's shared context, not one of its own, and
+  `reset` would clear the background and every item drawn before it and empty the save
+  stack under the row's clip and transform. Confining it to the item instead would need
+  a wrapper or a second canvas per item; a drawing that wants a clean state already has
+  `save`, `restore`, `setTransform` and `resetTransform`. Types do not stop a plain-JS
+  scene, so `drawTrack` and `drawItem` shadow `reset` on the context with a no-op own
+  property while a drawing runs and delete it after (`withoutReset` in
+  `src/draw/frame.ts`). A context that is not extensible or already has an own `reset`
+  is handed over as it is: no real context is either. An unbalanced `restore` in a
+  drawing can still pop the row's state; that is not guarded.
 - The text helper is `drawText(ctx, text, options?)`, a root export with
   `DrawTextOptions` (`x`, `y`, `size`, `align`, `width`) and its result `TextSize`. It
   is named for what it does rather than `fillText`, which would read as the context

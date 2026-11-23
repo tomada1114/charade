@@ -281,9 +281,10 @@ describe("drawing context types", () => {
     expectTypeOf<SkiaTextMetrics>().toExtend<TextMeasurement>();
   });
 
-  it("makes the full interface the shape context plus text", () => {
+  it("makes the full interface the shape context plus reset and text", () => {
     expectTypeOf<DrawingContext>().toExtend<ShapeContext>();
     expectTypeOf<Exclude<keyof DrawingContext, keyof ShapeContext>>().toEqualTypeOf<
+      | "reset"
       | "fillText"
       | "strokeText"
       | "measureText"
@@ -639,6 +640,31 @@ describe("handle types", () => {
       (ctx: ShapeContext, t: number, moment: DrawMoment) => void
     >();
     expectTypeOf<Parameters<DrawFunction>[0]>().not.toHaveProperty("fillText");
+  });
+
+  it("gives a depth 4 drawing no reset, while the engine's full context keeps it", () => {
+    expectTypeOf<Parameters<DrawFunction>[0]>().not.toHaveProperty("reset");
+    expectTypeOf<DrawingContext>().toHaveProperty("reset");
+    const kept = (row: Row): Span =>
+      row.draw((ctx) => {
+        ctx.save();
+        ctx.resetTransform();
+        ctx.restore();
+      });
+    expectTypeOf(kept).returns.toEqualTypeOf<Span>();
+    const reset = (ctx: { reset(): void }): void => {
+      ctx.reset();
+    };
+    const engine = (ctx: DrawingContext): void => {
+      reset(ctx);
+    };
+    expect(engine).toBeTypeOf("function");
+    const rejected = (row: Row): Span =>
+      row.draw((ctx) => {
+        // @ts-expect-error a depth 4 drawing cannot reset the frame's context
+        reset(ctx);
+      });
+    expect(rejected).toBeTypeOf("function");
   });
 
   it("gives a function the scene time, its segment and the random source", () => {
