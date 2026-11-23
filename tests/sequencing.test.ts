@@ -8,11 +8,13 @@ import {
   type Span,
   type Timeline,
 } from "../src/index.js";
-import { poseAtFrame } from "../src/rig/compose.js";
+import { poseAtFrame, poseAtInstant } from "../src/rig/compose.js";
+import { reach } from "../src/rig/ik.js";
 import { forwardKinematics } from "../src/rig/kinematics.js";
 import type { Pose } from "../src/rig/rig.js";
 import { parseTimeline, serializeTimeline } from "../src/timeline/json.js";
 import { randomSource } from "../src/timeline/random.js";
+import type { TimelineSegment } from "../src/timeline/timeline.js";
 
 /** The rest pose, written out: every angle and offset 0, eyes open, mouth normal. */
 const REST = {
@@ -899,5 +901,371 @@ describe("a timeline that was not just built", () => {
       ],
     };
     expect(poseOf(timeline, 15)).toEqual({ ...REST, chest: 0.3 });
+  });
+});
+
+/** A pose or a reach as a hand-built segment holds it, its phases in microseconds. */
+interface Recorded {
+  readonly kind: "pose" | "reach";
+  readonly mode: "replace" | "add";
+  readonly anticipation: number;
+  readonly blend: number;
+  readonly followThrough: number;
+  readonly channels?: Readonly<Partial<Record<keyof Pose, number>>>;
+  readonly effector?: "handL" | "handR" | "footL" | "footR";
+  readonly target?: { readonly x: number; readonly y: number };
+}
+
+interface RecordedSegment extends TimelineSegment {
+  readonly data: Recorded;
+}
+
+const CHAINS = {
+  handL: ["shoulderL", "elbowL"],
+  handR: ["shoulderR", "elbowR"],
+  footL: ["hipL", "kneeL"],
+  footR: ["hipR", "kneeR"],
+} as const;
+
+function ease(progress: number): number {
+  return progress * progress * (3 - 2 * progress);
+}
+
+function sway(progress: number): number {
+  return 0.1 * Math.sin(Math.PI * progress) ** 2;
+}
+
+function blendOver(beneath: number, value: number, weight: number): number {
+  return weight === 1 ? value : beneath + weight * (value - beneath);
+}
+
+/**
+ * The composition as it was before an ended segment's yielding was found in one pass:
+ * each ended segment asks every earlier-recorded one, which is plain to read and grows
+ * with the square of the segment count. Poses and reaches only; `now` in frame units.
+ */
+function referencePose(
+  segments: readonly RecordedSegment[],
+  fps: number,
+  now: number,
+): Pose {
+  const layers = segments.map(({ start, end, data }) => {
+    const { effector, target, channels = {} } = data;
+    const names: readonly (keyof Pose)[] =
+      effector === undefined
+        ? (Object.keys(channels) as (keyof Pose)[])
+        : CHAINS[effector];
+    return {
+      names,
+      evaluate: (beneath: Pose): (readonly [keyof Pose, number])[] => {
+        if (effector === undefined || target === undefined) {
+          return names.map((name) => [name, channels[name] ?? 0] as const);
+        }
+        const solved = reach(beneath, effector, target);
+        return names.map((name) => [name, solved[name]] as const);
+      },
+      solved: data.kind === "reach",
+      mode: data.mode,
+      start: start * fps,
+      end: end === null ? null : end * fps,
+      anticipation: data.anticipation * fps,
+      blend: data.blend * fps,
+      followThrough: data.followThrough * fps,
+    };
+  });
+  type Layer = (typeof layers)[number];
+  const arrival = (layer: Layer, elapsed: number): number => {
+    const { anticipation, blend, followThrough } = layer;
+    if (elapsed < anticipation) {
+      return -sway(elapsed / anticipation);
+    }
+    const blending = elapsed - anticipation;
+    if (blending < blend) {
+      return ease(blending / blend);
+    }
+    const settling = blending - blend;
+    return settling < followThrough ? 1 + sway(settling / followThrough) : 1;
+  };
+  const pose: Record<keyof Pose, number> = { ...REST };
+  const holder = new Map<keyof Pose, Layer>();
+  const held = layers
+    .filter(
+      (layer) => layer.mode === "replace" && layer.end !== null && layer.end <= now,
+    )
+    .sort((a, b) => (a.end ?? 0) - (b.end ?? 0));
+  for (const layer of held) {
+    for (const [name, value] of layer.evaluate(pose)) {
+      pose[name] = value;
+      holder.set(name, layer);
+    }
+  }
+  const moved = new Set<keyof Pose>();
+  layers.forEach((layer, index) => {
+    if (now < layer.start) {
+      return;
+    }
+    const { end } = layer;
+    if (end === null || now < end) {
+      const weight = arrival(layer, now - layer.start);
+      for (const [name, value] of layer.evaluate(pose)) {
+        pose[name] =
+          layer.mode === "add"
+            ? pose[name] + weight * value
+            : blendOver(pose[name], value, weight);
+        moved.add(name);
+      }
+      return;
+    }
+    const fade = now - end < layer.blend ? 1 - ease((now - end) / layer.blend) : 0;
+    if (fade === 0 && !layer.solved) {
+      return;
+    }
+    const yields = (name: keyof Pose): boolean =>
+      layers
+        .slice(0, index)
+        .some(
+          (lower) =>
+            lower.names.includes(name) &&
+            lower.start < end &&
+            (lower.end === null || lower.end > end),
+        );
+    for (const [name, value] of layer.evaluate(pose)) {
+      if (layer.mode === "add") {
+        pose[name] += fade * value;
+      } else if (yields(name)) {
+        pose[name] = blendOver(pose[name], value, fade);
+      } else if (holder.get(name) === layer && !moved.has(name)) {
+        pose[name] = value;
+      }
+    }
+  });
+  return pose;
+}
+
+function trackOf(segments: readonly RecordedSegment[], fps: number): Timeline {
+  return {
+    fps,
+    seed: 0,
+    duration: null,
+    rows: [{ tracks: [{ kind: "actor", name: "actor", occurrence: 0, segments }] }],
+  };
+}
+
+/** The engine's pose of a hand-built track at `now`, in frame units. */
+function composed(
+  segments: readonly RecordedSegment[],
+  fps: number,
+  now: number,
+): Pose {
+  const timeline = trackOf(segments, fps);
+  const track = timeline.rows[0]?.tracks[0];
+  if (track === undefined) {
+    throw new Error("no track");
+  }
+  return poseAtInstant(timeline, 0, track, now);
+}
+
+const TENTH = 100_000;
+
+/**
+ * A track drawn from `seed`: poses and reaches on a tenth-of-a-second grid over three
+ * seconds, so starts and ends coincide, some of no length and some open-ended.
+ */
+function drawnTrack(seed: number, count: number): RecordedSegment[] {
+  const random = randomSource({
+    seed,
+    row: 0,
+    kind: "test",
+    name: "track",
+    occurrence: 0,
+  });
+  let draw = 0;
+  const below = (limit: number): number => Math.floor(random.float(draw++) * limit);
+  const pick = <T>(from: readonly [T, ...T[]]): T =>
+    from[below(from.length)] ?? from[0];
+  return Array.from({ length: count }, (): RecordedSegment => {
+    const start = below(30) * TENTH;
+    const end = below(7) === 0 ? null : start + below(12) * TENTH;
+    const phases = {
+      mode: pick(["replace", "replace", "replace", "add"] as const),
+      anticipation: pick([0, 0, TENTH]),
+      blend: pick([0, TENTH, 3 * TENTH]),
+      followThrough: pick([0, 0, TENTH]),
+    };
+    if (below(3) === 0) {
+      return {
+        start,
+        end,
+        data: {
+          kind: "reach",
+          ...phases,
+          effector: pick(["handL", "handR", "footL", "footR"] as const),
+          target: { x: below(9) / 10 - 0.4, y: below(9) / 10 },
+        },
+      };
+    }
+    const channels: Partial<Record<keyof Pose, number>> = {};
+    for (const name of ["spine", "shoulderR", "elbowR", "hipL", "kneeL"] as const) {
+      if (below(3) === 0) {
+        channels[name] = below(21) / 10 - 1;
+      }
+    }
+    return { start, end, data: { kind: "pose", ...phases, channels } };
+  });
+}
+
+describe("a track of many segments", () => {
+  it("composes 2000 segments to the pose asking every earlier segment gives", () => {
+    // A walk's shape: each step a pose of the legs that outlasts the next step's start,
+    // a reach of a hand and of a foot, over a lean that never ends.
+    const segments: RecordedSegment[] = [
+      {
+        start: 0,
+        end: null,
+        data: {
+          kind: "pose",
+          mode: "replace",
+          anticipation: 0,
+          blend: 2 * TENTH,
+          followThrough: 0,
+          channels: { spine: 0.2, shoulderL: -0.3 },
+        },
+      },
+      {
+        start: 5 * TENTH,
+        end: null,
+        data: {
+          kind: "pose",
+          mode: "add",
+          anticipation: 0,
+          blend: 2 * TENTH,
+          followThrough: 0,
+          channels: { chest: 0.1, kneeR: -0.1 },
+        },
+      },
+    ];
+    for (let step = 0; segments.length < 2000; step += 1) {
+      const start = step * TENTH;
+      const side = step % 2 === 0 ? "L" : "R";
+      const phases = {
+        mode: "replace",
+        anticipation: 0,
+        blend: TENTH,
+        followThrough: 0,
+      } as const;
+      segments.push(
+        {
+          start,
+          end: start + 3 * TENTH,
+          data: {
+            kind: "pose",
+            ...phases,
+            channels: { [`hip${side}`]: 0.4, [`knee${side}`]: -0.5, pelvisY: -0.02 },
+          },
+        },
+        {
+          start,
+          end: start + 2 * TENTH,
+          data: {
+            kind: "reach",
+            ...phases,
+            effector: `hand${side}`,
+            target: { x: 0.2, y: 0.5 + (step % 5) / 20 },
+          },
+        },
+        {
+          start: start + TENTH,
+          end: start + 2 * TENTH,
+          data: {
+            kind: "reach",
+            ...phases,
+            effector: `foot${side}`,
+            target: { x: 0.1, y: 0.05 },
+          },
+        },
+      );
+    }
+    expect(segments).toHaveLength(2000);
+    const fps = 30;
+    const last = segments.at(-1)?.start ?? 0;
+    for (const now of [
+      last * fps + 1_000_000,
+      (last / 2) * fps,
+      (last + TENTH) * fps,
+    ]) {
+      expect(composed(segments, fps, now)).toEqual(referencePose(segments, fps, now));
+    }
+  });
+
+  it.each([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12])(
+    "composes drawn track %d to the pose asking every earlier segment gives",
+    (seed) => {
+      const fps = 20;
+      for (const count of [1, 6, 40]) {
+        const segments = drawnTrack(seed * 100 + count, count);
+        // Every frame of the four seconds, and an instant between two frames.
+        for (let frame = 0; frame <= 80; frame += 1) {
+          for (const now of [frame * 1_000_000, frame * 1_000_000 + 370_000]) {
+            expect(composed(segments, fps, now)).toEqual(
+              referencePose(segments, fps, now),
+            );
+          }
+        }
+      }
+    },
+  );
+
+  it("composes a track anew once a segment is recorded on it", () => {
+    const segments = drawnTrack(7, 12);
+    const fps = 20;
+    const now = 40 * 1_000_000;
+    expect(composed(segments, fps, now)).toEqual(referencePose(segments, fps, now));
+    segments.push({
+      start: 0,
+      end: 15 * TENTH,
+      data: {
+        kind: "pose",
+        mode: "replace",
+        anticipation: 0,
+        blend: TENTH,
+        followThrough: 0,
+        channels: { neck: 0.25, spine: -0.5 },
+      },
+    });
+    const pose = composed(segments, fps, now);
+    expect(pose.neck).toBe(0.25);
+    expect(pose).toEqual(referencePose(segments, fps, now));
+  });
+
+  it("fades an ended pose back to the one beneath it past a hand-built time that is not a number", () => {
+    const phases = {
+      kind: "pose",
+      mode: "replace",
+      anticipation: 0,
+      blend: TENTH,
+      followThrough: 0,
+    } as const;
+    const segments: RecordedSegment[] = [
+      { start: 0, end: null, data: { ...phases, channels: { spine: 0.5 } } },
+      { start: 0, end: Number.NaN, data: { ...phases, channels: { spine: -0.4 } } },
+      { start: Number.NaN, end: null, data: { ...phases, channels: { neck: 0.3 } } },
+      { start: 0, end: 10 * TENTH, data: { ...phases, channels: { spine: 0.2 } } },
+    ];
+    const fps = 30;
+    // Half the last pose's blend past its end: halfway back from 0.2 to 0.5.
+    const now = (10 * TENTH + TENTH / 2) * fps;
+    const pose = composed(segments, fps, now);
+    expect(pose.spine).toBeCloseTo(0.35, 12);
+    expect(pose).toEqual(referencePose(segments, fps, now));
+  });
+
+  it("composes the same segments at another frame rate", () => {
+    const segments = drawnTrack(8, 12);
+    for (const fps of [20, 50, 20]) {
+      for (const frame of [0, 1, 2, 3].map((second) => second * fps)) {
+        const now = frame * 1_000_000;
+        expect(composed(segments, fps, now)).toEqual(referencePose(segments, fps, now));
+      }
+    }
   });
 });

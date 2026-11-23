@@ -196,6 +196,15 @@ recorded sample is written against; changing any of it changes all of them at on
   value is not a finite number. `poseAtInstant` composes the same at a time that is not
   a frame's, given in frame units: a prop let go between two frames starts its path from
   where the hand was at that microsecond, not at the frame before.
+- What does not depend on the frame is worked out once per track and kept in a `WeakMap`
+  keyed on its segments array, with the frame rate and the segment count it was made
+  for: the layers, the held ones in end order, and the channels each ended segment
+  yields on, found in one pass in recorded order. A frame then costs one pass over the
+  track's segments, not their square; `check`, `sheet` and `render` compose every frame,
+  and a long walk is over a thousand segments. A pose is still a function of the
+  timeline and the frame alone. A segment replaced in place without the count changing
+  would be composed stale, which nothing does: a built or parsed timeline is not changed
+  again.
 - `drive` takes one function of time that returns a map of channel values, as in
   `a.drive(t => ({ spine: Math.sin(t * 3) * 0.1 }))`. The channels it names are the keys
   it returns when it is called once with `t = 0` as the call is recorded: an unknown
@@ -228,19 +237,30 @@ recorded sample is written against; changing any of it changes all of them at on
   `DrawFunction` (draws on a `ShapeContext`), and the source is `RandomSource`. In an
   open-ended segment `duration` is `Infinity` and `progress` stays 0.
 - A drawing function — a depth 4 callback, or the `draw` of a prop, backdrop or effect —
-  gets a `DrawMoment`: a `Moment` plus `view`, a `RowView` (`left`, `right`, `bottom`,
-  `top`) giving the row's visible area in the coordinates the function draws in. For a
-  free drawing and a backdrop that is the row's own (`∓units / 2`, −0.3, 2.2); for a
-  prop or an effect it is shifted by the item's ground point or origin, since its
-  context is, and mirrored with an effect that is drawn mirrored. The width is the one
-  thing about a row an item cannot know, and a backdrop has to reach both edges at every
-  canvas shape and row count. It is a field of the moment, not a parameter or a method
-  of the context: every drawing function already receives the moment, a parameter would
-  be a reserved name in every definition's bag, and the drawing interface holds only
-  standard Canvas 2D members. It is a separate type because a `drive` has no layout to
-  read: a pose is composed from the timeline alone, which does not hold the canvas size.
-  A function typed against `Moment` is still accepted where a `DrawMoment` is handed
-  over. `rowView` in `src/draw/layout.ts` builds it.
+  gets a `DrawMoment`: a `Moment` plus `t` (below) and `view`, a `RowView` (`left`,
+  `right`, `bottom`, `top`) giving the row's visible area in the coordinates the
+  function draws in. For a free drawing and a backdrop that is the row's own
+  (`∓units / 2`, −0.3, 2.2); for a prop or an effect it is shifted by the item's ground
+  point or origin, since its context is, and mirrored with an effect that is drawn
+  mirrored. The width is the one thing about a row an item cannot know, and a backdrop
+  has to reach both edges at every canvas shape and row count. It is a field of the
+  moment, not a parameter or a method of the context: every drawing function already
+  receives the moment, a parameter would be a reserved name in every definition's bag,
+  and the drawing interface holds only standard Canvas 2D members. It is a separate type
+  because a `drive` has no layout to read: a pose is composed from the timeline alone,
+  which does not hold the canvas size. A function typed against `Moment` is still
+  accepted where a `DrawMoment` is handed over. `rowView` in `src/draw/layout.ts` builds
+  it.
+- A `DrawMoment` also carries `t`, seconds since its segment began, the same number a
+  depth 4 callback receives as its argument: a prop's, backdrop's or effect's `draw`
+  takes its params where that argument would be, and in an open-ended segment `progress`
+  stays 0, so without it a drawing could not tell how long it had been shown, and what
+  repeats would start at scene time 0 and differ by where it was placed. It is named `t`
+  rather than given as a `start` field so that one name means one thing across depths 3
+  and 4 and the definitions, and nobody subtracts. A `drive`'s `Moment` has no `t`: its
+  function already takes it. `t` is computed from the frame and the start in frame
+  units, `(n × 1e6 − µs × fps) / (fps × 1e6)`, not as `n / fps − start`, which rounds
+  the same distance from the start two ways at two starts.
 
 ## The rig
 

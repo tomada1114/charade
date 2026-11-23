@@ -32,7 +32,7 @@ import {
   type TimelineTrack,
 } from "../timeline/timeline.js";
 import { type CheckReport, type Finding, FINDING_CAP } from "./findings.js";
-import { readFinding, watchReads } from "./reads.js";
+import { readFinding, valueOf, watchReads } from "./reads.js";
 import { RecordingContext } from "./recorder.js";
 
 /**
@@ -425,20 +425,19 @@ function violationsAt(
       // The author's functions run only inside `watched`, where a clock or random
       // read is noted.
       const watched = <T>(run: () => T, noteReads = true): T | undefined => {
-        try {
-          const { value, reads } = watchReads(run);
-          for (const read of noteReads ? reads : []) {
-            found.push({
-              key: `read|${id}|${read}`,
-              excess: 0,
-              finding: readFinding(read, { subject: id, row, target: id }),
-            });
-          }
-          return value;
-        } catch (error) {
-          found.push(failure(error, row, id));
+        const result = watchReads(run);
+        for (const read of noteReads ? result.reads : []) {
+          found.push({
+            key: `read|${id}|${read}`,
+            excess: 0,
+            finding: readFinding(read, { subject: id, row, target: id }),
+          });
+        }
+        if (!result.ok) {
+          found.push(failure(result.error, row, id));
           return undefined;
         }
+        return result.value;
       };
       if (track.kind === "actor") {
         const pose = watched(() => poseAtFrame(timeline, row, track, frame));
@@ -523,23 +522,25 @@ export function checkScene(scene: Scene, options: CheckOptions = {}): CheckResul
     const open = new Map<string, Run>();
     // One outer watch replaces the globals once for the whole scan; each item's own
     // watch is nested inside it and keeps its reads to itself.
-    watchReads(() => {
-      for (let frame = 0; frame <= lastFrame; frame += 1) {
-        for (const violation of violationsAt(scene, layouts, frame, options)) {
-          const run = open.get(violation.key);
-          if (run !== undefined && run.last >= frame - 1) {
-            run.last = frame;
-            if (violation.excess > run.worst.excess) {
-              run.worst = violation;
+    valueOf(
+      watchReads(() => {
+        for (let frame = 0; frame <= lastFrame; frame += 1) {
+          for (const violation of violationsAt(scene, layouts, frame, options)) {
+            const run = open.get(violation.key);
+            if (run !== undefined && run.last >= frame - 1) {
+              run.last = frame;
+              if (violation.excess > run.worst.excess) {
+                run.worst = violation;
+              }
+            } else {
+              const started: Run = { first: frame, last: frame, worst: violation };
+              open.set(violation.key, started);
+              runs.push(started);
             }
-          } else {
-            const started: Run = { first: frame, last: frame, worst: violation };
-            open.set(violation.key, started);
-            runs.push(started);
           }
         }
-      }
-    });
+      }),
+    );
   }
   const computed = runs.map((run): Finding => {
     return {

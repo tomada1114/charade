@@ -56,11 +56,18 @@ export interface RowView {
 
 /**
  * The moment a drawing function is handed: a free drawing at depth 4, or the `draw` of a
- * prop, backdrop or effect. It is a {@link Moment} plus the row's visible area.
+ * prop, backdrop or effect. It is a {@link Moment} plus how long the segment has been
+ * shown and the row's visible area.
  *
  * @public
  */
 export interface DrawMoment extends Moment {
+  /**
+   * Seconds since the segment began, the `t` a depth 4 function also receives as its
+   * own argument. It counts in an open-ended segment too, where `progress` stays 0, so
+   * what repeats starts with the segment rather than at scene time 0.
+   */
+  readonly t: number;
   /** The row's visible area, in the coordinates the function draws in. */
   readonly view: RowView;
 }
