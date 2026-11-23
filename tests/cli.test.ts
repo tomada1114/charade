@@ -564,6 +564,33 @@ describe("main", () => {
     expect(out.join("")).toBe("");
     expect(err.join("")).toContain("ERR_CLI_UNKNOWN_FLAG");
   });
+
+  it("writes stderr once, as it is produced, ahead of stdout", async () => {
+    const order: string[] = [];
+    const streams = {
+      stdout: { write: (chunk: string) => order.push(`out:${chunk}`) },
+      stderr: { write: (chunk: string) => order.push(`err:${chunk}`) },
+    };
+
+    await main(["--unknown", "--json"], streams, { ...quiet, nodeVersion: "24.11.0" });
+    expect(order).toHaveLength(2);
+    expect(order[0]).toMatch(/^err:notice: type stripping/);
+    expect(order[1]).toMatch(/^out:\{/);
+  });
+
+  it("listens for stderr errors, so a closed pipe does not end the process", async () => {
+    const events: string[] = [];
+    const streams = {
+      stdout: { write: () => true },
+      stderr: {
+        write: () => true,
+        on: (event: string) => events.push(event),
+      },
+    };
+
+    await main(["--unknown"], streams, quiet);
+    expect(events).toEqual(["error"]);
+  });
 });
 
 describe("runIfMain", () => {
