@@ -109,7 +109,9 @@ export default scene({ rows: 2 }, (stage) => {
 - `Finding`, `Severity` and `SourceLocation` describe one problem found in a scene as
   plain data: an `ERR_<AREA>_<FAILURE>` `code`, an `error` or `warning` severity, what
   is wrong, how to fix it, and where it applies.
-- `FindingCollector` records findings up to `FINDING_CAP` (20), keeping the first ones.
+- `FindingCollector` records findings up to `FINDING_CAP` (20), keeping the first ones,
+  except that a warning gives way to an error: at the cap, a later error takes the place
+  of the last warning kept, so a run with an error never passes.
 - `exitCodeFor` maps findings to an `ExitCode` (0 clean, 1 failing findings, with
   `strict` making warnings fail; `COULD_NOT_RUN` is 2), and `checkReport` builds the
   `CheckReport` document `{ version, ok, findings, summary }`.
