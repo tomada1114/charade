@@ -36,6 +36,21 @@ recorded sample is how an unintended change in appearance fails a test.
   position, never the value. A property write counts: the write throws and the state
   keeps its old value. An `undefined` in a required argument, before a given one, or
   written to a property throws the same class, since a real context reads it as `NaN`.
+- An argument a real context rejects throws instead of being logged, so a record cannot
+  pass where the rendered frame throws: a negative radius to `arc`, `arcTo` or `ellipse`
+  and a colour stop offset outside 0..1 (`IndexSizeError` in the DOM), and a negative
+  corner radius or more than four of them to `roundRect` (`RangeError`). The class is
+  `DrawingArgumentRangeError` (`ERR_SCENE_DRAWING_OUT_OF_RANGE`), beside
+  `NonFiniteDrawingError` and carrying the same `call` and `argument`, never the value;
+  a list of radii is its one argument position. The test is on the value given, not the
+  logged one, `-0` is not negative, and a negative infinity throws
+  `NonFiniteDrawingError`. An empty radius list is not rejected, since skia-canvas 4
+  accepts it (and five radii too, which the recorder still rejects as the DOM does).
+- `setLineDash` keeps the dash list as a real context does: a list with a negative entry
+  leaves the previous one in place, and an odd-length list is stored twice over, so
+  `[1, 2, 3]` reads back from `getLineDash` as `[1, 2, 3, 1, 2, 3]`. The call is logged
+  as given either way. A non-finite entry, which a real context ignores too, throws
+  `NonFiniteDrawingError` as any non-finite argument does.
 - A property write is logged as a call. A gradient is logged by its creation index.
 - An entry is `{ call, args }`. A property write's `call` is the property's name and
   `args` holds the one value; a method's `args` holds the arguments given, so an omitted
