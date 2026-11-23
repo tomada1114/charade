@@ -196,6 +196,15 @@ recorded sample is written against; changing any of it changes all of them at on
   value is not a finite number. `poseAtInstant` composes the same at a time that is not
   a frame's, given in frame units: a prop let go between two frames starts its path from
   where the hand was at that microsecond, not at the frame before.
+- What does not depend on the frame is worked out once per track and kept in a `WeakMap`
+  keyed on its segments array, with the frame rate and the segment count it was made
+  for: the layers, the held ones in end order, and the channels each ended segment
+  yields on, found in one pass in recorded order. A frame then costs one pass over the
+  track's segments, not their square; `check`, `sheet` and `render` compose every frame,
+  and a long walk is over a thousand segments. A pose is still a function of the
+  timeline and the frame alone. A segment replaced in place without the count changing
+  would be composed stale, which nothing does: a built or parsed timeline is not changed
+  again.
 - `drive` takes one function of time that returns a map of channel values, as in
   `a.drive(t => ({ spine: Math.sin(t * 3) * 0.1 }))`. The channels it names are the keys
   it returns when it is called once with `t = 0` as the call is recorded: an unknown
