@@ -247,7 +247,9 @@ recorded sample is how an unintended change in appearance fails a test.
 - A watched global still answers as the real one does, so the scene runs on and one
   check reports every read. Only reading the current time counts: `Date.now()`,
   `new Date()` and `Date()`, not `new Date(2020, 0, 1)` or `Date.UTC`. A nested watch
-  keeps its reads to itself.
+  keeps its reads to itself. A watch returns what its function throws, with the reads
+  made before the throw, instead of rethrowing it: a frame whose function reads and then
+  throws reports both the read and the failure, and the caller rethrows when it must.
 - A read in the build callback is a finding frozen into the scene, with no row or
   target. A read at a frame names the track. Both use the `ERR_CHECK_` codes, also the
   one recorded while authoring: it is one failure with one fix, and a caller should not

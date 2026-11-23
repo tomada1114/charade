@@ -548,6 +548,9 @@ describe("clock and random reads", () => {
       random: Math.random(),
       elapsed: performance.now(),
     }));
+    if (!watched.ok) {
+      throw new Error("the watched function threw");
+    }
     expect(watched.value.date).toBeInstanceOf(Date);
     expect(typeof watched.value.text).toBe("string");
     expect(watched.value.now).toBeGreaterThan(1_600_000_000_000);
@@ -567,22 +570,66 @@ describe("clock and random reads", () => {
       Reflect.get(performance, "now"),
     ];
     const before = globals();
-    expect(() =>
-      watchGlobals(() => {
-        expect(Date).not.toBe(before[0]);
-        throw new Error("stop");
-      }),
-    ).toThrow("stop");
+    const stop = new Error("stop");
+    const watched = watchGlobals(() => {
+      expect(Date).not.toBe(before[0]);
+      throw stop;
+    });
+    expect(watched).toMatchObject({ ok: false, error: stop });
     globals().forEach((value, index) => {
       expect(value).toBe(before[index]);
     });
     expect(Object.hasOwn(performance, "now")).toBe(false);
   });
 
+  it("keeps the reads a watched function made before it threw", () => {
+    const watched = watchGlobals(() => {
+      Math.random();
+      Date.now();
+      throw new Error("stop");
+    });
+    expect(watched.ok).toBe(false);
+    expect([...watched.reads].sort()).toEqual(["Date", "Math.random"]);
+  });
+
   it("keeps a nested watch's reads out of the outer one", () => {
     const outer = watchGlobals(() => watchGlobals(() => Math.random()).reads);
-    expect(outer.value).toEqual(["Math.random"]);
-    expect(outer.reads).toEqual([]);
+    expect(outer).toEqual({ ok: true, value: ["Math.random"], reads: [] });
+  });
+
+  it("reports a drive's read made in the frames where it throws", () => {
+    const built = act((a) => {
+      a.drive(
+        (t) => {
+          if (t > 0.5) {
+            Math.random();
+            throw new Error("late");
+          }
+          return { spine: 0.1 };
+        },
+        { duration: 1 },
+      );
+    });
+    const { findings } = checkScene(built);
+    expect(
+      findings.map((finding) => [finding.code, finding.target, finding.frames]),
+    ).toEqual(
+      expect.arrayContaining([
+        ["ERR_SCENE_DRAWING_FAILED", ACTOR, [16, 90]],
+        ["ERR_CHECK_UNSEEDED_RANDOM", ACTOR, [16, 90]],
+      ]),
+    );
+    expect(findings).toHaveLength(2);
+  });
+
+  it("rethrows what the build function threw after a read", () => {
+    const failure = new Error("build failed");
+    expect(() =>
+      scene({ duration: 1 }, () => {
+        Date.now();
+        throw failure;
+      }),
+    ).toThrow(failure);
   });
 });
 

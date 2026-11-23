@@ -1,6 +1,6 @@
 import type { Finding, FindingCollector, Severity } from "../check/findings.js";
 import { nearestNames } from "../check/nearest.js";
-import { watchReads } from "../check/reads.js";
+import { valueOf, watchReads } from "../check/reads.js";
 import { type ItemKind, SceneClosedError, UnknownRowError } from "../errors.js";
 import { ANCHOR_PART_NAMES, isAnchorPart } from "../rig/kinematics.js";
 import {
@@ -1020,20 +1020,22 @@ export class SceneBuilder {
     try {
       // A clock or random read here is left to the frame check, which meets it again
       // at every frame and names the track; kept, it would be reported twice.
-      first = watchReads(() =>
-        motion(0, {
-          time: toSeconds(start),
-          duration: end === null ? Infinity : toSeconds(end - start),
-          progress: 0,
-          random: randomSource({
-            seed: this.#settings.seed,
-            row: actor.row,
-            kind: actor.track.kind,
-            name: actor.track.name,
-            occurrence: actor.track.occurrence,
+      first = valueOf(
+        watchReads(() =>
+          motion(0, {
+            time: toSeconds(start),
+            duration: end === null ? Infinity : toSeconds(end - start),
+            progress: 0,
+            random: randomSource({
+              seed: this.#settings.seed,
+              row: actor.row,
+              kind: actor.track.kind,
+              name: actor.track.name,
+              occurrence: actor.track.occurrence,
+            }),
           }),
-        }),
-      ).value;
+        ),
+      );
     } catch {
       this.#report(
         "ERR_SCENE_INVALID_VALUE",
