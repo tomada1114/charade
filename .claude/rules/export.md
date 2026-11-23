@@ -316,10 +316,10 @@ stay free of Node-only modules.
 
 - The default gate uses an injected, in-process fake in place of the spawn, which is the
   boundary a mock is allowed at, and keeps the logic inside coverage.
-- A real-ffmpeg smoke path is a package script outside vitest: it renders a sample and
-  asserts codec, pixel format, size and frame count with `ffprobe`, and fails with a
-  code when ffmpeg is absent. It runs in CI, in a job that installs ffmpeg; until that
-  job exists it is run by hand. It is not a vitest test, because a test may not be
-  skipped and most machines have no ffmpeg.
+- A real-ffmpeg smoke path is a package script outside vitest (`pnpm run render:smoke`,
+  `scripts/render-smoke.mjs`): it renders a sample and asserts codec, pixel format, size
+  and frame count with `ffprobe`, and fails with a code when ffmpeg is absent. It runs
+  in CI, in the `render-smoke` job that installs ffmpeg, not in `pnpm check`. It is not
+  a vitest test, because a test may not be skipped and most machines have no ffmpeg.
 - The empty-folder proof belongs in the package smoke check, which already installs the
   tarball into an empty consumer.
