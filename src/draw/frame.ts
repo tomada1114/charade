@@ -408,7 +408,7 @@ export function drawItem(
       ctx.strokeStyle = INK;
       ctx.fillStyle = INK;
       ctx.lineWidth = FIGURE_LINE;
-      withoutReset(ctx, () => {
+      guarded(ctx, () => {
         draw(ctx, data["params"], {
           time,
           duration,
@@ -433,26 +433,44 @@ function sinceStart(frame: number, start: Micros, fps: number): number {
   return (frame * MICROS_PER_SECOND - start * fps) / (fps * MICROS_PER_SECOND);
 }
 
+/** The members a drawing's guard shadows on the shared context while it runs. */
+const GUARDED = ["reset", "save", "restore"] as const;
+
 /**
- * Calls `draw` with `ctx`'s `reset` shadowed by a no-op. `ShapeContext` has no `reset`,
- * but a plain-JS drawing could still call the real context's, which would clear the frame
- * drawn so far and the row's save stack under it. The shadow is an own property, removed
- * afterwards; a context that cannot take one is handed over as it is.
+ * Calls `draw` with `reset` a no-op and `save`/`restore` counted, so a plain-JS drawing
+ * can neither clear nor pop the row's state; `.claude/rules/engine.md` has the reasons.
  */
-function withoutReset(ctx: ShapeContext, draw: () => void): void {
-  if (!Object.isExtensible(ctx) || Object.hasOwn(ctx, "reset")) {
+function guarded(ctx: ShapeContext, draw: () => void): void {
+  if (!Object.isExtensible(ctx) || GUARDED.some((name) => Object.hasOwn(ctx, name))) {
     draw();
     return;
   }
-  Object.defineProperty(ctx, "reset", {
-    configurable: true,
-    writable: true,
-    value: () => undefined,
+  const save = ctx.save.bind(ctx);
+  const restore = ctx.restore.bind(ctx);
+  let open = 0;
+  const shadow = (name: (typeof GUARDED)[number], value: () => void): void => {
+    Object.defineProperty(ctx, name, { configurable: true, writable: true, value });
+  };
+  shadow("reset", () => undefined);
+  shadow("save", () => {
+    save();
+    open += 1;
+  });
+  shadow("restore", () => {
+    if (open > 0) {
+      open -= 1;
+      restore();
+    }
   });
   try {
     draw();
   } finally {
-    Reflect.deleteProperty(ctx, "reset");
+    for (const name of GUARDED) {
+      Reflect.deleteProperty(ctx, name);
+    }
+    for (; open > 0; open -= 1) {
+      restore();
+    }
   }
 }
 
@@ -490,7 +508,7 @@ export function drawTrack(
     ctx.strokeStyle = INK;
     ctx.fillStyle = INK;
     ctx.lineWidth = FIGURE_LINE;
-    withoutReset(ctx, () => {
+    guarded(ctx, () => {
       draw(ctx, t, {
         time,
         duration,

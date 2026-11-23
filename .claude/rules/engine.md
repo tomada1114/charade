@@ -457,10 +457,19 @@ change to the shape raises the version.
   a wrapper or a second canvas per item; a drawing that wants a clean state already has
   `save`, `restore`, `setTransform` and `resetTransform`. Types do not stop a plain-JS
   scene, so `drawTrack` and `drawItem` shadow `reset` on the context with a no-op own
-  property while a drawing runs and delete it after (`withoutReset` in
-  `src/draw/frame.ts`). A context that is not extensible or already has an own `reset`
-  is handed over as it is: no real context is either. An unbalanced `restore` in a
-  drawing can still pop the row's state; that is not guarded.
+  property while a drawing runs and delete it after.
+- The same guard (`guarded` in `src/draw/frame.ts`) counts a drawing's `save` and
+  `restore`, because the row's clip and transform sit on the shared save stack under
+  every item: a `restore` with none of the drawing's own saves left to pop is ignored,
+  and the saves it leaves open are restored when it returns (after a throw too), so its
+  state reaches neither the rest of its row nor the next item. Rebalancing is what the
+  drawer's own `save`…`restore` around each item already promises; leaving open saves in
+  place would make the drawer's closing `restore` pop the drawing's state rather than
+  its own. An ignored `reset` or `restore` never reaches the context, so the recording
+  context does not log it; the restores that close open saves are real calls and are
+  logged. A context that is not extensible or already has an own `reset`, `save` or
+  `restore` is handed over unguarded, all three at once since the counts only hold
+  together: no real context is either.
 - The text helper is `drawText(ctx, text, options?)`, a root export with
   `DrawTextOptions` (`x`, `y`, `size`, `align`, `width`) and its result `TextSize`. It
   is named for what it does rather than `fillText`, which would read as the context
