@@ -161,8 +161,11 @@ stay free of Node-only modules.
   image, a single frame. `-o, --out` overrides the path. Existing output is overwritten,
   because the loop regenerates it on every pass.
 - stdout carries the result: paths written, findings, descriptions, the catalog. stderr
-  carries progress and notices. `--json` exists on every command and makes stdout
-  exactly one JSON document, also on failure.
+  carries progress and notices, and each line reaches the process's stderr as it is
+  produced (`CliOptions.stderr`, which `main` sets to its stream): a render's progress
+  shows while it runs and is not lost when a signal ends the process. stdout is written
+  once the command is done, since it is one result. `--json` exists on every command and
+  makes stdout exactly one JSON document, also on failure.
 - The scene is the only source of seed, frame rate and size. There are no override
   flags, so a video is a function of its file.
 - `--at` takes seconds, as a scene does: `1.5` and `1.5s` are seconds, `45f` is a frame.
