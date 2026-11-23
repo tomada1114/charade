@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  DrawingArgumentRangeError,
   ForeignGradientError,
   NonFiniteDrawingError,
   RecordingContext,
@@ -140,6 +141,143 @@ describe("non-finite arguments", () => {
     expect(() => {
       gradient.addColorStop(Number.NaN, "red");
     }).toThrow(NonFiniteDrawingError);
+  });
+});
+
+describe("arguments a real context rejects", () => {
+  it.each([
+    ["arc", 2, (ctx: DrawingContext) => ctx.arc(0, 0, -1, 0, 1)],
+    ["arcTo", 4, (ctx: DrawingContext) => ctx.arcTo(0, 0, 1, 1, -0.5)],
+    ["ellipse", 2, (ctx: DrawingContext) => ctx.ellipse(0, 0, -1, 1, 0, 0, 1)],
+    ["ellipse", 3, (ctx: DrawingContext) => ctx.ellipse(0, 0, 1, -1, 0, 0, 1)],
+    ["roundRect", 4, (ctx: DrawingContext) => ctx.roundRect(0, 0, 1, 1, -0.1)],
+    ["roundRect", 4, (ctx: DrawingContext) => ctx.roundRect(0, 0, 1, 1, [0.1, -0.1])],
+    [
+      "roundRect",
+      4,
+      (ctx: DrawingContext) => ctx.roundRect(0, 0, 1, 1, [0.1, 0.1, 0.1, 0.1, 0.1]),
+    ],
+  ])("throws on %s argument %i and logs nothing", (call, argument, invoke) => {
+    const ctx = new RecordingContext();
+    let caught: unknown;
+    try {
+      invoke(ctx);
+    } catch (error) {
+      caught = error;
+    }
+    expect(caught).toBeInstanceOf(DrawingArgumentRangeError);
+    expect(caught).toBeInstanceOf(CharadeError);
+    expect(caught).toMatchObject({
+      code: "ERR_SCENE_DRAWING_OUT_OF_RANGE",
+      call,
+      argument,
+    });
+    expect(ctx.log).toEqual([]);
+  });
+
+  it.each([
+    ["arc", (ctx: DrawingContext) => ctx.arc(0, 0, -Infinity, 0, 1)],
+    ["roundRect", (ctx: DrawingContext) => ctx.roundRect(0, 0, 1, 1, [-Infinity])],
+    [
+      "addColorStop",
+      (ctx: DrawingContext) =>
+        ctx.createLinearGradient(0, 0, 1, 0).addColorStop(-Infinity, "red"),
+    ],
+  ])(
+    "throws the non-finite error, not the range one, on a negative infinity to %s",
+    (_call, invoke) => {
+      const ctx = new RecordingContext();
+      expect(() => {
+        invoke(ctx);
+      }).toThrow(NonFiniteDrawingError);
+    },
+  );
+
+  it("throws on a radius that is still negative below half a log step", () => {
+    const ctx = new RecordingContext();
+    expect(() => {
+      ctx.arc(0, 0, -0.00001, 0, 1);
+    }).toThrow(DrawingArgumentRangeError);
+  });
+
+  it.each([
+    ["a zero radius", (ctx: DrawingContext) => ctx.arc(0, 0, 0, 0, 1)],
+    ["a negative zero radius", (ctx: DrawingContext) => ctx.arcTo(0, 0, 1, 1, -0)],
+    [
+      "four corner radii",
+      (ctx: DrawingContext) => ctx.roundRect(0, 0, 1, 1, [0, 0, 0, 0]),
+    ],
+    ["a zero corner radius", (ctx: DrawingContext) => ctx.roundRect(0, 0, 1, 1, 0)],
+  ])("accepts %s", (_label, invoke) => {
+    const ctx = new RecordingContext();
+    invoke(ctx);
+    expect(ctx.log).toHaveLength(1);
+  });
+
+  it.each([
+    ["below zero", -0.1],
+    ["above one", 1.1],
+  ])("throws on a colour stop offset %s and logs nothing", (_label, offset) => {
+    const ctx = new RecordingContext();
+    const gradient = ctx.createLinearGradient(0, 0, 1, 0);
+    let caught: unknown;
+    try {
+      gradient.addColorStop(offset, "red");
+    } catch (error) {
+      caught = error;
+    }
+    expect(caught).toMatchObject({
+      code: "ERR_SCENE_DRAWING_OUT_OF_RANGE",
+      call: "addColorStop",
+      argument: 0,
+    });
+    expect(ctx.log).toEqual([{ call: "createLinearGradient", args: [0, 0, 10000, 0] }]);
+  });
+
+  it("accepts colour stop offsets of exactly 0 and 1", () => {
+    const ctx = new RecordingContext();
+    const gradient = ctx.createLinearGradient(0, 0, 1, 0);
+    gradient.addColorStop(0, "red");
+    gradient.addColorStop(1, "blue");
+    expect(ctx.log.slice(1)).toEqual([
+      { call: "addColorStop", args: [{ gradient: 0 }, 0, "red"] },
+      { call: "addColorStop", args: [{ gradient: 0 }, 10000, "blue"] },
+    ]);
+  });
+});
+
+describe("the dash pattern", () => {
+  it("stores an odd-length list twice over", () => {
+    const ctx = new RecordingContext();
+    ctx.setLineDash([1, 2, 3]);
+    expect(ctx.getLineDash()).toEqual([1, 2, 3, 1, 2, 3]);
+  });
+
+  it("stores a single entry twice", () => {
+    const ctx = new RecordingContext();
+    ctx.setLineDash([4]);
+    expect(ctx.getLineDash()).toEqual([4, 4]);
+  });
+
+  it("logs the list as given", () => {
+    const ctx = new RecordingContext();
+    ctx.setLineDash([1, 2, 3]);
+    expect(ctx.log).toEqual([{ call: "setLineDash", args: [[10000, 20000, 30000]] }]);
+  });
+
+  it("keeps the previous list when one has a negative entry", () => {
+    const ctx = new RecordingContext();
+    ctx.setLineDash([4, 2]);
+    ctx.setLineDash([1, -2]);
+    expect(ctx.getLineDash()).toEqual([4, 2]);
+  });
+
+  it("accepts zero entries and the empty list", () => {
+    const ctx = new RecordingContext();
+    ctx.setLineDash([0, 0]);
+    expect(ctx.getLineDash()).toEqual([0, 0]);
+    ctx.setLineDash([]);
+    expect(ctx.getLineDash()).toEqual([]);
   });
 });
 
