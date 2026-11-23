@@ -261,11 +261,11 @@ export default scene((stage) => {
 - The built-in backdrops are `plain`, `court`, `office`, `hill` and `night`:
   `row.backdrop("night")` draws behind that row only, and each paints its whole row at
   every canvas shape and row count. A drawing function's last argument is a
-  `DrawMoment`: the scene time, the segment's progress, a seeded random source, and
-  `view`, the row's visible area in the units the function draws in (`left`, `right`,
-  `bottom`, `top`). A row is always 2.5 units high, but its width follows the canvas and
-  the row count, so a backdrop of your own reads its edges from `view` instead of
-  assuming them.
+  `DrawMoment`: the scene time, `t` (seconds since the item began to show, which an
+  open-ended item has too), the segment's progress, a seeded random source, and `view`,
+  the row's visible area in the units the function draws in (`left`, `right`, `bottom`,
+  `top`). A row is always 2.5 units high, but its width follows the canvas and the row
+  count, so a backdrop of your own reads its edges from `view` instead of assuming them.
 
 ```ts
 import { defineBackdrop, scene } from "charade";

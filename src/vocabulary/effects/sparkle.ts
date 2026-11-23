@@ -40,9 +40,7 @@ export const sparkleEffect: EffectDefinition<typeof sparkleParams> = defineEffec
   description:
     "Four-pointed stars twinkling in a ring around its origin, for delight, pride or something that shines: each star swells and fades in place, and the next appears somewhere else on the ring, for as long as the effect is shown. The ring leaves its middle clear, so on an actor (on: actor) the stars surround the head without covering the face; on a point, such as a prop's place, they surround that. The stars are scattered from the scene's seed.",
   params: sparkleParams,
-  draw(ctx, { stars, radius, size, color }, { time, duration, progress, random }) {
-    // An open-ended effect has no progress, so it runs on scene time.
-    const t = Number.isFinite(duration) ? progress * duration : time;
+  draw(ctx, { stars, radius, size, color }, { t, random }) {
     const count = Math.round(stars);
     ctx.fillStyle = color;
     ctx.lineWidth = 0.007;
