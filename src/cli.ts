@@ -1368,6 +1368,11 @@ export interface CliOptions {
   readonly spawn?: Spawn;
   /** Reports SIGINT, SIGTERM and SIGHUP by default, so a partial video is removed. */
   readonly interrupts?: Interrupts;
+  /**
+   * Receives stderr as it is produced, so progress shows during a long render and is
+   * not lost when a signal ends the process. The result's `stderr` holds it all too.
+   */
+  readonly stderr?: { write(chunk: string): unknown };
 }
 
 const realLoad: SceneLoader = (file, notice) => loadScene(file, { notice });
@@ -1388,8 +1393,12 @@ export async function runCli(
 ): Promise<CliResult> {
   const json = wantsJson(argv);
   let stderr = "";
+  const emit = (text: string): void => {
+    stderr += text;
+    options.stderr?.write(text);
+  };
   const notice = (line: string): void => {
-    stderr += `${line}\n`;
+    emit(`${line}\n`);
   };
   const node = nodeNotice(options.nodeVersion ?? process.versions.node);
   if (node !== undefined) {
@@ -1414,12 +1423,11 @@ export async function runCli(
         stderr,
       };
     }
-    const block = `error ${error.code}: ${error.message}\n  fix: ${error.fix}\n`;
-    return {
-      exitCode: COULD_NOT_RUN,
-      stdout: "",
-      stderr: stderr + block + (usageText === undefined ? "" : `\n${usageText}`),
-    };
+    emit(`error ${error.code}: ${error.message}\n  fix: ${error.fix}\n`);
+    if (usageText !== undefined) {
+      emit(`\n${usageText}`);
+    }
+    return { exitCode: COULD_NOT_RUN, stdout: "", stderr };
   };
 
   const parsed = parse(argv);
@@ -1510,11 +1518,15 @@ export function isMain(moduleUrl: string, entry: string | undefined): boolean {
 /** The streams {@link main} writes to. */
 export interface CliStreams {
   readonly stdout: { write(chunk: string): unknown };
-  readonly stderr: { write(chunk: string): unknown };
+  readonly stderr: {
+    write(chunk: string): unknown;
+    on?(event: "error", listener: (error: Error) => void): unknown;
+  };
 }
 
 /**
- * Run the command and write its result to `streams`.
+ * Run the command, writing stderr to `streams` as it is produced and stdout once the
+ * command is done.
  *
  * @param argv Arguments after the executable name.
  * @param streams Where stdout and stderr go.
@@ -1526,9 +1538,11 @@ export async function main(
   streams: CliStreams,
   options: CliOptions = {},
 ): Promise<ExitCode> {
-  const result = await runCli(argv, options);
+  // stderr is written mid-render now: an EPIPE there (`2>&1 | head`) must not crash the
+  // process before ffmpeg is stopped and the partial video removed.
+  streams.stderr.on?.("error", () => undefined);
+  const result = await runCli(argv, { ...options, stderr: streams.stderr });
   streams.stdout.write(result.stdout);
-  streams.stderr.write(result.stderr);
   return result.exitCode;
 }
 
