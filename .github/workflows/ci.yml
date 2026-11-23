@@ -160,3 +160,37 @@ jobs:
 
       - name: Consume the packed artifact at the published Node floor
         run: pnpm --config.runtime-on-fail=ignore run package:smoke -- --pack-dir .smoke
+
+  # vitest only ever drives the encoder through an injected fake
+  # (.claude/rules/export.md § Testing). This job is where the real ffmpeg
+  # argument list meets a real libx264, and where ffprobe reads the result back.
+  render-smoke:
+    name: Render smoke with a real ffmpeg
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .node-version
+
+      # Ubuntu's ffmpeg package ships libx264 and ffprobe, which is what
+      # `render` and the smoke check need; nothing that bundles ffmpeg is added.
+      - name: Install ffmpeg
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends ffmpeg
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Render a sample and check it with ffprobe
+        run: pnpm run render:smoke

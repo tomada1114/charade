@@ -27,6 +27,7 @@ const automationTests = [
   "tests/package-smoke.test.ts",
   "tests/package.test.ts",
   "tests/raster.test.ts",
+  "tests/render-smoke.test.ts",
   "tests/render.test.ts",
   "tests/skills-frontmatter.test.ts",
   "tests/smoke-package.test.ts",
