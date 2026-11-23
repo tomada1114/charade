@@ -185,6 +185,57 @@ describe("FindingCollector", () => {
     expect(recorded.at(-1)).toBe(false);
   });
 
+  it("records an error at the cap in place of the last warning kept", () => {
+    const collector = new FindingCollector();
+    for (let index = 0; index < 20; index += 1) {
+      collector.add({ ...offFrame, message: `warning ${String(index)}` });
+    }
+    expect(collector.add(kneeError)).toBe(true);
+    expect(collector.findings).toHaveLength(20);
+    expect(collector.findings[18]?.message).toBe("warning 18");
+    expect(collector.findings[19]).toEqual(kneeError);
+    expect(collector.truncated).toBe(true);
+  });
+
+  it("keeps errors in the order they were added while they evict warnings", () => {
+    const collector = new FindingCollector();
+    collector.add({ ...kneeError, message: "error a" });
+    for (let index = 0; index < 19; index += 1) {
+      collector.add({ ...offFrame, message: `warning ${String(index)}` });
+    }
+    collector.add({ ...kneeError, message: "error b" });
+    collector.add({ ...offFrame, message: "late warning" });
+    collector.add({ ...kneeError, message: "error c" });
+    expect(collector.findings.map(({ message }) => message)).toEqual([
+      "error a",
+      ...Array.from({ length: 17 }, (_, index) => `warning ${String(index)}`),
+      "error b",
+      "error c",
+    ]);
+  });
+
+  it("drops a warning at the cap", () => {
+    const collector = new FindingCollector();
+    for (let index = 0; index < 20; index += 1) {
+      collector.add({ ...offFrame, message: `warning ${String(index)}` });
+    }
+    expect(collector.add(offFrame)).toBe(false);
+    expect(collector.findings.at(-1)?.message).toBe("warning 19");
+    expect(collector.truncated).toBe(true);
+  });
+
+  it("never evicts an error", () => {
+    const collector = new FindingCollector();
+    for (let index = 0; index < 20; index += 1) {
+      collector.add({ ...kneeError, message: `error ${String(index)}` });
+    }
+    expect(collector.add({ ...kneeError, message: "late error" })).toBe(false);
+    expect(collector.findings.map(({ message }) => message)).toEqual(
+      Array.from({ length: 20 }, (_, index) => `error ${String(index)}`),
+    );
+    expect(collector.truncated).toBe(true);
+  });
+
   it("records duplicates as separate findings", () => {
     const collector = new FindingCollector();
     collector.add(kneeError);

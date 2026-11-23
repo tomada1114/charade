@@ -80,7 +80,8 @@ let restore: (() => void) | undefined;
 
 /**
  * The watch the CLI installs: the globals are replaced while the outermost watched
- * function runs and put back when it returns or throws.
+ * function runs and put back when it returns or throws. A throw is returned with the
+ * reads made before it.
  */
 export const watchGlobals: ReadWatch = (run) => {
   const reads = new Set<GlobalRead>();
@@ -89,7 +90,9 @@ export const watchGlobals: ReadWatch = (run) => {
   }
   running.push(reads);
   try {
-    return { value: run(), reads: [...reads] };
+    return { ok: true, value: run(), reads: [...reads] };
+  } catch (error) {
+    return { ok: false, error, reads: [...reads] };
   } finally {
     running.pop();
     if (running.length === 0) {

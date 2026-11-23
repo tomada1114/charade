@@ -39,9 +39,7 @@ export const sweatEffect: EffectDefinition<typeof sweatParams> = defineEffect({
   description:
     "Droplets flying off a head, for a figure that is nervous, flustered or worn out: each leaves the edge of the head upwards and outwards, falls a little and is gone, and the next follows for as long as the effect is shown. Its origin is the centre of the head, so put it on an actor (on: actor), where it follows the head through whatever the figure does, or give on a point 0.9 above the ground for a standing figure. The droplets are scattered from the scene's seed.",
   params: sweatParams,
-  draw(ctx, { drops, size, side, color }, { time, duration, progress, random }) {
-    // An open-ended effect has no progress, so it runs on scene time.
-    const t = Number.isFinite(duration) ? progress * duration : time;
+  draw(ctx, { drops, size, side, color }, { t, random }) {
     const count = Math.round(drops);
     ctx.fillStyle = color;
     ctx.lineWidth = 0.008;

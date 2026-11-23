@@ -253,19 +253,30 @@ recorded sample is written against; changing any of it changes all of them at on
   `DrawFunction` (draws on a `ShapeContext`), and the source is `RandomSource`. In an
   open-ended segment `duration` is `Infinity` and `progress` stays 0.
 - A drawing function — a depth 4 callback, or the `draw` of a prop, backdrop or effect —
-  gets a `DrawMoment`: a `Moment` plus `view`, a `RowView` (`left`, `right`, `bottom`,
-  `top`) giving the row's visible area in the coordinates the function draws in. For a
-  free drawing and a backdrop that is the row's own (`∓units / 2`, −0.3, 2.2); for a
-  prop or an effect it is shifted by the item's ground point or origin, since its
-  context is, and mirrored with an effect that is drawn mirrored. The width is the one
-  thing about a row an item cannot know, and a backdrop has to reach both edges at every
-  canvas shape and row count. It is a field of the moment, not a parameter or a method
-  of the context: every drawing function already receives the moment, a parameter would
-  be a reserved name in every definition's bag, and the drawing interface holds only
-  standard Canvas 2D members. It is a separate type because a `drive` has no layout to
-  read: a pose is composed from the timeline alone, which does not hold the canvas size.
-  A function typed against `Moment` is still accepted where a `DrawMoment` is handed
-  over. `rowView` in `src/draw/layout.ts` builds it.
+  gets a `DrawMoment`: a `Moment` plus `t` (below) and `view`, a `RowView` (`left`,
+  `right`, `bottom`, `top`) giving the row's visible area in the coordinates the
+  function draws in. For a free drawing and a backdrop that is the row's own
+  (`∓units / 2`, −0.3, 2.2); for a prop or an effect it is shifted by the item's ground
+  point or origin, since its context is, and mirrored with an effect that is drawn
+  mirrored. The width is the one thing about a row an item cannot know, and a backdrop
+  has to reach both edges at every canvas shape and row count. It is a field of the
+  moment, not a parameter or a method of the context: every drawing function already
+  receives the moment, a parameter would be a reserved name in every definition's bag,
+  and the drawing interface holds only standard Canvas 2D members. It is a separate type
+  because a `drive` has no layout to read: a pose is composed from the timeline alone,
+  which does not hold the canvas size. A function typed against `Moment` is still
+  accepted where a `DrawMoment` is handed over. `rowView` in `src/draw/layout.ts` builds
+  it.
+- A `DrawMoment` also carries `t`, seconds since its segment began, the same number a
+  depth 4 callback receives as its argument: a prop's, backdrop's or effect's `draw`
+  takes its params where that argument would be, and in an open-ended segment `progress`
+  stays 0, so without it a drawing could not tell how long it had been shown, and what
+  repeats would start at scene time 0 and differ by where it was placed. It is named `t`
+  rather than given as a `start` field so that one name means one thing across depths 3
+  and 4 and the definitions, and nobody subtracts. A `drive`'s `Moment` has no `t`: its
+  function already takes it. `t` is computed from the frame and the start in frame
+  units, `(n × 1e6 − µs × fps) / (fps × 1e6)`, not as `n / fps − start`, which rounds
+  the same distance from the start two ways at two starts.
 
 ## The rig
 
@@ -471,10 +482,19 @@ change to the shape raises the version.
   a wrapper or a second canvas per item; a drawing that wants a clean state already has
   `save`, `restore`, `setTransform` and `resetTransform`. Types do not stop a plain-JS
   scene, so `drawTrack` and `drawItem` shadow `reset` on the context with a no-op own
-  property while a drawing runs and delete it after (`withoutReset` in
-  `src/draw/frame.ts`). A context that is not extensible or already has an own `reset`
-  is handed over as it is: no real context is either. An unbalanced `restore` in a
-  drawing can still pop the row's state; that is not guarded.
+  property while a drawing runs and delete it after.
+- The same guard (`guarded` in `src/draw/frame.ts`) counts a drawing's `save` and
+  `restore`, because the row's clip and transform sit on the shared save stack under
+  every item: a `restore` with none of the drawing's own saves left to pop is ignored,
+  and the saves it leaves open are restored when it returns (after a throw too), so its
+  state reaches neither the rest of its row nor the next item. Rebalancing is what the
+  drawer's own `save`…`restore` around each item already promises; leaving open saves in
+  place would make the drawer's closing `restore` pop the drawing's state rather than
+  its own. An ignored `reset` or `restore` never reaches the context, so the recording
+  context does not log it; the restores that close open saves are real calls and are
+  logged. A context that is not extensible or already has an own `reset`, `save` or
+  `restore` is handed over unguarded, all three at once since the counts only hold
+  together: no real context is either.
 - The text helper is `drawText(ctx, text, options?)`, a root export with
   `DrawTextOptions` (`x`, `y`, `size`, `align`, `width`) and its result `TextSize`. It
   is named for what it does rather than `fillText`, which would read as the context
