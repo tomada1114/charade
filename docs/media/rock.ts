@@ -39,10 +39,7 @@ export default scene({ rows: 3 }, (stage) => {
       swingFor: pressed.marks.stop - pressed.marks.heave,
     })
     .place({ x: 1.08, y: 0 });
-  presser.express("happy", {
-    at: pressed.marks.stop,
-    duration: pressed.end - pressed.marks.stop,
-  });
+  presser.express("happy", { at: pressed.marks.stop });
 
   // A cart: lifts the rock onto it and wheels it away.
   const cartRow = stage.row(2);
