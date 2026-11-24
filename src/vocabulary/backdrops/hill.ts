@@ -1,10 +1,7 @@
-import {
-  type BackdropDefinition,
-  defineBackdrop,
-  type ShapeContext,
-  type Stage,
-  svgPath,
-} from "../../index.js";
+import type { ShapeContext } from "../../draw/context.js";
+import { svgPath } from "../../draw/path-data.js";
+import { type BackdropDefinition, defineBackdrop } from "../../scene/define.js";
+import type { Stage } from "../../scene/handles.js";
 
 const hillParams = {
   grass: {

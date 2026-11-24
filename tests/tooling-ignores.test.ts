@@ -484,9 +484,12 @@ describe("the layer boundary in eslint.config.mjs", () => {
 
   describe("in the vocabulary", () => {
     it.each([
-      ["another layer", "../../rig/rig.js"],
-      ["a root module other than the entry", "../../errors.js"],
+      ["the root entry", "../../index.js"],
+      ["the built-in maps", "../../scene/builtins.js"],
+      ["the scene function", "../../scene/scene.js"],
       ["src/internal", "../../internal/x.js"],
+      ["the built-in index", "../index.js"],
+      ["the built-in index by its full path", "../../vocabulary/index.js"],
     ])("rejects importing %s", async (_label, specifier) => {
       expect(
         await boundaryReports(
@@ -497,7 +500,7 @@ describe("the layer boundary in eslint.config.mjs", () => {
     });
 
     it.each([
-      ["the root entry", "../../index.js"],
+      ["a defining module", "../../scene/define.js"],
       ["another vocabulary module", "../actions/walk.js"],
     ])("accepts importing %s", async (_label, specifier) => {
       expect(

@@ -1,8 +1,5 @@
-import {
-  defineExpression,
-  type ExpressionDefinition,
-  type Stage,
-} from "../../index.js";
+import { defineExpression, type ExpressionDefinition } from "../../scene/define.js";
+import type { Stage } from "../../scene/handles.js";
 
 const focusedParams = {
   intensity: {

@@ -76,7 +76,6 @@ export type {
   NoParams,
   PropDefinition,
 } from "./scene/define.js";
-// After `define…`: the built-in items import this entry, and they load while it does.
 export {
   builtinActions,
   builtinBackdrops,

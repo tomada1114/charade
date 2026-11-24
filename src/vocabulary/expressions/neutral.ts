@@ -2,8 +2,8 @@ import {
   defineExpression,
   type ExpressionDefinition,
   type NoParams,
-  type Stage,
-} from "../../index.js";
+} from "../../scene/define.js";
+import type { Stage } from "../../scene/handles.js";
 
 export const neutralExpression: ExpressionDefinition<NoParams> = defineExpression({
   name: "neutral",

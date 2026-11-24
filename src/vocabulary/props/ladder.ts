@@ -1,4 +1,5 @@
-import { defineProp, type PropDefinition, type Stage } from "../../index.js";
+import { defineProp, type PropDefinition } from "../../scene/define.js";
+import type { Stage } from "../../scene/handles.js";
 
 const ladderParams = {
   height: {
