@@ -100,7 +100,7 @@ export const ALLOWED_PATHS = [
     // not, so a stray `.DS_Store`-style file cannot slip through, and `.` and
     // `..` are excluded as directory segments.
     pattern:
-      /^dist\/(?:(?!\.\.?(?:\/|$))[A-Za-z0-9_.-]+\/)*[A-Za-z0-9_-][A-Za-z0-9_.-]*\.(?:d\.ts\.map|d\.ts|js\.map|js|json)$/,
+      /^dist\/(?:(?!\.\.?(?:\/|$))[A-Za-z0-9_.-]+\/)*[A-Za-z0-9_-][A-Za-z0-9_.-]*\.(?:d\.ts|js|json)$/,
   },
 ];
 
@@ -175,6 +175,14 @@ export const FORBIDDEN_PATHS = [
   {
     pattern: /^(scripts|etc|docs)(\/|$)/,
     reason: "repository tooling or documentation, which consumers never load",
+  },
+  {
+    // The allowlist already refuses a map; this entry is what makes the error
+    // say the package deliberately ships none and how to stop emitting one.
+    // Last, so a map under src/ or tests/ is reported as that hazard instead.
+    pattern: /\.map$/i,
+    reason: "a source map, and this package ships none",
+    next: "keep `sourceMap`, `inlineSourceMap` and `declarationMap` off in tsconfig.build.json, then run `pnpm run build` and pack again.",
   },
 ];
 
@@ -499,137 +507,6 @@ export function requiredEntryPaths(manifest) {
 }
 
 // -----------------------------------------------------------------------------
-// Source maps
-// -----------------------------------------------------------------------------
-
-const ABSOLUTE_SOURCE = /^(?:\/|[A-Za-z]:[\\/]|file:\/\/)/;
-
-/**
- * Find source map references that leak a build machine's filesystem layout.
- *
- * @remarks
- * `tsc` with `rootDir` emits paths relative to the map, so an absolute entry
- * means the build was misconfigured. Publishing one exposes the directory
- * structure — often including a username — of whoever ran the release.
- *
- * @param {readonly TarEntry[]} entries - Entries from {@link readTarEntries}.
- * @returns {{ path: string; source: string }[]} Every offending reference.
- */
-export function findAbsoluteMapSources(entries) {
-  /** @type {{ path: string; source: string }[]} */
-  const found = [];
-  for (const entry of entries) {
-    if (!entry.path.endsWith(".map") || entry.data === undefined) {
-      continue;
-    }
-    /** @type {unknown} */
-    let map;
-    try {
-      map = parseJson(entry.data.toString("utf8"));
-    } catch {
-      found.push({ path: entry.path, source: "<unparsable source map>" });
-      continue;
-    }
-    const sourceRoot = readKey(map, "sourceRoot");
-    if (typeof sourceRoot === "string" && ABSOLUTE_SOURCE.test(sourceRoot)) {
-      found.push({ path: entry.path, source: sourceRoot });
-    }
-    const sources = readKey(map, "sources");
-    if (!Array.isArray(sources)) {
-      continue;
-    }
-    for (const source of sources) {
-      if (typeof source === "string" && ABSOLUTE_SOURCE.test(source)) {
-        found.push({ path: entry.path, source });
-      }
-    }
-  }
-  return found;
-}
-
-/**
- * Find published maps whose sources a consumer cannot reach.
- *
- * @remarks
- * `src/` is on {@link FORBIDDEN_PATHS}, so a map that only names `../src/*.ts`
- * points at nothing once installed — the debugger shows an empty frame instead
- * of the code. A map is self-contained only when it embeds `sourcesContent` for
- * every source, or when every source it names is itself in the tarball.
- *
- * References that are absolute are left to {@link findAbsoluteMapSources}: they
- * are the same file being wrong for a different, more serious reason, and
- * reporting them twice would bury it.
- *
- * @param {readonly TarEntry[]} entries - Entries from {@link readTarEntries}.
- * @returns {PackageProblem[]} One problem per unreachable source.
- */
-export function findDanglingMapSources(entries) {
-  const present = new Set(
-    entries.filter((entry) => entry.type === "file").map((entry) => entry.path),
-  );
-  /** @type {PackageProblem[]} */
-  const problems = [];
-
-  for (const entry of entries) {
-    if (!entry.path.endsWith(".map") || entry.data === undefined) {
-      continue;
-    }
-    /** @type {unknown} */
-    let map;
-    try {
-      // An unparsable map is already reported as a leak by
-      // findAbsoluteMapSources; nothing further can be said about it here.
-      map = parseJson(entry.data.toString("utf8"));
-    } catch {
-      continue;
-    }
-
-    const sources = readKey(map, "sources");
-    if (!Array.isArray(sources)) {
-      continue;
-    }
-    const contents = readKey(map, "sourcesContent");
-    const sourceRoot = readKey(map, "sourceRoot");
-    const root = typeof sourceRoot === "string" ? sourceRoot : "";
-    const mapDirectory = path.posix.dirname(entry.path);
-
-    for (const [index, source] of sources.entries()) {
-      if (typeof source !== "string" || ABSOLUTE_SOURCE.test(source)) {
-        continue;
-      }
-      const embedded = Array.isArray(contents)
-        ? /** @type {readonly unknown[]} */ (contents)[index]
-        : undefined;
-      if (typeof embedded === "string") {
-        continue;
-      }
-      if (ABSOLUTE_SOURCE.test(root)) {
-        continue;
-      }
-      const resolved = path.posix.normalize(
-        path.posix.join(mapDirectory, root, source),
-      );
-      if (present.has(resolved)) {
-        continue;
-      }
-      problems.push({
-        code: "ERR_PACKAGE_MAP_DANGLING_SOURCE",
-        path: entry.path,
-        message:
-          `${entry.path} points at ${resolved}, which the tarball does not contain, ` +
-          "and carries no embedded copy of it.\n" +
-          "Expected: `sourcesContent` for every source, or a source that is itself published.\n" +
-          `Actual: sources[${String(index)}] is ${source} with no sourcesContent entry.\n` +
-          "Next: set `inlineSources` in tsconfig.build.json (TypeScript honours it " +
-          "for .js.map only, so turn `declarationMap` off), then rebuild and pack again.",
-      });
-    }
-  }
-
-  return problems;
-}
-
-// -----------------------------------------------------------------------------
 // Inspection
 // -----------------------------------------------------------------------------
 
@@ -717,7 +594,7 @@ export function inspectPackageEntries(entries, options = {}) {
         message:
           `The tarball contains ${entry.path}, which is ${hazard.reason}.\n` +
           "Expected: no such path in a published tarball.\n" +
-          'Next: narrow `files` in package.json (it should stay ["dist"]) and pack again.',
+          `Next: ${hazard.next ?? 'narrow `files` in package.json (it should stay ["dist"]) and pack again.'}`,
       });
       continue;
     }
@@ -1049,7 +926,6 @@ export function inspectTarball(tarballPath, repositoryManifest) {
   const problems = [
     ...inspectPackageEntries(entries, { manifest: packedManifest }),
     ...findMissingRequiredPaths(entries),
-    ...findDanglingMapSources(entries),
   ];
 
   if (packedManifest !== undefined) {
@@ -1057,18 +933,6 @@ export function inspectTarball(tarballPath, repositoryManifest) {
     problems.push(...findManifestMismatch(packedManifest, repositoryManifest));
   } else {
     problems.push(...findUnreadableManifest(entries, packedManifest));
-  }
-
-  for (const leak of findAbsoluteMapSources(entries)) {
-    problems.push({
-      code: "ERR_PACKAGE_MAP_ABSOLUTE_PATH",
-      path: leak.path,
-      message:
-        `${leak.path} references a source by absolute path.\n` +
-        "Expected: paths relative to the map, so the build machine's layout stays private.\n" +
-        `Actual: ${leak.source.replace(/^(\/|file:\/\/\/)[^\s]*?([^/]+\/[^/]+)$/, "$1…/$2")}\n` +
-        "Next: confirm `rootDir` and `outDir` in tsconfig.build.json, then rebuild.",
-    });
   }
 
   return problems;
@@ -1082,9 +946,9 @@ const USAGE = `Usage: node scripts/check-package.mjs (--pack-dir <dir> | --tarba
 
 Inspects a packed tarball against the allowlist, the forbidden-path list, the
 size ceilings in PACKAGE_LIMITS, the files REQUIRED_PATHS demands, the entry
-points package.json declares, the reachability of every source map source, and
-the packed package.json itself: no install-time lifecycle script, and no field
-that differs from the repository manifest once publishConfig is applied.
+points package.json declares, and the packed package.json itself: no
+install-time lifecycle script, and no field that differs from the repository
+manifest once publishConfig is applied.
 
 Exit codes:
   0  the tarball is publishable

@@ -18,8 +18,6 @@ import {
   FORBIDDEN_PATHS,
   PACKAGE_LIMITS,
   REQUIRED_PATHS,
-  findAbsoluteMapSources,
-  findDanglingMapSources,
   findInstallScripts,
   findManifestMismatch,
   findMissingRequiredPaths,
@@ -233,8 +231,6 @@ describe("inspectPackageEntries", () => {
         entry("LICENCE.md"),
         entry("dist/index.js"),
         entry("dist/index.d.ts"),
-        entry("dist/index.js.map"),
-        entry("dist/index.d.ts.map"),
         entry("dist/internal/example.js"),
       ],
       { manifest: SATISFIED_MANIFEST },
@@ -299,10 +295,32 @@ describe("inspectPackageEntries", () => {
   it.each([
     ["dist/date.utils.js"],
     ["dist/date.utils.d.ts"],
-    ["dist/my.module.d.ts.map"],
-    ["dist/internal/deep/nested.js.map"],
+    ["dist/internal/deep/my.module.js"],
   ])("accepts %s, which tsc emits for a source name containing a dot", (allowed) => {
     expect(inspectPackageEntries([entry(allowed)], {})).toEqual([]);
+  });
+
+  it.each([
+    ["dist/index.js.map"],
+    ["dist/index.d.ts.map"],
+    ["dist/internal/deep/my.module.js.map"],
+    ["dist/index.css.map"],
+    ["dist/INDEX.JS.MAP"],
+  ])("rejects the source map %s, because the package ships none", (map) => {
+    const problems = inspectPackageEntries([entry(map)], {});
+
+    expect(codesOf(problems)).toEqual(["ERR_PACKAGE_PATH_FORBIDDEN"]);
+    expect(problems[0]?.path).toBe(map);
+  });
+
+  it("routes a shipped source map to its own fix and nothing else there", () => {
+    const hazardOf = (file: string) =>
+      FORBIDDEN_PATHS.find((rule) => rule.pattern.test(file));
+
+    expect(hazardOf("dist/index.js.map")).toHaveProperty("next");
+    expect(hazardOf("src/index.js.map")).not.toHaveProperty("next");
+    expect(hazardOf("src/index.ts")).not.toHaveProperty("next");
+    expect(FORBIDDEN_PATHS.filter((rule) => "next" in rule)).toHaveLength(1);
   });
 
   it.each([["dist/.hidden.js"], ["dist/.DS_Store"]])(
@@ -562,55 +580,6 @@ describe("requiredEntryPaths", () => {
   });
 });
 
-// --- findAbsoluteMapSources --------------------------------------------------
-
-describe("findAbsoluteMapSources", () => {
-  function mapEntry(mapPath: string, map: unknown): Entry {
-    return entry(mapPath, 0, { data: Buffer.from(JSON.stringify(map), "utf8") });
-  }
-
-  it("accepts relative sources", () => {
-    expect(
-      findAbsoluteMapSources([
-        mapEntry("dist/index.js.map", { sources: ["../src/index.ts"] }),
-      ]),
-    ).toEqual([]);
-  });
-
-  it.each([
-    ["/Users/someone/repo/src/index.ts"],
-    ["C:\\Users\\someone\\repo\\src\\index.ts"],
-    ["file:///Users/someone/repo/src/index.ts"],
-  ])("flags the absolute source %s", (source) => {
-    const found = findAbsoluteMapSources([
-      mapEntry("dist/index.js.map", { sources: [source] }),
-    ]);
-
-    expect(found).toHaveLength(1);
-    expect(found[0]?.path).toBe("dist/index.js.map");
-  });
-
-  it("flags an absolute sourceRoot", () => {
-    expect(
-      findAbsoluteMapSources([
-        mapEntry("dist/index.d.ts.map", {
-          sourceRoot: "/Users/someone/repo",
-          sources: ["index.ts"],
-        }),
-      ]),
-    ).toHaveLength(1);
-  });
-
-  it("ignores entries that are not maps and maps without data", () => {
-    expect(
-      findAbsoluteMapSources([
-        mapEntry("dist/index.js", { sources: ["/absolute.ts"] }),
-        entry("dist/index.js.map"),
-      ]),
-    ).toEqual([]);
-  });
-});
-
 // --- findMissingRequiredPaths ------------------------------------------------
 
 describe("findMissingRequiredPaths", () => {
@@ -680,107 +649,6 @@ describe("findMissingRequiredPaths", () => {
     for (const rule of REQUIRED_PATHS) {
       expect(inspectPackageEntries([entry(rule.sample)], {})).toEqual([]);
     }
-  });
-});
-
-// --- findDanglingMapSources --------------------------------------------------
-
-describe("findDanglingMapSources", () => {
-  function mapEntry(mapPath: string, map: unknown): Entry {
-    return entry(mapPath, 0, { data: Buffer.from(JSON.stringify(map), "utf8") });
-  }
-
-  it("accepts a map that embeds the contents of every source", () => {
-    expect(
-      findDanglingMapSources([
-        entry("dist/index.js"),
-        mapEntry("dist/index.js.map", {
-          version: 3,
-          sources: ["../src/index.ts"],
-          sourcesContent: ["export const a = 1;\n"],
-        }),
-      ]),
-    ).toEqual([]);
-  });
-
-  it("accepts a map whose source is itself published", () => {
-    expect(
-      findDanglingMapSources([
-        entry("dist/index.js"),
-        mapEntry("dist/index.js.map", { version: 3, sources: ["./index.js"] }),
-      ]),
-    ).toEqual([]);
-  });
-
-  it("flags a source that is neither embedded nor published", () => {
-    const problems = findDanglingMapSources([
-      entry("dist/index.js"),
-      mapEntry("dist/index.js.map", { version: 3, sources: ["../src/index.ts"] }),
-    ]);
-
-    expect(codesOf(problems)).toEqual(["ERR_PACKAGE_MAP_DANGLING_SOURCE"]);
-    expect(problems[0]?.path).toBe("dist/index.js.map");
-    // The resolved path is what a debugger would look for, so it is what the
-    // message has to name.
-    expect(problems[0]?.message).toContain("src/index.ts");
-  });
-
-  it("flags a declaration map, which tsc emits without sourcesContent", () => {
-    expect(
-      codesOf(
-        findDanglingMapSources([
-          mapEntry("dist/index.d.ts.map", { version: 3, sources: ["../src/index.ts"] }),
-        ]),
-      ),
-    ).toEqual(["ERR_PACKAGE_MAP_DANGLING_SOURCE"]);
-  });
-
-  it("flags a source whose sourcesContent slot is null", () => {
-    expect(
-      codesOf(
-        findDanglingMapSources([
-          mapEntry("dist/index.js.map", {
-            version: 3,
-            sources: ["../src/a.ts", "../src/b.ts"],
-            sourcesContent: ["export const a = 1;\n", null],
-          }),
-        ]),
-      ),
-    ).toEqual(["ERR_PACKAGE_MAP_DANGLING_SOURCE"]);
-  });
-
-  it("resolves a relative sourceRoot before deciding", () => {
-    expect(
-      findDanglingMapSources([
-        entry("src/index.ts"),
-        mapEntry("dist/index.js.map", {
-          version: 3,
-          sourceRoot: "../src",
-          sources: ["index.ts"],
-        }),
-      ]),
-    ).toEqual([]);
-  });
-
-  it("leaves an absolute source to findAbsoluteMapSources", () => {
-    const entries = [
-      mapEntry("dist/index.js.map", {
-        version: 3,
-        sources: ["/Users/someone/repo/src/index.ts"],
-      }),
-    ];
-
-    expect(findDanglingMapSources(entries)).toEqual([]);
-    expect(findAbsoluteMapSources(entries)).toHaveLength(1);
-  });
-
-  it("ignores entries that are not maps and maps without data", () => {
-    expect(
-      findDanglingMapSources([
-        mapEntry("dist/index.js", { sources: ["../src/index.ts"] }),
-        entry("dist/index.js.map"),
-      ]),
-    ).toEqual([]);
   });
 });
 
@@ -1146,6 +1014,28 @@ describe("checkTarballContents reads the packed manifest, not the repository's",
     expect(() => checkTarballContents(entries, "fixture.tgz")).not.toThrow();
   });
 
+  it("rejects a packed source map before any consumer installs the tarball", () => {
+    const packedManifest = {
+      name: "fixture-package",
+      version: "1.0.0",
+      exports: { ".": { types: "./dist/index.d.ts", import: "./dist/index.js" } },
+    };
+    const entries = [
+      entry("package.json", 10, {
+        data: Buffer.from(JSON.stringify(packedManifest), "utf8"),
+      }),
+      entry("README.md"),
+      entry("LICENSE"),
+      entry("dist/index.js"),
+      entry("dist/index.d.ts"),
+      entry("dist/index.js.map"),
+    ];
+
+    expect(() => checkTarballContents(entries, "fixture.tgz")).toThrow(
+      /ERR_SMOKE_TARBALL_CONTENTS[\s\S]*ERR_PACKAGE_PATH_FORBIDDEN/,
+    );
+  });
+
   it("fails loudly instead of skipping the entry-point check when package.json does not parse", () => {
     const entries = [
       entry("package.json", 10, { data: Buffer.from("{not valid json", "utf8") }),
@@ -1267,18 +1157,6 @@ describe("a tarball produced by npm pack", () => {
       path.join(root, "dist", "index.d.ts"),
       "export declare const a: 1;\n",
     );
-    writeFileSync(
-      path.join(root, "dist", "index.js.map"),
-      JSON.stringify({
-        version: 3,
-        sources: ["../src/index.ts"],
-        // Embedded so this fixture is a genuinely problem-free tarball: without
-        // it, findDanglingMapSources would flag the map even though nothing
-        // about the manifest verification this file tests is at fault.
-        sourcesContent: ["export const a = 1;\n"],
-        mappings: "",
-      }),
-    );
     writeFileSync(path.join(root, "dist", "bin.js"), "#!/usr/bin/env node\n");
     // A basename over 100 bytes cannot be split across the ustar prefix and
     // name fields, so npm's packer must emit a pax extended header for it.
@@ -1316,7 +1194,6 @@ describe("a tarball produced by npm pack", () => {
         "dist/bin.js",
         "dist/index.d.ts",
         "dist/index.js",
-        "dist/index.js.map",
         `dist/${longName}`,
         "package.json",
       ].sort(),
@@ -1331,10 +1208,34 @@ describe("a tarball produced by npm pack", () => {
     expect(inspectPackageEntries(entries, { manifest })).toEqual([]);
   });
 
-  it("has no absolute paths in its source maps", () => {
-    const entries = readTarEntries(readFileSync(tarballPath));
+  it("fails inspectTarball once a source map is packed alongside it", () => {
+    writeFileSync(
+      path.join(workspace, "fixture-package", "dist", "index.js.map"),
+      JSON.stringify({ version: 3, sources: ["../src/index.ts"], mappings: "" }),
+    );
+    const packDir = path.join(workspace, "pack-with-map");
+    mkdirSync(packDir);
+    try {
+      execFileSync(
+        process.execPath,
+        [npmCliPath(), "pack", "--ignore-scripts", "--pack-destination", packDir],
+        {
+          cwd: path.join(workspace, "fixture-package"),
+          stdio: "pipe",
+          env: {
+            ...process.env,
+            npm_config_cache: path.join(workspace, "npm-cache"),
+          },
+        },
+      );
+    } finally {
+      rmSync(path.join(workspace, "fixture-package", "dist", "index.js.map"));
+    }
 
-    expect(findAbsoluteMapSources(entries)).toEqual([]);
+    const problems = inspectTarball(findSingleTarball(packDir), manifest);
+
+    expect(codesOf(problems)).toEqual(["ERR_PACKAGE_PATH_FORBIDDEN"]);
+    expect(problems[0]?.path).toBe("dist/index.js.map");
   });
 
   it("passes inspectTarball with no problems, including the manifest checks", () => {
