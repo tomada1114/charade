@@ -36,6 +36,7 @@ const automationTests = [
   "tests/tooling-ignores.test.ts",
   "tests/verify-bootstrap.test.ts",
   "tests/verify-package.test.ts",
+  "tests/vocabulary-imports.test.ts",
   "tests/vocabulary-index.test.ts",
   "tests/workflows.test.ts",
 ];

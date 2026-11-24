@@ -1,4 +1,6 @@
-import { defineProp, type PropDefinition, type Stage, svgPath } from "../../index.js";
+import { svgPath } from "../../draw/path-data.js";
+import { defineProp, type PropDefinition } from "../../scene/define.js";
+import type { Stage } from "../../scene/handles.js";
 
 const laptopParams = {
   size: {

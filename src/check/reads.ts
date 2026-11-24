@@ -31,6 +31,18 @@ export type ReadWatch = <T>(run: () => T) => Watched<T>;
 // layer that may: the export layer installs its watch here for the length of a command.
 let installed: ReadWatch | undefined;
 
+// A build that throws makes no scene to freeze its findings into; they wait here, keyed
+// by the thrown value itself, since a thrown value need not be an object to carry them.
+let aborted: { readonly error: unknown; readonly build: AbortedBuild } | undefined;
+
+/** The findings a failed build recorded, and whether the cap dropped later ones. */
+export interface AbortedBuild {
+  readonly findings: readonly Finding[];
+  readonly truncated: boolean;
+}
+
+const NOTHING_KEPT: AbortedBuild = { findings: [], truncated: false };
+
 /**
  * Sets the watch `scene()` and the frame checks run author functions under;
  * `undefined` removes it.
@@ -40,7 +52,29 @@ let installed: ReadWatch | undefined;
 export function installReadWatch(watch: ReadWatch | undefined): ReadWatch | undefined {
   const previous = installed;
   installed = watch;
+  aborted = undefined;
   return previous;
+}
+
+/**
+ * Keeps the findings a failed build recorded, for the command that ran it to take back
+ * by what the build threw. Only while a watch is installed, and only one build's worth.
+ */
+export function noteAbortedBuild(error: unknown, build: AbortedBuild): void {
+  aborted =
+    installed === undefined || build.findings.length === 0
+      ? undefined
+      : { error, build };
+}
+
+/**
+ * The findings kept for the build that threw `error`, or none when it is not the value
+ * kept. Either way nothing is kept afterwards.
+ */
+export function takeAbortedBuild(error: unknown): AbortedBuild {
+  const kept = aborted;
+  aborted = undefined;
+  return kept !== undefined && kept.error === error ? kept.build : NOTHING_KEPT;
 }
 
 /** Runs `run` under the installed watch; with none installed it reports no reads. */

@@ -10,6 +10,7 @@ import {
   type CheckOptions,
   type CheckResult,
   checkScene,
+  formatFinding,
   formatReport,
   lastFrameOf,
 } from "./check/check.js";
@@ -31,7 +32,11 @@ import {
   type ExitCode,
   exitCodeFor,
 } from "./check/findings.js";
-import { installReadWatch } from "./check/reads.js";
+import {
+  type AbortedBuild,
+  installReadWatch,
+  takeAbortedBuild,
+} from "./check/reads.js";
 import {
   findActor,
   GHOSTS,
@@ -555,6 +560,9 @@ function table(rows: readonly (readonly [string, string])[]): string {
   const width = Math.max(...rows.map(([left]) => left.length));
   return rows.map(([left, right]) => `  ${left.padEnd(width)}  ${right}\n`).join("");
 }
+
+// Looked up for a load error no build threw, so no build's kept findings can match it.
+const NO_BUILD = Symbol("no build");
 
 const EXIT_CODES = "Exit codes: 0 success, 1 error findings, 2 could not run.\n";
 
@@ -1405,7 +1413,11 @@ export async function runCli(
     notice(node);
   }
 
-  const failed = (error: Reportable, usageText?: string): CliResult => {
+  const failed = (
+    error: Reportable,
+    usageText?: string,
+    { findings, truncated }: AbortedBuild = { findings: [], truncated: false },
+  ): CliResult => {
     if (json) {
       const document = {
         version: 1,
@@ -1416,6 +1428,8 @@ export async function runCli(
           fix: error.fix,
           ...(error.nearest === undefined ? {} : { nearest: error.nearest }),
         },
+        ...(findings.length === 0 ? {} : { findings }),
+        ...(truncated ? { truncated } : {}),
       };
       return {
         exitCode: COULD_NOT_RUN,
@@ -1424,6 +1438,12 @@ export async function runCli(
       };
     }
     emit(`error ${error.code}: ${error.message}\n  fix: ${error.fix}\n`);
+    if (findings.length > 0) {
+      emit(`\n${findings.map(formatFinding).join("\n")}`);
+    }
+    if (truncated) {
+      emit("\nLater findings were dropped: fix these and check again.\n");
+    }
     if (usageText !== undefined) {
       emit(`\n${usageText}`);
     }
@@ -1468,8 +1488,19 @@ export async function runCli(
       try {
         scene = await (options.load ?? realLoad)(invocation.scene, notice);
       } catch (error) {
+        // The build's findings are kept under what it threw, which the loader wraps; a
+        // load error with no cause (no scene file, not a scene) was thrown by no build.
+        const kept = takeAbortedBuild(
+          error instanceof SceneLoadError
+            ? Object.hasOwn(error, "cause")
+              ? error.cause
+              : NO_BUILD
+            : error,
+        );
         return failed(
           error instanceof SceneLoadError ? error : new SceneFailedError(error),
+          undefined,
+          kept,
         );
       }
       outcome = await runSceneCommand(scene, invocation, {

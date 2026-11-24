@@ -61,9 +61,10 @@ never repeats it. This rule holds only what is true inside this repository.
   along a closed-form path. This is how `throw`, `pickUp`, `push` and `carry` work, and
   it is not interaction between actors.
 - The sample is a builder callback, `sample(stage)`, which the consumer passes to
-  `scene`. A sample that called `scene` itself would import the root entry and close the
-  cycle named below; this way an item imports nothing for its sample, and built-ins and
-  a user's items are written the same way. A sample passes definitions, never names.
+  `scene`. A sample that called `scene` itself would import `scene/scene.ts`, which
+  loads the built-in index, and close the cycle named below; this way an item imports
+  nothing for its sample, and built-ins and a user's items are written the same way. A
+  sample passes definitions, never names.
 - The root entry exports the `define…` functions, the definition and parameter types,
   and the built-in maps. The individual built-in definitions are not root exports.
 
@@ -168,17 +169,20 @@ never repeats it. This rule holds only what is true inside this repository.
   byte-identical to a fresh one; nothing registers itself on import, because the package
   declares no side effects. The script writes the text Prettier would leave, so the
   format check and the staleness test agree.
-- Built-in items use only what the root entry exports, and import it from there
-  (`../../index.js`): the lint rule for `src/vocabulary/**` rejects every other module
-  of `src/`. That closes a cycle, root entry → `scene/builtins.ts` → index → item → root
-  entry, and an item calls `define…` as it loads, so two orderings hold it up.
-  `scene/builtins.ts` imports `./define.js` before the index, and `src/index.ts`
-  re-exports `./scene/define.js` before `./scene/builtins.js`; a module runner that
-  fills an entry's exports as it goes, as the test runner does, otherwise hands an item
-  a root entry without `define…` yet. For the same reason no test or script imports an
-  item module directly: it reaches an item through the maps, or through another item's
-  import. An item builds its sample lazily, as a method, so the sample may name the item
-  itself and other items' definitions.
+- Built-in items use only what the root entry exports, and import each name from the
+  module `src/index.ts` re-exports it from (`defineProp` from `../../scene/define.js`,
+  `Stage` from `../../scene/handles.js`), never from the root entry. The root entry,
+  `scene/scene.ts` and `scene/builtins.ts` load the built-in index, so an item that
+  imported one of them would close a cycle (root entry → `scene/builtins.ts` → index →
+  item) that loads only under a particular import order; the lint rule for
+  `src/vocabulary/**` rejects those three, the built-in index and `src/internal/`. A
+  specifier cannot tell `defineProp` from a private export of the same module, so
+  `tests/vocabulary-imports.test.ts` checks, for every item, that each name is a root
+  export taken from its defining module, a value only where the root exports a value; it
+  also walks the items' run-time imports and fails if they reach the index,
+  `scene/builtins.ts` or the root entry. Nothing depends on import order: an item module
+  can be imported on its own. An item builds its sample lazily, as a method, so the
+  sample may name the item itself and other items' definitions.
 - An item's `ActionDefinition` annotation states its marks, `never` when it has none:
   the type's own default is `string`, which would type every `a.do("name")` as a span
   with any mark.

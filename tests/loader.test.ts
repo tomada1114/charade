@@ -27,6 +27,7 @@ import {
   commonJSScope,
   loadScene,
   packageNameOf,
+  SceneFailedError,
   sceneFrom,
 } from "../src/export/loader.js";
 import { scene } from "../src/index.js";
@@ -505,6 +506,25 @@ describe("loadScene", () => {
       importModule: () => Promise.resolve({ default: built }),
     });
     expect(notices).toHaveLength(1);
+  });
+
+  it("keeps the object a scene's build threw as the cause", async () => {
+    const boom = new Error("thrown by the build");
+    const failure: unknown = await loadScene("/s/scene.ts", {
+      notice: () => undefined,
+      install,
+      exists: () => true,
+      localVersion: () => undefined,
+      importModule: () =>
+        new Promise(() => {
+          scene(() => {
+            throw boom;
+          });
+        }),
+    }).catch((error: unknown) => error);
+    expect(failure).toBeInstanceOf(SceneFailedError);
+    expect(failure).toMatchObject({ code: "ERR_LOAD_FAILED" });
+    expect(failure instanceof SceneFailedError ? failure.cause : undefined).toBe(boom);
   });
 
   it("translates an import failure", async () => {
