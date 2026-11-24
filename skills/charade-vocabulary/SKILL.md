@@ -147,9 +147,11 @@ parameter allows. `define…` checks both when it runs; the types do not.
   `move(to, { at, duration, arc })`, with `at` in the action's time.
 - Leave alone the joints of an action yours should compose with, and end in a pose the
   next action can start from.
-- A scene may run your action over an open-ended one such as `stand`. A pose that has
-  ended gives way to what runs beneath it, so let each pose last until the next one on
-  its joints has arrived: `duration` up to the next pose's start plus its `blend`.
+- A scene may run your action inside a bounded one, such as a `stand` with a `duration`.
+  There a pose that has ended gives way to what runs beneath it, so let each pose last
+  until the next one on its joints has arrived: `duration` up to the next pose's start
+  plus its `blend`. Over an open-ended `stand` a pose that ends is held instead, and the
+  stand does not take those joints back.
 - Acting is timing: wind up before a big move (`anticipation`), overshoot after it
   (`followThrough`), let the head trail the body by a beat, hold the end. Both options
   go past the pose, so keep them off a joint resting on its limit.

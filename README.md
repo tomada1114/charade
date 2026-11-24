@@ -383,14 +383,16 @@ export default scene((stage) => {
   it `distance` along the ground (0 strains and gets nowhere; `by: "lever"` bears down
   on a lever), and `carry` walks off with it in the arms or, `by: "cart"`, on a cart the
   scene moves over the times the returned marks give. `stand` breathes and blinks to the
-  end of the scene without lengthening it, so it is the last call on an actor that has
-  nothing more to do: an open-ended `stand` shows through wherever a later call has
-  ended, so started first it would stand a seated figure back up. `walk` and `run` take
-  the actor `distance` along the ground from `from` and leave it there. A prop has
-  `place`, `hold` (it rides a hand or a foot) and `move` (a straight or arced path),
-  which is how your own action moves one. A placed prop draws behind the actor;
-  `place(point, { layer: "front" })` puts it in front, as for a desk the figure sits
-  behind.
+  end of the scene without lengthening it. An open-ended `stand` lasts until a later
+  call takes its joints, which then keep the pose that call leaves: a figure that sat
+  down stays seated. Call `stand` again to idle again. A `stand` with a `duration` is a
+  call like any other: one started inside it is an override, so
+  `do("stand", { duration: 5 })` then `do("sitDown", { at: 0.5 })` stands back up.
+  `walk` and `run` take the actor `distance` along the ground from `from` and leave it
+  there. A prop has `place`, `hold` (it rides a hand or a foot) and `move` (a straight
+  or arced path), which is how your own action moves one. A placed prop draws behind the
+  actor; `place(point, { layer: "front" })` puts it in front, as for a desk the figure
+  sits behind.
 - The built-in backdrops are `plain`, `court`, `office`, `hill` and `night`:
   `row.backdrop("night")` draws behind that row only, and each paints its whole row at
   every canvas shape and row count. A drawing function's last argument is a

@@ -498,15 +498,122 @@ describe("the composed pose", () => {
     expect(at(900).neck).toBeCloseTo(0.2, 12);
   });
 
-  it("runs an open-ended cycle to the end of the scene, under a later pose", () => {
+  /** A sway of the back that never ends: both channels 0 on the second, 0.2 half way. */
+  function sway(a: Actor, options: { at?: number; duration?: number } = {}): void {
+    a.cycle(
+      [
+        { at: 0, channels: { spine: 0, chest: 0 } },
+        { at: 0.5, channels: { spine: 0.2, chest: 0.2 } },
+      ],
+      { period: 1, ...options },
+    );
+  }
+
+  it("keeps the pose a later call ended on over an open-ended cycle, which runs on in its other channels", () => {
     const at = play((a) => {
-      a.cycle([{ at: 0, channels: { spine: 0.1, chest: 0.2 } }], { period: 1 });
+      sway(a);
       a.pose({ spine: 0.5 }, { at: 2, blend: 0.1, duration: 1 });
     });
-    expect(at(250)).toMatchObject({ spine: 0.5, chest: 0.2 });
-    // The pose gives way to the cycle still running beneath it.
-    expect(at(320).spine).toBeCloseTo(0.1, 12);
-    expect(at(1000)).toMatchObject({ spine: 0.1, chest: 0.2 });
+    expect(at(150).spine).toBeCloseTo(0.2, 12);
+    expect(at(250).spine).toBe(0.5);
+    for (const frame of [299, 300, 301, 305, 320, 350, 975, 1000]) {
+      expect(at(frame).spine).toBe(0.5);
+    }
+    expect(at(350).chest).toBeCloseTo(0.2, 12);
+    expect(at(975).chest).toBeCloseTo(0.1, 12);
+    expect(at(1000).chest).toBeCloseTo(0, 12);
+  });
+
+  it("blends a second pose in from the first over an open-ended cycle, without a dip towards it", () => {
+    const at = play((a) => {
+      sway(a);
+      a.pose({ spine: 0.5 }, { at: 2, blend: 0.1, duration: 1 });
+      a.pose({ spine: 0.9 }, { at: 4, duration: 1 });
+    });
+    expect(at(400).spine).toBe(0.5);
+    expect(at(410).spine).toBeCloseTo(0.7, 12);
+    expect(at(420).spine).toBe(0.9);
+    expect(at(1000).spine).toBe(0.9);
+  });
+
+  it("gives a channel back to a bounded cycle still running beneath an ended pose", () => {
+    const at = play((a) => {
+      sway(a, { duration: 5 });
+      a.pose({ spine: 0.5 }, { at: 2, blend: 0.1, duration: 1 });
+    });
+    expect(at(300).spine).toBe(0.5);
+    expect(at(305).spine).toBeCloseTo(0.25, 2);
+    expect(at(350).spine).toBeCloseTo(0.2, 12);
+    expect(at(450).spine).toBeCloseTo(0.2, 12);
+  });
+
+  it("lets an earlier-recorded open-ended cycle that starts after a pose ended take over from it", () => {
+    const at = play((a) => {
+      a.cycle([{ at: 0, channels: { spine: 0.1 } }], { period: 1, at: 4 });
+      a.pose({ spine: 0.5 }, { at: 1, duration: 1 });
+    });
+    expect(at(300).spine).toBe(0.5);
+    expect(at(410).spine).toBeCloseTo(0.3, 12);
+    expect(at(1000).spine).toBeCloseTo(0.1, 12);
+  });
+
+  it("leaves an open-ended cycle its channel when the pose that ended over it yielded to a bounded one", () => {
+    const at = play((a) => {
+      a.pose({ spine: 1 }, { duration: 3 });
+      a.cycle([{ at: 0, channels: { spine: 0.1 } }], { period: 1, at: 0 });
+      a.pose({ spine: 2 }, { at: 1, duration: 1 });
+    });
+    expect(at(200).spine).toBe(2);
+    expect(at(210).spine).toBeCloseTo(1.05, 12);
+    expect(at(220).spine).toBeCloseTo(0.1, 12);
+    expect(at(1000).spine).toBeCloseTo(0.1, 12);
+  });
+
+  it("still fades an ended pose back to an open-ended cycle in add mode", () => {
+    const at = play((a) => {
+      a.cycle([{ at: 0, channels: { spine: 0.1 } }], { period: 1, mode: "add" });
+      a.pose({ spine: 0.5 }, { at: 1, duration: 1 });
+    });
+    expect(at(200).spine).toBe(0.5);
+    expect(at(220).spine).toBeCloseTo(0.6, 12);
+    expect(at(1000).spine).toBeCloseTo(0.6, 12);
+  });
+
+  it("holds an ended pose over an open-ended cycle, under an open-ended sway in add mode", () => {
+    const at = play((a) => {
+      a.cycle([{ at: 0, channels: { spine: 0.1 } }], { period: 1 });
+      a.cycle([{ at: 0, channels: { spine: 0.05 } }], {
+        period: 1,
+        at: 0,
+        mode: "add",
+      });
+      a.pose({ spine: 0.5 }, { at: 1, duration: 1 });
+    });
+    expect(at(150).spine).toBeCloseTo(0.5, 12);
+    expect(at(200).spine).toBeCloseTo(0.5, 12);
+    expect(at(210).spine).toBeCloseTo(0.525, 12);
+    expect(at(250).spine).toBeCloseTo(0.55, 12);
+    expect(at(1000).spine).toBeCloseTo(0.55, 12);
+  });
+
+  it("keeps a held hand on its point while the open-ended cycle it ended over still moves the back", () => {
+    const at = play((a) => {
+      a.cycle(
+        [
+          { at: 0, channels: { spine: 0, shoulderR: 0, elbowR: 0 } },
+          { at: 0.5, channels: { spine: 0.3, shoulderR: 0.4, elbowR: 0.2 } },
+        ],
+        { period: 1 },
+      );
+      a.reach("handR", { x: 0.2, y: 0.6 }, { at: 1, duration: 1 });
+    });
+    expect(at(250).spine).toBeCloseTo(0.3, 12);
+    expect(at(300).spine).toBeCloseTo(0, 12);
+    for (const frame of [199, 200, 225, 250, 300, 975]) {
+      const hand = forwardKinematics(at(frame)).handR;
+      expect(hand.x).toBeCloseTo(0.2, 9);
+      expect(hand.y).toBeCloseTo(0.6, 9);
+    }
   });
 
   it("moves nothing when a drive's function gives no finite number", () => {
@@ -597,6 +704,20 @@ describe("continuity", () => {
       (a) => {
         a.pose({ shoulderR: 1 }, { duration: 3 });
         a.pose({ shoulderR: 2 }, { at: 1, duration: 1 });
+      },
+    ],
+    [
+      "poses that end over an open-ended cycle",
+      (a) => {
+        a.cycle(
+          [
+            { at: 0, channels: { spine: 0, chest: 0 } },
+            { at: 0.7, channels: { spine: 0.3, chest: 0.3 } },
+          ],
+          { period: 1.3 },
+        );
+        a.pose({ spine: 0.9 }, { at: 1, followThrough: 0.2, duration: 0.6 });
+        a.pose({ spine: 0.1, chest: 0.6 }, { at: 2.5, duration: 0.3 });
       },
     ],
     [
@@ -1139,8 +1260,9 @@ function blendOver(beneath: number, value: number, weight: number): number {
 }
 
 /**
- * The composition as it was before an ended segment's yielding was found in one pass:
- * each ended segment asks every earlier-recorded one, which is plain to read and grows
+ * The composition written without the one-pass bookkeeping: each ended segment asks
+ * every earlier-recorded one whether it yields, and each open-ended one asks every
+ * later-recorded one whether it has taken a channel, which is plain to read and grows
  * with the square of the segment count. Poses and reaches only; `now` in frame units.
  */
 function referencePose(
@@ -1198,6 +1320,37 @@ function referencePose(
       holder.set(name, layer);
     }
   }
+  /**
+   * Whether layer `index`, ending at `end`, fades back out on `name`; with `bounded`,
+   * to an earlier segment that has an end.
+   */
+  const yields = (
+    index: number,
+    end: number,
+    name: keyof Pose,
+    bounded = false,
+  ): boolean =>
+    layers
+      .slice(0, index)
+      .some(
+        (lower) =>
+          !(lower.end === null && (bounded || lower.mode === "replace")) &&
+          lower.names.includes(name) &&
+          lower.start < end &&
+          (lower.end === null || lower.end > end),
+      );
+  /** Whether a later-recorded segment has ended on `name` over open-ended layer `index`. */
+  const lost = (index: number, name: keyof Pose): boolean =>
+    layers.some(
+      (upper, above) =>
+        above > index &&
+        upper.mode === "replace" &&
+        upper.end !== null &&
+        upper.names.includes(name) &&
+        upper.end > (layers[index]?.start ?? Number.NaN) &&
+        upper.end <= now &&
+        !yields(above, upper.end, name, true),
+    );
   const moved = new Set<keyof Pose>();
   layers.forEach((layer, index) => {
     if (now < layer.start) {
@@ -1207,6 +1360,9 @@ function referencePose(
     if (end === null || now < end) {
       const weight = arrival(layer, now - layer.start);
       for (const [name, value] of layer.evaluate(pose)) {
+        if (end === null && layer.mode === "replace" && lost(index, name)) {
+          continue;
+        }
         pose[name] =
           layer.mode === "add"
             ? pose[name] + weight * value
@@ -1219,19 +1375,10 @@ function referencePose(
     if (fade === 0 && !layer.solved) {
       return;
     }
-    const yields = (name: keyof Pose): boolean =>
-      layers
-        .slice(0, index)
-        .some(
-          (lower) =>
-            lower.names.includes(name) &&
-            lower.start < end &&
-            (lower.end === null || lower.end > end),
-        );
     for (const [name, value] of layer.evaluate(pose)) {
       if (layer.mode === "add") {
         pose[name] += fade * value;
-      } else if (yields(name)) {
+      } else if (yields(index, end, name)) {
         pose[name] = blendOver(pose[name], value, fade);
       } else if (holder.get(name) === layer && !moved.has(name)) {
         pose[name] = value;
@@ -1436,7 +1583,7 @@ describe("a track of many segments", () => {
     expect(pose).toEqual(referencePose(segments, fps, now));
   });
 
-  it("fades an ended pose back to the one beneath it past a hand-built time that is not a number", () => {
+  it("fades an ended pose back to the bounded one beneath it past a hand-built time that is not a number", () => {
     const phases = {
       kind: "pose",
       mode: "replace",
@@ -1445,7 +1592,7 @@ describe("a track of many segments", () => {
       followThrough: 0,
     } as const;
     const segments: RecordedSegment[] = [
-      { start: 0, end: null, data: { ...phases, channels: { spine: 0.5 } } },
+      { start: 0, end: 30 * TENTH, data: { ...phases, channels: { spine: 0.5 } } },
       { start: 0, end: Number.NaN, data: { ...phases, channels: { spine: -0.4 } } },
       { start: Number.NaN, end: null, data: { ...phases, channels: { neck: 0.3 } } },
       { start: 0, end: 10 * TENTH, data: { ...phases, channels: { spine: 0.2 } } },
@@ -1456,6 +1603,34 @@ describe("a track of many segments", () => {
     const pose = composed(segments, fps, now);
     expect(pose.spine).toBeCloseTo(0.35, 12);
     expect(pose).toEqual(referencePose(segments, fps, now));
+  });
+
+  it("holds an ended pose over an open-ended one past a hand-built time that is not a number", () => {
+    const phases = {
+      kind: "pose",
+      mode: "replace",
+      anticipation: 0,
+      blend: TENTH,
+      followThrough: 0,
+    } as const;
+    const segments: RecordedSegment[] = [
+      { start: 0, end: null, data: { ...phases, channels: { spine: 0.5, neck: 0.1 } } },
+      { start: Number.NaN, end: null, data: { ...phases, channels: { chest: 0.3 } } },
+      { start: 0, end: Number.NaN, data: { ...phases, channels: { neck: -0.4 } } },
+      { start: 0, end: 10 * TENTH, data: { ...phases, channels: { spine: 0.2 } } },
+      { start: 0, end: 5 * TENTH, data: { ...phases, channels: { chest: 0.6 } } },
+    ];
+    const fps = 30;
+    for (const now of [
+      10 * TENTH * fps,
+      (10 * TENTH + TENTH / 2) * fps,
+      40 * TENTH * fps,
+    ]) {
+      const pose = composed(segments, fps, now);
+      // A pose with no end that is a number never takes the neck from the first.
+      expect(pose).toMatchObject({ spine: 0.2, neck: 0.1 });
+      expect(pose).toEqual(referencePose(segments, fps, now));
+    }
   });
 
   it("composes the same segments at another frame rate", () => {

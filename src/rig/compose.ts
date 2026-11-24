@@ -275,70 +275,151 @@ function countBelow(sorted: readonly number[], value: number): number {
   return low;
 }
 
-/** One channel's segments, for asking the latest end among those that start before a time. */
-interface Running {
-  /** The start of every segment that names the channel, ascending once all are in. */
-  readonly starts: number[];
-  /** A prefix-maximum tree over `starts`, holding the ends of the segments put in so far. */
-  ends: number[];
+/**
+ * A prefix-maximum tree over ascending `keys`: each value is put in at its key, and the
+ * highest value among the keys below a bound is read back, either in a logarithm.
+ */
+interface Highest {
+  /** Ascending once every key is in. */
+  readonly keys: number[];
+  tree: number[];
+}
+
+function seal(highest: Highest): void {
+  highest.keys.sort((a, b) => a - b);
+  highest.tree = highest.keys.map(() => -Infinity);
+}
+
+/** Puts `value` in at `key`, which is one of the keys. */
+function raise({ keys, tree }: Highest, key: number, value: number): void {
+  for (
+    let node = countBelow(keys, key) + 1;
+    node <= tree.length;
+    node += node & -node
+  ) {
+    tree[node - 1] = Math.max(tree[node - 1] ?? -Infinity, value);
+  }
+}
+
+/** The highest value put in at a key below `bound`. */
+function highestBelow({ keys, tree }: Highest, bound: number): number {
+  let highest = -Infinity;
+  for (let node = countBelow(keys, bound); node > 0; node -= node & -node) {
+    highest = Math.max(highest, tree[node - 1] ?? -Infinity);
+  }
+  return highest;
 }
 
 /**
  * Per layer, the channels on which an earlier-recorded segment was still running when
  * the layer ended; `undefined` where there is none, and for a layer that is never held.
+ * Only the earlier layers `counts` accepts are counted; an open-ended `replace` layer
+ * is a base and never is: nothing yields to it.
  * It is one pass in recorded order with a logarithm per channel a layer names: asking
  * each layer about every earlier one grows with the square of a walk's steps.
  */
 function yieldingChannels(
   layers: readonly Layer[],
+  counts: (layer: Layer) => boolean,
 ): readonly (ReadonlySet<ChannelName> | undefined)[] {
   // A hand-built time that is not a number is never compared as earlier or later; kept
-  // in the tree it would unsort `starts` and turn every maximum it meets into NaN.
-  const timed = layers.map(
-    (layer) => !Number.isNaN(layer.start) && !Number.isNaN(layer.end ?? 0),
+  // in the tree it would unsort the keys and turn every maximum it meets into NaN.
+  const entered = layers.map(
+    (layer) =>
+      !Number.isNaN(layer.start) &&
+      !Number.isNaN(layer.end ?? 0) &&
+      (layer.end !== null || layer.mode === "add") &&
+      counts(layer),
   );
-  const channels = new Map<ChannelName, Running>();
+  // Per channel, the ends of the segments recorded so far, keyed by their starts.
+  const channels = new Map<ChannelName, Highest>();
   const named = layers.map((layer, index) =>
-    layer.names.map((name): [ChannelName, Running] => {
-      const running = channels.get(name) ?? { starts: [], ends: [] };
+    layer.names.map((name): [ChannelName, Highest] => {
+      const running = channels.get(name) ?? { keys: [], tree: [] };
       channels.set(name, running);
-      if (timed[index] === true) {
-        running.starts.push(layer.start);
+      if (entered[index] === true) {
+        running.keys.push(layer.start);
       }
       return [name, running];
     }),
   );
   for (const running of channels.values()) {
-    running.starts.sort((a, b) => a - b);
-    running.ends = running.starts.map(() => -Infinity);
+    seal(running);
   }
   return layers.map((layer, index) => {
     const { end } = layer;
     const yielding = new Set<ChannelName>();
-    for (const [name, { starts, ends }] of named[index] ?? []) {
-      if (end !== null && layer.mode === "replace") {
-        let latest = -Infinity;
-        for (let node = countBelow(starts, end); node > 0; node -= node & -node) {
-          latest = Math.max(latest, ends[node - 1] ?? -Infinity);
-        }
-        if (latest > end) {
-          yielding.add(name);
-        }
-      }
-      if (timed[index] !== true) {
-        continue;
-      }
-      const until = end ?? Infinity;
-      for (
-        let node = countBelow(starts, layer.start) + 1;
-        node <= ends.length;
-        node += node & -node
+    for (const [name, running] of named[index] ?? []) {
+      if (
+        end !== null &&
+        layer.mode === "replace" &&
+        highestBelow(running, end) > end
       ) {
-        ends[node - 1] = Math.max(ends[node - 1] ?? -Infinity, until);
+        yielding.add(name);
+      }
+      if (entered[index] === true) {
+        raise(running, layer.start, end ?? Infinity);
       }
     }
     return yielding.size === 0 ? undefined : yielding;
   });
+}
+
+/**
+ * Per open-ended `replace` layer, when it loses each channel for good: the earliest
+ * end, after its start, of a later-recorded bounded `replace` layer that names the
+ * channel and does not yield on it to a bounded one: yielding to an open-ended `add`
+ * only fades it in over the sway, which still runs on. `undefined` for a layer that
+ * loses none. It is one pass in reverse recorded order, with a logarithm per channel a
+ * layer names.
+ */
+function lostChannels(
+  layers: readonly Layer[],
+  yieldingToBounded: readonly (ReadonlySet<ChannelName> | undefined)[],
+): readonly (ReadonlyMap<ChannelName, number> | undefined)[] {
+  const takes = (layer: Layer, index: number, name: ChannelName): boolean =>
+    layer.mode === "replace" &&
+    layer.end !== null &&
+    !Number.isNaN(layer.end) &&
+    yieldingToBounded[index]?.has(name) !== true;
+  // Per channel, the ends of the layers that take it, negated as key and as value: the
+  // highest below a negated start is then the earliest end after that start.
+  const channels = new Map<ChannelName, Highest>();
+  const named = layers.map((layer, index) =>
+    layer.names.map((name): [ChannelName, Highest] => {
+      const ending = channels.get(name) ?? { keys: [], tree: [] };
+      channels.set(name, ending);
+      if (takes(layer, index, name)) {
+        ending.keys.push(-(layer.end ?? 0));
+      }
+      return [name, ending];
+    }),
+  );
+  for (const ending of channels.values()) {
+    seal(ending);
+  }
+  const lost: (ReadonlyMap<ChannelName, number> | undefined)[] = layers.map(
+    () => undefined,
+  );
+  for (const [index, layer] of [...layers.entries()].reverse()) {
+    const open =
+      layer.mode === "replace" && layer.end === null && !Number.isNaN(layer.start);
+    const gone = new Map<ChannelName, number>();
+    for (const [name, ending] of named[index] ?? []) {
+      if (open) {
+        const earliest = -highestBelow(ending, -layer.start);
+        if (earliest !== Infinity) {
+          gone.set(name, earliest);
+        }
+      } else if (takes(layer, index, name)) {
+        raise(ending, -(layer.end ?? 0), -(layer.end ?? 0));
+      }
+    }
+    if (gone.size > 0) {
+      lost[index] = gone;
+    }
+  }
+  return lost;
 }
 
 /** A layer that has an end. */
@@ -357,6 +438,8 @@ interface Layers {
   readonly held: readonly Bounded[];
   /** Per layer, the channels it blends back out on once it has ended. */
   readonly yielding: readonly (ReadonlySet<ChannelName> | undefined)[];
+  /** Per open-ended `replace` layer, when it stops moving each channel it has lost. */
+  readonly lost: readonly (ReadonlyMap<ChannelName, number> | undefined)[];
 }
 
 /**
@@ -372,6 +455,7 @@ function layersOf(segments: readonly TimelineSegment[], fps: number): Layers {
     return known;
   }
   const layers = segments.flatMap((segment) => layerOf(segment, fps) ?? []);
+  const yielding = yieldingChannels(layers, () => true);
   const made: Layers = {
     fps,
     count: segments.length,
@@ -382,7 +466,11 @@ function layersOf(segments: readonly TimelineSegment[], fps: number): Layers {
           layer.mode === "replace" && layer.end !== null && !Number.isNaN(layer.end),
       )
       .sort((a, b) => a.end - b.end),
-    yielding: yieldingChannels(layers),
+    yielding,
+    lost: lostChannels(
+      layers,
+      yieldingChannels(layers, (layer) => layer.end !== null),
+    ),
   };
   prepared.set(segments, made);
   return made;
@@ -395,8 +483,10 @@ function layersOf(segments: readonly TimelineSegment[], fps: number): Layers {
  * Ended `replace` segments are held, later end over earlier, so a sequence keeps its
  * last pose. Over them the running segments apply in the order they were recorded:
  * the later one wins for the channels it names, by its arrival weight; `add` adds.
- * A segment that ends while an earlier-recorded one is still running on a channel
- * fades back to it over its own blend time; an `add` segment always fades.
+ * A segment that ends while an earlier-recorded bounded one is still running on a
+ * channel fades back to it over its own blend time; an `add` segment always fades.
+ * An open-ended `replace` segment is not faded back to: a later-recorded one that ends
+ * while it runs is held over it, and it stops moving that channel from that end on.
  */
 export function poseAtFrame(
   timeline: Timeline,
@@ -430,7 +520,7 @@ export function poseAtInstant(
       occurrence: track.occurrence,
     }),
   };
-  const { layers, held, yielding } = layersOf(track.segments, fps);
+  const { layers, held, yielding, lost } = layersOf(track.segments, fps);
   const pose: MutablePose = { ...REST_POSE };
 
   /** Per channel, the held segment whose value is the base. */
@@ -455,7 +545,12 @@ export function poseAtInstant(
     const { end } = layer;
     if (end === null || now < end) {
       const weight = arrival(layer, now - layer.start);
+      const gone = lost[index];
       for (const [name, value] of layer.evaluate(now, pose, instant)) {
+        // The segment held from that end on is the base; this one no longer moves it.
+        if (gone !== undefined && now >= (gone.get(name) ?? Infinity)) {
+          continue;
+        }
         pose[name] =
           layer.mode === "add"
             ? pose[name] + weight * value
@@ -469,7 +564,7 @@ export function poseAtInstant(
     if (fade === 0 && !layer.solved) {
       return;
     }
-    // Whether an earlier-recorded segment was still running on a channel when this one
+    // Whether an earlier-recorded bounded segment was still running on a channel when this one
     // ended: decided at the end, so the fade goes on if that one ends meanwhile.
     const yields = yielding[index];
     // Most ended reaches of a walk neither yield nor hold a channel: solving one moves nothing.
