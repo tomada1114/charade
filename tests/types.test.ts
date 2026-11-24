@@ -981,6 +981,10 @@ describe("using definitions", () => {
       expectTypeOf(
         actor.do("sitDown", { seat: 0.3, mood: "dejected" }),
       ).toEqualTypeOf<Span>();
+      expectTypeOf(actor.do("sitDown", { from: 1 })).toEqualTypeOf<Span>();
+      expectTypeOf(
+        actor.do("throw", { ball, from: 1, to: { x: 1.6, y: 0 } }),
+      ).toEqualTypeOf<Span<"release">>();
       expectTypeOf(
         actor.do("slump", { depth: 0.5, duration: 2 }),
       ).toEqualTypeOf<Span>();

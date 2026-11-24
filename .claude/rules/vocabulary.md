@@ -287,8 +287,11 @@ These set the conventions the later items follow.
   `from` at once and leave it on `from + distance`; a second one names where the first
   ended. `point` takes `from` for the same reason: its aim is an angle from the
   shoulder. `stand`, `cheer` and `think` move no root `x` and plant no foot by `reach`,
-  so they play wherever the actor is. `sitDown` and `throw` still plant their feet
-  around 0; the placement call is what removes `from`.
+  so they play wherever the actor is. `sitDown` and `throw` plant their feet, so they
+  take `from` too: every hip and foot `x` is counted from it, `sitDown`'s seat goes at
+  `from − 0.24`, and `throw`'s `to` stays a point of the row, as `point`'s does (a
+  dejected toss lands 0.55 of the way from `from` to it). The placement call is what
+  removes `from`.
 - `walk` and `run` share one recorder, `stride` in `actions/walk.ts`, driven by a `Gait`
   of numbers; a mood is another `Gait`. A foot on the ground is a `reach` on its spot
   from its landing until its next step is under way, so it cannot slide; its heel peels

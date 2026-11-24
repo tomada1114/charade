@@ -11,6 +11,14 @@ const sitDownParams = {
     unit: "units",
     doc: "The height of the seat's top above the ground; the default is a box's height.",
   },
+  from: {
+    type: "number",
+    default: 0,
+    min: -20,
+    max: 20,
+    unit: "units",
+    doc: "The x the actor stands at: 0 until a walk or run has moved it, then where that one ended (its from + distance).",
+  },
 } as const;
 
 /** How far behind the feet the hips come down: the middle of the seat. */
@@ -42,10 +50,10 @@ export const sitDownAction: ActionDefinition<typeof sitDownParams, never> =
   defineAction({
     name: "sitDown",
     description:
-      "Sits down on a seat behind the actor and stays seated: the hips go back and down while the feet stay planted, the body leans forward to balance, then settles upright with the hands on the thighs. Put a seat under it, such as a box placed 0.24 behind the actor; seat is its height. The mood dejected drops the last of the way and ends hunched, head hanging.",
+      "Sits down on a seat behind the actor and stays seated: the hips go back and down while the feet stay planted, the body leans forward to balance, then settles upright with the hands on the thighs. Put a seat under it, such as a box placed 0.24 behind the actor, at from - 0.24; seat is its height. The feet stay at from, which says where the actor stands after a walk. The mood dejected drops the last of the way and ends hunched, head hanging.",
     params: sitDownParams,
     moods: ["dejected"],
-    build(clip, { seat }) {
+    build(clip, { seat, from }) {
       const heavy = clip.mood === "dejected";
       // Lean forward, lower the hips, settle. A dejected sit lets go and drops, then sags.
       const [lean, lower, settle] = heavy ? [0.45, 0.4, 0.75] : [0.3, 0.5, 0.35];
@@ -63,9 +71,11 @@ export const sitDownAction: ActionDefinition<typeof sitDownParams, never> =
       const footL = Math.min(-0.04, furthest);
       const footR = Math.min(0.04, furthest);
 
+      // At `from` at once, as a walk leaves it, so the hips do not slide in over the feet.
+      clip.pose({ pelvisX: from }, { at: 0, blend: 0 });
       clip.pose(
         {
-          pelvisX: leanX,
+          pelvisX: from + leanX,
           pelvisY: leanY,
           pelvis: 0.2,
           spine: 0.1,
@@ -81,7 +91,7 @@ export const sitDownAction: ActionDefinition<typeof sitDownParams, never> =
       );
       clip.pose(
         {
-          pelvisX: -BACK,
+          pelvisX: from - BACK,
           pelvisY: hips - STANDING,
           pelvis: 0.3,
           spine: heavy ? 0.3 : 0.15,
@@ -135,8 +145,8 @@ export const sitDownAction: ActionDefinition<typeof sitDownParams, never> =
       // Recorded last: a reach is solved over what was recorded before it, so the feet
       // stay planted while the poses above carry the hips back and down.
       const planted = { at: 0, blend: 0.1 * k, duration: natural * k };
-      clip.reach("footL", { x: footL, y: 0 }, planted);
-      clip.reach("footR", { x: footR, y: 0 }, planted);
+      clip.reach("footL", { x: from + footL, y: 0 }, planted);
+      clip.reach("footR", { x: from + footR, y: 0 }, planted);
     },
     sample(stage: Stage): void {
       stage.prop(boxProp).place({ x: -BACK, y: 0 });

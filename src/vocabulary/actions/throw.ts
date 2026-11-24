@@ -10,7 +10,7 @@ const throwParams = {
   to: {
     type: "point",
     default: { x: 1, y: 0 },
-    doc: "Where the ball comes down, in row units.",
+    doc: "Where the ball comes down: a point of the row, not counted from from, so after a walk it names a spot ahead of where the walk ended.",
   },
   loft: {
     type: "number",
@@ -24,6 +24,14 @@ const throwParams = {
     type: "boolean",
     default: true,
     doc: "Whether the ball hops once more, 0.12 further on, after it comes down; turn it off when something catches it.",
+  },
+  from: {
+    type: "number",
+    default: 0,
+    min: -20,
+    max: 20,
+    unit: "units",
+    doc: "The x the actor stands at: 0 until a walk or run has moved it, then where that one ended (its from + distance).",
   },
 } as const;
 
@@ -42,11 +50,11 @@ export const throwAction: ActionDefinition<typeof throwParams, "release"> =
   defineAction({
     name: "throw",
     description:
-      "Throws a prop overhand with the near hand: winds up leaning back with the far arm out in front, steps onto the far foot and whips the arm through, then recovers to standing. The prop rides the near hand from the action's start until the mark release, then flies a parabola to to. The mood focused takes aim for longer before the throw; the mood dejected is a weak toss that falls short.",
+      "Throws a prop overhand with the near hand: winds up leaning back with the far arm out in front, steps onto the far foot and whips the arm through, then recovers to standing. The prop rides the near hand from the action's start until the mark release, then flies a parabola to to, a point of the row. The feet stay at from, which says where the actor stands after a walk. The mood focused takes aim for longer before the throw; the mood dejected is a weak toss that falls short.",
     params: throwParams,
     marks: ["release"],
     moods: ["focused", "dejected"],
-    build(clip, { ball, to, loft, bounce }) {
+    build(clip, { ball, to, loft, bounce, from }) {
       const focused = clip.mood === "focused";
       const weak = clip.mood === "dejected";
       // Wind up (and aim), whip the arm through, hold the follow-through, recover.
@@ -61,9 +69,11 @@ export const throwAction: ActionDefinition<typeof throwParams, "release"> =
 
       // Lowered into the palm, so a ball sits in the hand rather than on top of it.
       ball.hold("handR", { at: 0, offset: { x: 0, y: -0.05 } });
+      // At `from` at once, as a walk leaves it, so the hips do not slide in over the feet.
+      clip.pose({ pelvisX: from }, { at: 0, blend: 0 });
       clip.pose(
         {
-          pelvisX: -0.06 * s,
+          pelvisX: from - 0.06 * s,
           pelvis: -0.15 * s,
           spine: -0.15 * s,
           chest: -0.2 * s,
@@ -79,7 +89,7 @@ export const throwAction: ActionDefinition<typeof throwParams, "release"> =
       );
       clip.pose(
         {
-          pelvisX: 0.12 * s,
+          pelvisX: from + 0.12 * s,
           pelvisY: -0.03 * s,
           pelvis: 0.2 * s,
           spine: 0.2 * s,
@@ -101,7 +111,7 @@ export const throwAction: ActionDefinition<typeof throwParams, "release"> =
       );
       clip.pose(
         {
-          pelvisX: 0,
+          pelvisX: from,
           pelvisY: 0,
           pelvis: 0,
           spine: weak ? 0.2 : 0,
@@ -120,31 +130,35 @@ export const throwAction: ActionDefinition<typeof throwParams, "release"> =
       // The feet last, so they are solved over the poses above: the near foot stays
       // where it stands, the far foot lifts, steps out and comes back.
       const step = 0.22 * s;
-      clip.reach("footR", { x: 0, y: 0 }, { at: 0, blend: 0.1 * k, duration: thrown });
+      clip.reach(
+        "footR",
+        { x: from, y: 0 },
+        { at: 0, blend: 0.1 * k, duration: thrown },
+      );
       // The near heel comes up as the weight goes onto the far foot.
       clip.reach(
         "footR",
-        { x: 0, y: 0.05 * s },
+        { x: from, y: 0.05 * s },
         { at: thrown, blend: whip * k, duration: back - thrown },
       );
       clip.reach(
         "footL",
-        { x: 0.06 * s, y: 0.1 * s },
+        { x: from + 0.06 * s, y: 0.1 * s },
         { at: 0, blend: thrown, duration: thrown },
       );
       clip.reach(
         "footL",
-        { x: step, y: 0 },
+        { x: from + step, y: 0 },
         { at: thrown, blend: whip * k * 0.7, duration: back - thrown },
       );
       clip.reach(
         "footL",
-        { x: 0, y: 0 },
+        { x: from, y: 0 },
         { at: back, blend: recover * k, duration: recover * k },
       );
       clip.reach(
         "footR",
-        { x: 0, y: 0 },
+        { x: from, y: 0 },
         { at: back, blend: recover * k, duration: recover * k },
       );
 
@@ -152,12 +166,13 @@ export const throwAction: ActionDefinition<typeof throwParams, "release"> =
       const release = thrown + whip * k * 0.65;
       clip.mark("release", release);
       const arc = weak ? loft * 0.6 : loft;
-      const landing = weak ? { x: to.x * 0.55, y: to.y } : to;
+      const landing = weak ? { x: from + (to.x - from) * 0.55, y: to.y } : to;
       const flight = airTime(arc);
       ball.move(landing, { at: release, duration: flight, arc });
       if (bounce) {
         ball.move(
-          { x: landing.x + 0.12, y: landing.y },
+          // On the way it was thrown, which is backwards when to is behind from.
+          { x: landing.x + (landing.x < from ? -0.12 : 0.12), y: landing.y },
           { at: release + flight, duration: airTime(0.06), arc: 0.06 },
         );
       }
