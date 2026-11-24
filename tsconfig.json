@@ -30,9 +30,22 @@
     // on plain Node before `pnpm install`, so it is authored as `.mjs`.
     // Checking those files here is what makes "typecheck covers scripts" true.
     "allowJs": true,
-    "checkJs": true
+    "checkJs": true,
+
+    // The README's scene imports "charade" as a user's scene does. Resolve it
+    // to the source, so it is type-checked and linted without a build first.
+    "paths": { "charade": ["./src/index.ts"] }
   },
-  "include": ["src", "tests", "scripts", ".claude/skills", "*.ts", "*.mts", "*.mjs"],
+  "include": [
+    "src",
+    "tests",
+    "scripts",
+    ".claude/skills",
+    "docs/media",
+    "*.ts",
+    "*.mts",
+    "*.mjs"
+  ],
   // A `tests/fixtures/` file is malformed on purpose, so type-checking it
   // reports the very defect a test asserts on.
   "exclude": ["tests/fixtures/**"]

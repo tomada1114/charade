@@ -4,6 +4,126 @@
 
 Short 2D animations where stick figures act out an idea — written as code by AI agents.
 
+<video src="https://github.com/tomada1114/charade/raw/main/docs/media/rock.mp4" width="540" controls muted loop playsinline></video>
+
+[Watch the video (`docs/media/rock.mp4`)](https://github.com/tomada1114/charade/raw/main/docs/media/rock.mp4):
+three ways to move a rock. Bare hands get nowhere, a lever shifts it a little, a cart
+takes it away.
+
+This is the whole scene, [`docs/media/rock.ts`](docs/media/rock.ts), written with the
+built-in vocabulary alone:
+
+```ts
+import { scene } from "charade";
+
+export default scene({ rows: 3 }, (stage) => {
+  // Bare hands: heaves at the rock, gets nowhere and gives up.
+  const bare = stage.row(0);
+  bare.backdrop("hill");
+  const boulder = bare.prop("rock");
+  boulder.place({ x: 0.6, y: 0 });
+  const pusher = bare.actor({ name: "pusher" });
+  pusher.wait(0.4);
+  const pushed = pusher.do("push", { prop: boulder, tries: 3, mood: "focused" });
+  bare.effect("sweat", {
+    on: pusher,
+    at: pushed.marks.contact,
+    duration: pushed.end - pushed.marks.contact,
+  });
+  pusher.do("slump", { mood: "dejected" });
+  pusher.express("dejected", { at: pushed.end });
+
+  // A lever: bears down on it and the rock shifts a little.
+  const lever = stage.row(1);
+  lever.backdrop("hill");
+  const rock = lever.prop("rock");
+  rock.place({ x: 1.66, y: 0 });
+  const presser = lever.actor({ name: "presser" });
+  presser.wait(0.4);
+  const pressed = presser.do("push", {
+    prop: rock,
+    by: "lever",
+    distance: 0.15,
+    where: { x: 1.66, y: 0 },
+    grip: { x: -1.41, y: 0.49 },
+    mood: "focused",
+  });
+  lever
+    .prop("lever", {
+      swing: -0.3,
+      swingAt: pressed.marks.heave,
+      swingFor: pressed.marks.stop - pressed.marks.heave,
+    })
+    .place({ x: 1.08, y: 0 });
+  presser.express("happy", {
+    at: pressed.marks.stop,
+    duration: pressed.end - pressed.marks.stop,
+  });
+
+  // A cart: lifts the rock onto it and wheels it away.
+  const cartRow = stage.row(2);
+  cartRow.backdrop("hill");
+  const load = cartRow.prop("rock");
+  load.place({ x: 0.6, y: 0 });
+  const mover = cartRow.actor({ name: "mover" });
+  mover.wait(0.4);
+  const grip = { x: -0.3, y: 0.12 };
+  mover.do("pickUp", { prop: load, where: { x: 0.6, y: 0 }, grip });
+  mover.do("carry", { prop: load, grip, distance: 0.9, duration: 1.6 });
+  const distance = 3.5;
+  const carried = mover.do("carry", {
+    prop: load,
+    by: "cart",
+    grip,
+    from: 0.9,
+    distance,
+    duration: 4.6,
+    mood: "happy",
+  });
+  const cart = cartRow.prop("cart", {
+    roll: distance,
+    rollAt: carried.marks.off,
+    rollFor: carried.marks.stop - carried.marks.off,
+  });
+  cart.place({ x: 1.77, y: 0 });
+  cart.move(
+    { x: 1.77 + distance, y: 0 },
+    { at: carried.marks.off, duration: carried.marks.stop - carried.marks.off },
+  );
+
+  stage.sync();
+  pusher.wait(1);
+});
+```
+
+`npx charade render rock.ts` turned it into that MP4 on the defaults: 1080×1080, 30 fps,
+H.264 in yuv420p, 275 frames. The mover wheeling the cart out of the frame is meant, so
+`check` only warns about it and `render` goes ahead:
+
+```sh
+npx charade check rock.ts
+# warning ERR_CHECK_OFF_FRAME: row2/prop/cart/0 leaves the visible area of row 2, …
+# warning ERR_CHECK_OFF_FRAME: row2/prop/rock/0 leaves the visible area of row 2, …
+# warning ERR_CHECK_OFF_FRAME: row2/actor/mover/0 leaves the visible area of row 2, …
+# => 0 errors, 3 warnings
+```
+
+`npx charade catalog` lists the installed vocabulary, and `--images` draws a sample of
+each item. A few of them:
+
+<table>
+  <tr>
+    <td><img src="docs/media/catalog/action.push.png" alt="push: leans on a rock and heaves" width="260"></td>
+    <td><img src="docs/media/catalog/action.carry.png" alt="carry: picks a box up and walks off with it" width="260"></td>
+    <td><img src="docs/media/catalog/action.throw.png" alt="throw: winds up and throws a ball overhand" width="260"></td>
+  </tr>
+  <tr>
+    <td><img src="docs/media/catalog/action.sitDown.png" alt="sitDown: sits down on a box" width="260"></td>
+    <td><img src="docs/media/catalog/prop.lever.png" alt="lever: a beam on a fulcrum" width="260"></td>
+    <td><img src="docs/media/catalog/backdrop.hill.png" alt="hill: a grassy hill with a tree" width="260"></td>
+  </tr>
+</table>
+
 ## Install
 
 ```sh
@@ -13,21 +133,20 @@ pnpm add charade
 Requires Node.js 24 or newer. The package ships ESM only. CommonJS consumers need a
 Node.js version with unflagged `require(esm)` support (20.19+, 22.12+, or 24+).
 
-## Quick start
+A scene needs no install at all: `npx charade render scene.ts` works in an empty folder,
+and the scene's `import "charade"` resolves to the command itself. `render` calls the
+`ffmpeg` on your `PATH`; the other commands do not need it.
 
-```ts
-import { CharadeError } from "charade";
+## Agent Skills
 
-function reasonOf(error: unknown): string {
-  return error instanceof CharadeError ? error.code : "unknown";
-}
+An agent writes scenes through two skills kept in this repository's `skills/` directory:
+[making a scene](skills/charade-scene/SKILL.md) and
+[adding vocabulary](skills/charade-vocabulary/SKILL.md). Install them from the
+repository, not from npm:
 
-console.log(reasonOf(new Error("not ours")));
-// => "unknown"
+```sh
+npx skills add tomada1114/charade
 ```
-
-All public symbols are named exports from the package root. Deep imports are private and
-blocked by the package export map.
 
 ## Writing a scene
 
@@ -98,8 +217,23 @@ export default scene({ rows: 2 }, (stage) => {
 
 ## API
 
+All public symbols are named exports from the package root. Deep imports are private and
+blocked by the package export map.
+
 - `CharadeError` is the base of every error charade throws. Branch on its stable `code`,
   never on `message`.
+
+```ts
+import { CharadeError } from "charade";
+
+function reasonOf(error: unknown): string {
+  return error instanceof CharadeError ? error.code : "unknown";
+}
+
+console.log(reasonOf(new Error("not ours")));
+// => "unknown"
+```
+
 - `UnknownFlagError` (`ERR_CLI_UNKNOWN_FLAG`) is thrown for a flag a command does not
   have; its `path` names the flag, never the value passed with it.
 - `AsyncBuildError` (`ERR_SCENE_ASYNC_BUILD`) is thrown when a scene's `build` returns a
@@ -348,4 +482,6 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the complete workflow.
 
 ## License
 
-[MIT](LICENSE) © tomada
+Code: [MIT](LICENSE) © tomada. Assets — the character, the props, the backdrops and the
+media under `docs/media/` — are self-made and dedicated to the public domain under
+[CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/).

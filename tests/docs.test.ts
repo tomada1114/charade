@@ -8,13 +8,14 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { describe, expect, it } from "vitest";
 
 import { parseJson, readKey, readString } from "../scripts/lib/json.mjs";
 import { resolveDependencyBin, runNode } from "../scripts/lib/node-tools.mjs";
-import { CharadeError } from "../src/index.js";
+import { checkScene, lastFrameOf } from "../src/check/check.js";
+import { CharadeError, checkReport, exitCodeFor, type Scene } from "../src/index.js";
 
 // the `create-pr` skill requires every documented code example to
 // compile against the *current* public API. Nothing did: a substring
@@ -195,7 +196,7 @@ describe("documented examples compile against the public API", () => {
   );
 });
 
-describe("README quick start", () => {
+describe("README's CharadeError example", () => {
   it("matches runtime behavior", () => {
     const reasonOf = (error: unknown): string =>
       error instanceof CharadeError ? error.code : "unknown";
@@ -207,6 +208,61 @@ describe("README quick start", () => {
     // typo'd claimed result still fails loudly.
     const readme = readFileSync(path.join(repoRoot, "README.md"), "utf8");
     expect(readme).toContain(`// => ${JSON.stringify(result)}`);
+  });
+});
+
+describe("README's opening scene", () => {
+  const scenePath = path.join(repoRoot, "docs", "media", "rock.ts");
+  const readme = (): string => readFileSync(path.join(repoRoot, "README.md"), "utf8");
+
+  it("opens with the video, then the exact scene file that rendered it", () => {
+    const text = readme();
+    const video = text.indexOf(
+      '<video src="https://github.com/tomada1114/charade/raw/main/docs/media/rock.mp4"',
+    );
+    expect(video).toBeGreaterThan(-1);
+    expect(text.indexOf("```")).toBeGreaterThan(video);
+    expect(readmeSnippets()[0]?.source).toBe(readFileSync(scenePath, "utf8"));
+  });
+
+  it("checks with the findings and frame count the README claims", async () => {
+    // A copy whose `charade` import names the source, as the CLI's resolve
+    // hook would name the built entry.
+    const dir = mkdtempSync(path.join(tmpdir(), "docs-scene-"));
+    try {
+      const copy = path.join(dir, "rock.ts");
+      const index = pathToFileURL(path.join(repoRoot, "src", "index.ts")).href;
+      writeFileSync(
+        copy,
+        readFileSync(scenePath, "utf8").replace(
+          'from "charade"',
+          `from ${JSON.stringify(index)}`,
+        ),
+      );
+      const loaded: unknown = await import(pathToFileURL(copy).href);
+      const exported = readKey(loaded, "default");
+      expect(readString(exported, "kind")).toBe("charade.scene");
+      const built = exported as Scene;
+      const { findings } = checkScene(built);
+      expect(
+        findings.map((finding) => [finding.code, finding.severity, finding.row]),
+      ).toEqual([
+        ["ERR_CHECK_OFF_FRAME", "warning", 2],
+        ["ERR_CHECK_OFF_FRAME", "warning", 2],
+        ["ERR_CHECK_OFF_FRAME", "warning", 2],
+      ]);
+      expect(exitCodeFor(findings)).toBe(0);
+      const { errors, warnings } = checkReport(findings).summary;
+      const text = readme();
+      expect(text).toContain(
+        `# => ${String(errors)} errors, ${String(warnings)} warnings`,
+      );
+      // Frames 0 to 274: what ffprobe counted in the committed MP4.
+      expect(lastFrameOf(built.timeline)).toBe(274);
+      expect(text).toContain("275 frames");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });
 
