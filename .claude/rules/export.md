@@ -190,8 +190,13 @@ stay free of Node-only modules.
   `ERR_CLI_UNEXPECTED_ARGUMENT`, `ERR_CLI_MISSING_SCENE`, `ERR_CLI_MISSING_FLAG` or, for
   a name `catalog` does not know, `ERR_CLI_UNKNOWN_ITEM`. A failure under `--json` is
   `{ version: 1, ok: false, error: { code, message, fix } }`; as text it is
-  `error <code>: <message>` and a `fix:` line on stderr. Every command's body is built,
-  so `ERR_CLI_NOT_IMPLEMENTED` is gone.
+  `error <code>: <message>` and a `fix:` line on stderr. A scene whose build failed adds
+  the findings recorded before it did: `findings` beside `error` under `--json`, present
+  only when there are any, and `truncated: true` beside it when the cap dropped later
+  ones; on stderr one block per finding after a blank line, as `check` prints it, and
+  `check`'s dropped-findings line when the cap was reached. The exit code stays 2 in
+  every scene command. Every command's body is built, so `ERR_CLI_NOT_IMPLEMENTED` is
+  gone.
 - `sheet` picks twelve evenly spaced frames including the first and the last by default,
   or the times, range or row it is given, labels every cell with its time and frame
   number, and scales the sheet to a width an agent's image input can take. `--ghost`

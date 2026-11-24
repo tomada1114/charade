@@ -11,6 +11,7 @@ import {
   runCli,
   runIfMain,
 } from "../src/cli.js";
+import { NotASceneError, SceneFailedError } from "../src/export/loader.js";
 import { type Scene, scene } from "../src/index.js";
 
 const built = scene({}, () => undefined);
@@ -468,6 +469,174 @@ describe("check", () => {
     expect(after.findings).toEqual([]);
   });
 });
+
+/** Loads by running `build` as the loader does: what it throws becomes the load error. */
+function failingBuild(build: () => void): CliOptions {
+  return {
+    nodeVersion: "24.22.1",
+    load: () => {
+      try {
+        return Promise.resolve(scene({ duration: 1 }, build));
+      } catch (error) {
+        return Promise.reject(new SceneFailedError(error));
+      }
+    },
+  };
+}
+
+interface FailedDocument {
+  ok: boolean;
+  error: { code: string };
+  findings?: { code: string }[];
+}
+
+const readsTheClockThenThrows = (): void => {
+  Date.now();
+  throw new Error("the author's own failure");
+};
+
+describe("a scene whose build failed", () => {
+  it("reports the findings recorded before the failure beside the error under --json", async () => {
+    const result = await runCli(
+      ["check", "s.ts", "--json"],
+      failingBuild(readsTheClockThenThrows),
+    );
+    expect(result.exitCode).toBe(2);
+    parseOne(result.stdout);
+    const document = JSON.parse(result.stdout) as FailedDocument;
+    expect(document.ok).toBe(false);
+    expect(document.error.code).toBe("ERR_LOAD_FAILED");
+    expect(document.findings?.map(({ code }) => code)).toEqual([
+      "ERR_CHECK_CLOCK_READ",
+    ]);
+  });
+
+  it("prints them on stderr after the error as text", async () => {
+    const result = await runCli(
+      ["check", "s.ts"],
+      failingBuild(readsTheClockThenThrows),
+    );
+    expect(result.exitCode).toBe(2);
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toMatch(
+      /^error ERR_LOAD_FAILED: .+\n {2}fix: .+\n\nerror ERR_CHECK_CLOCK_READ: .+\n {2}fix: .+\n$/,
+    );
+  });
+
+  it("separates several findings with a blank line and prints no count", async () => {
+    const result = await runCli(["check", "s.ts"], {
+      nodeVersion: "24.22.1",
+      load: () => {
+        try {
+          return Promise.resolve(
+            scene(untypedOptions({ durations: 1 }), readsTheClockThenThrows),
+          );
+        } catch (error) {
+          return Promise.reject(new SceneFailedError(error));
+        }
+      },
+    });
+    expect(result.stderr).toMatch(
+      /\n\nerror ERR_SCENE_UNKNOWN_OPTION: .+\n {2}fix: .+\n\nerror ERR_CHECK_CLOCK_READ: .+\n {2}fix: .+\n$/,
+    );
+    expect(result.stderr).not.toMatch(/\d+ errors?, \d+ warnings?/);
+  });
+
+  it("says when the cap dropped later findings of the failed build", async () => {
+    const options = Object.fromEntries(
+      Array.from({ length: 25 }, (_, n) => [`unknown${String(n)}`, 1]),
+    );
+    const load = (): Promise<Scene> => {
+      try {
+        return Promise.resolve(scene(untypedOptions(options), readsTheClockThenThrows));
+      } catch (error) {
+        return Promise.reject(new SceneFailedError(error));
+      }
+    };
+    const text = await runCli(["check", "s.ts"], { nodeVersion: "24.22.1", load });
+    expect(text.stderr).toMatch(/\n\nLater findings were dropped: .+\n$/);
+    const json = await runCli(["check", "s.ts", "--json"], {
+      nodeVersion: "24.22.1",
+      load,
+    });
+    const document = JSON.parse(json.stdout) as FailedDocument & {
+      truncated?: boolean;
+    };
+    expect(document.findings).toHaveLength(20);
+    expect(document.truncated).toBe(true);
+  });
+
+  it("does not give a failed build's findings to a load error no build threw", async () => {
+    const result = await runCli(["check", "s.ts", "--json"], {
+      nodeVersion: "24.22.1",
+      load: () => {
+        try {
+          scene((): void => {
+            Date.now();
+            // eslint-disable-next-line @typescript-eslint/only-throw-error -- a scene may throw anything
+            throw undefined;
+          });
+        } catch {
+          // The module goes on, then exports something that is not a scene.
+        }
+        return Promise.reject(new NotASceneError());
+      },
+    });
+    expect(result.exitCode).toBe(2);
+    expect(Object.keys(JSON.parse(result.stdout) as object)).toEqual([
+      "version",
+      "ok",
+      "error",
+    ]);
+  });
+
+  it("adds no findings key to a plain load failure", async () => {
+    const result = await runCli(["check", "a.ts", "--json"], {
+      nodeVersion: "24.22.1",
+      load: () => Promise.reject(new Error("boom")),
+    });
+    expect(result.exitCode).toBe(2);
+    expect(Object.keys(JSON.parse(result.stdout) as object)).toEqual([
+      "version",
+      "ok",
+      "error",
+    ]);
+  });
+
+  it("reports an async build's unseeded random read beside its load error", async () => {
+    const result = await runCli(
+      ["check", "s.ts", "--json"],
+      failingBuild((): unknown => Promise.resolve(Math.random())),
+    );
+    expect(result.exitCode).toBe(2);
+    const document = JSON.parse(result.stdout) as FailedDocument;
+    expect(document.error.code).toBe("ERR_LOAD_FAILED");
+    expect(document.findings?.map(({ code }) => code)).toEqual([
+      "ERR_CHECK_UNSEEDED_RANDOM",
+    ]);
+  });
+
+  it("reports them in frame too, for a loader that rejects with the build's own error", async () => {
+    const result = await runCli(["frame", "s.ts", "--at", "0", "--json"], {
+      nodeVersion: "24.22.1",
+      load: () =>
+        new Promise(() => {
+          scene({ duration: 1 }, readsTheClockThenThrows);
+        }),
+    });
+    expect(result.exitCode).toBe(2);
+    const document = JSON.parse(result.stdout) as FailedDocument;
+    expect(document.error.code).toBe("ERR_LOAD_FAILED");
+    expect(document.findings?.map(({ code }) => code)).toEqual([
+      "ERR_CHECK_CLOCK_READ",
+    ]);
+  });
+});
+
+/** Passes options the types reject, as a scene written in JavaScript can. */
+function untypedOptions(value: unknown): never {
+  return value as never;
+}
 
 describe("check, when the scene's findings reach the cap", () => {
   it("exits 1 on a build read made after twenty warnings", async () => {
