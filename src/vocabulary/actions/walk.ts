@@ -1,10 +1,5 @@
-import {
-  type ActionDefinition,
-  type Clip,
-  defineAction,
-  type PoseChannels,
-  type Stage,
-} from "../../index.js";
+import { type ActionDefinition, defineAction } from "../../scene/define.js";
+import type { Clip, PoseChannels, Stage } from "../../scene/handles.js";
 
 /** The rig's thigh and shin, which are the same length, and its foot. */
 const LEG = 0.24;

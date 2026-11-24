@@ -309,18 +309,18 @@ export default defineConfig([
     },
   },
   {
-    // A specifier does not say how deep its file is, so "only the root entry"
-    // is enforced as "not into another top-level module of src/" (export and
-    // cli are already in the shared patterns). A new layer or root module has
-    // to be added to this list.
-    name: "boundaries/vocabulary-uses-the-root-entry",
+    // A specifier cannot tell a root export from a private export of the same
+    // module, so "root exports only" is tests/vocabulary-imports.test.ts; this
+    // rule only keeps items off the modules that load the vocabulary (export
+    // and cli are already in the shared patterns).
+    name: "boundaries/vocabulary-stays-off-the-root-entry",
     files: ["src/vocabulary/**/*.ts"],
     rules: {
       "no-restricted-imports": pureLayerImports([
         {
-          regex: String.raw`^(\.\./)+(scene|timeline|rig|draw|check|internal|errors)(/|\.[jt]s$|$)`,
+          regex: String.raw`^(\.\./)+(index|vocabulary/index|scene/builtins|scene/scene|internal(/.*)?)(\.[jt]s)?$`,
           message:
-            'Built-in vocabulary uses the same public API a user has: import it from the root entry (src/index.ts). See "Architecture" in AGENTS.md.',
+            "A built-in item imports each name from the module src/index.ts re-exports it from: the root entry, the scene function and the built-in maps load the vocabulary, so importing them here closes a cycle. See .claude/rules/vocabulary.md.",
         },
       ]),
     },

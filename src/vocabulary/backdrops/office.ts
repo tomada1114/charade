@@ -1,4 +1,5 @@
-import { type BackdropDefinition, defineBackdrop, type Stage } from "../../index.js";
+import { type BackdropDefinition, defineBackdrop } from "../../scene/define.js";
+import type { Stage } from "../../scene/handles.js";
 
 const officeParams = {
   wall: {

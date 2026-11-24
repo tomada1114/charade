@@ -1,7 +1,3 @@
-// Before the index: its items call `define…` as they load, and they import it through
-// the root entry, which may be only part-way through loading by then.
-import "./define.js";
-
 import {
   builtinActions,
   builtinBackdrops,
