@@ -93,10 +93,12 @@ never repeats it. This rule holds only what is true inside this repository.
   occupies the asked duration or else what it recorded. A mood is a face pose over the
   action's span, recorded beneath the action's own calls so a face the action sets wins;
   like any ended pose it is held afterwards, until a later call moves the face. An
-  action's or expression's `build` that throws propagates out of `scene()`, as the
-  scene's own code does. `express` takes `at`, `duration`, `blend` and `mode` and
-  records a pose of the face channels `build` returns. A prop, backdrop or effect takes
-  `at` (default 0) and `duration` (default open-ended).
+  `express` that starts inside the action ends the mood there on the channels it names
+  (`.claude/rules/engine.md`, Sequencing). An action's or expression's `build` that
+  throws propagates out of `scene()`, as the scene's own code does. `express` takes
+  `at`, `duration`, `blend` and `mode` and records a pose of the face channels `build`
+  returns. A prop, backdrop or effect takes `at` (default 0) and `duration` (default
+  open-ended).
 - `row.effect` also takes `on`, where the effect's origin is (`EffectOptions`): a point
   of the row, an actor of the row, which is the centre of its head, or an `EffectAnchor`
   `{ actor, part, offset }` whose `part` (`AnchorPart`) is `head`, `pelvis`, `handL`,
@@ -360,9 +362,10 @@ These set the conventions the later items follow.
   (a point of the row, or a hand or foot).
 - `sweat`, `sparkle` and `speedLines` repeat for as long as they are shown: each
   droplet, star or streak lives one period (0.6 s, 0.8 s, 0.36 s) and the next takes its
-  place. Their time is `progress × duration`, counted from the effect's start, and scene
-  time when the effect is open-ended and has no progress. `impact` plays once over its
-  duration, about 0.4 s, and without one is a still burst.
+  place. Their time is the moment's `t`, counted from the effect's start whether it has
+  a duration or is open-ended, so an open-ended effect builds up from its `at` as a
+  bounded one does, and what it shows does not depend on `at`. `impact` plays once over
+  its duration, about 0.4 s, and without one is a still burst.
 - The things of a repeating effect start staggered by a fraction of the period each, and
   one that would have started before the effect did is not drawn: the effect builds up
   over its first period from nothing, which is what its progress 0 shows, instead of

@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  DrawingArgumentRangeError,
   ForeignGradientError,
+  InvalidDrawingColorError,
   NonFiniteDrawingError,
   RecordingContext,
 } from "../src/check/recorder.js";
@@ -140,6 +142,269 @@ describe("non-finite arguments", () => {
     expect(() => {
       gradient.addColorStop(Number.NaN, "red");
     }).toThrow(NonFiniteDrawingError);
+  });
+});
+
+describe("arguments a real context rejects", () => {
+  it.each([
+    ["arc", 2, (ctx: DrawingContext) => ctx.arc(0, 0, -1, 0, 1)],
+    ["arcTo", 4, (ctx: DrawingContext) => ctx.arcTo(0, 0, 1, 1, -0.5)],
+    ["ellipse", 2, (ctx: DrawingContext) => ctx.ellipse(0, 0, -1, 1, 0, 0, 1)],
+    ["ellipse", 3, (ctx: DrawingContext) => ctx.ellipse(0, 0, 1, -1, 0, 0, 1)],
+    ["roundRect", 4, (ctx: DrawingContext) => ctx.roundRect(0, 0, 1, 1, -0.1)],
+    ["roundRect", 4, (ctx: DrawingContext) => ctx.roundRect(0, 0, 1, 1, [0.1, -0.1])],
+    [
+      "roundRect",
+      4,
+      (ctx: DrawingContext) => ctx.roundRect(0, 0, 1, 1, [0.1, 0.1, 0.1, 0.1, 0.1]),
+    ],
+    [
+      "createRadialGradient",
+      2,
+      (ctx: DrawingContext) => ctx.createRadialGradient(0, 0, -1, 0, 0, 1),
+    ],
+    [
+      "createRadialGradient",
+      5,
+      (ctx: DrawingContext) => ctx.createRadialGradient(0, 0, 1, 0, 0, -0.5),
+    ],
+  ])("throws on %s argument %i and logs nothing", (call, argument, invoke) => {
+    const ctx = new RecordingContext();
+    let caught: unknown;
+    try {
+      invoke(ctx);
+    } catch (error) {
+      caught = error;
+    }
+    expect(caught).toBeInstanceOf(DrawingArgumentRangeError);
+    expect(caught).toBeInstanceOf(CharadeError);
+    expect(caught).toMatchObject({
+      code: "ERR_SCENE_DRAWING_OUT_OF_RANGE",
+      call,
+      argument,
+    });
+    expect(ctx.log).toEqual([]);
+  });
+
+  it.each([
+    ["arc", (ctx: DrawingContext) => ctx.arc(0, 0, -Infinity, 0, 1)],
+    [
+      "createRadialGradient",
+      (ctx: DrawingContext) => ctx.createRadialGradient(0, 0, -Infinity, 0, 0, 1),
+    ],
+    ["roundRect", (ctx: DrawingContext) => ctx.roundRect(0, 0, 1, 1, [-Infinity])],
+    [
+      "addColorStop",
+      (ctx: DrawingContext) =>
+        ctx.createLinearGradient(0, 0, 1, 0).addColorStop(-Infinity, "red"),
+    ],
+  ])(
+    "throws the non-finite error, not the range one, on a negative infinity to %s",
+    (_call, invoke) => {
+      const ctx = new RecordingContext();
+      expect(() => {
+        invoke(ctx);
+      }).toThrow(NonFiniteDrawingError);
+    },
+  );
+
+  it("throws on a radius that is still negative below half a log step", () => {
+    const ctx = new RecordingContext();
+    expect(() => {
+      ctx.arc(0, 0, -0.00001, 0, 1);
+    }).toThrow(DrawingArgumentRangeError);
+  });
+
+  it.each([
+    ["a zero radius", (ctx: DrawingContext) => ctx.arc(0, 0, 0, 0, 1)],
+    ["a negative zero radius", (ctx: DrawingContext) => ctx.arcTo(0, 0, 1, 1, -0)],
+    [
+      "four corner radii",
+      (ctx: DrawingContext) => ctx.roundRect(0, 0, 1, 1, [0, 0, 0, 0]),
+    ],
+    ["a zero corner radius", (ctx: DrawingContext) => ctx.roundRect(0, 0, 1, 1, 0)],
+    [
+      "zero and negative zero gradient radii",
+      (ctx: DrawingContext) => ctx.createRadialGradient(0, 0, 0, 0, 0, -0),
+    ],
+  ])("accepts %s", (_label, invoke) => {
+    const ctx = new RecordingContext();
+    invoke(ctx);
+    expect(ctx.log).toHaveLength(1);
+  });
+
+  it.each([
+    ["below zero", -0.1],
+    ["above one", 1.1],
+  ])("throws on a colour stop offset %s and logs nothing", (_label, offset) => {
+    const ctx = new RecordingContext();
+    const gradient = ctx.createLinearGradient(0, 0, 1, 0);
+    let caught: unknown;
+    try {
+      gradient.addColorStop(offset, "red");
+    } catch (error) {
+      caught = error;
+    }
+    expect(caught).toMatchObject({
+      code: "ERR_SCENE_DRAWING_OUT_OF_RANGE",
+      call: "addColorStop",
+      argument: 0,
+    });
+    expect(ctx.log).toEqual([{ call: "createLinearGradient", args: [0, 0, 10000, 0] }]);
+  });
+
+  it("accepts colour stop offsets of exactly 0 and 1", () => {
+    const ctx = new RecordingContext();
+    const gradient = ctx.createLinearGradient(0, 0, 1, 0);
+    gradient.addColorStop(0, "red");
+    gradient.addColorStop(1, "blue");
+    expect(ctx.log.slice(1)).toEqual([
+      { call: "addColorStop", args: [{ gradient: 0 }, 0, "red"] },
+      { call: "addColorStop", args: [{ gradient: 0 }, 10000, "blue"] },
+    ]);
+  });
+
+  it.each([
+    ["an unknown name", "notacolor"],
+    ["the empty string", ""],
+    ["blank space", "   "],
+    ["a grey spelling", "grey"],
+    ["another grey spelling", "darkslategrey"],
+    ["currentcolor", "currentcolor"],
+    ["a CSS-wide keyword", "inherit"],
+    ["a two-digit hex", "#ff"],
+    ["a five-digit hex", "#fffff"],
+    ["hex digits without a hash", "fff"],
+    ["a non-hex digit", "#ggg"],
+    ["two channels", "rgb(1, 2)"],
+    ["five channels", "rgb(1, 2, 3, 4, 5)"],
+    ["a trailing comma", "rgb(1, 2, 3,)"],
+    ["numbers mixed with percentages", "rgb(1, 2, 3%)"],
+    ["commas mixed with spaces", "rgb(1 2, 3)"],
+    ["a slash in the comma syntax", "rgb(1, 2, 3 / 0.5)"],
+    ["none in the comma syntax", "rgb(none, 2, 3)"],
+    ["a unit on an rgb channel", "rgb(1px, 2, 3)"],
+    ["a number ending in a point", "rgb(1., 2, 3)"],
+    ["a dangling exponent", "rgb(1e, 2, 3)"],
+    ["a space before the parenthesis", "rgb (1, 2, 3)"],
+    ["a missing parenthesis", "rgb(1, 2, 3"],
+    ["text after the colour", "rgb(1, 2, 3) x"],
+    ["two names", "red blue"],
+    ["a calc()", "rgb(calc(1), 2, 3)"],
+    ["hsl saturation without a percent sign", "hsl(120, 50, 50%)"],
+    ["a space between the hue and its comma", "hsl(120 , 50%, 50%)"],
+    ["a form feed inside the parentheses", "rgb(\f1, 2, 3)"],
+    ["a byte order mark before a name", "\ufeffred"],
+    ["hwb()", "hwb(120 10% 10%)"],
+    ["oklch()", "oklch(0.5 0.1 120)"],
+    ["color()", "color(srgb 1 0 0)"],
+  ])("throws on %s as a colour stop and logs nothing", (_label, color) => {
+    const ctx = new RecordingContext();
+    const gradient = ctx.createLinearGradient(0, 0, 1, 0);
+    let caught: unknown;
+    try {
+      gradient.addColorStop(0.5, color);
+    } catch (error) {
+      caught = error;
+    }
+    expect(caught).toBeInstanceOf(InvalidDrawingColorError);
+    expect(caught).toBeInstanceOf(CharadeError);
+    expect(caught).toMatchObject({
+      code: "ERR_SCENE_INVALID_DRAWING_COLOR",
+      call: "addColorStop",
+      argument: 1,
+    });
+    expect(ctx.log).toEqual([{ call: "createLinearGradient", args: [0, 0, 10000, 0] }]);
+  });
+
+  it("throws on a colour stop that is not a string", () => {
+    const ctx = new RecordingContext();
+    const gradient = ctx.createLinearGradient(0, 0, 1, 0);
+    expect(() => {
+      Reflect.apply(Reflect.get(gradient, "addColorStop"), gradient, [0, 0xff0000]);
+    }).toThrow(InvalidDrawingColorError);
+  });
+
+  it("throws the offset error before the colour one", () => {
+    const ctx = new RecordingContext();
+    const gradient = ctx.createLinearGradient(0, 0, 1, 0);
+    expect(() => {
+      gradient.addColorStop(2, "notacolor");
+    }).toThrow(DrawingArgumentRangeError);
+  });
+
+  it("throws the non-finite offset error before the colour one", () => {
+    const ctx = new RecordingContext();
+    const gradient = ctx.createLinearGradient(0, 0, 1, 0);
+    expect(() => {
+      gradient.addColorStop(Number.NaN, "notacolor");
+    }).toThrow(NonFiniteDrawingError);
+  });
+
+  it.each([
+    ["a name", "rebeccapurple"],
+    ["a name in capitals", "RED"],
+    ["transparent", "transparent"],
+    ["a name padded with whitespace", " \t\nnavy\f "],
+    ["a name padded with Unicode whitespace", "\u00a0red\v\u3000"],
+    ["three hex digits", "#fff"],
+    ["four hex digits", "#FfF8"],
+    ["six hex digits", "#2f3b6b"],
+    ["eight hex digits", "#2F3B6B80"],
+    ["rgb() with commas", "rgb(255, 0, 0)"],
+    ["rgb() with spaces around commas", "rgb(1 , 2 , 3)"],
+    ["rgba() with percentages", "rgba(10%, 20%, 30%, 50%)"],
+    ["rgb() with an alpha and out-of-range channels", "rgb(300, -1, 1.5, 0.5)"],
+    ["rgb() with spaces and a slash", "rgb(1 2 3 / 50%)"],
+    ["rgb() mixing numbers, percentages and none", "RGB(1 2% none / none)"],
+    ["rgba() without an alpha", "rgba(0, 0, 0)"],
+    ["numbers with signs, points and exponents", "rgb(+1e2, .5, -1E-2)"],
+    ["hsl() with commas", "hsl(120, 50%, 50%)"],
+    ["hsla() with a hue unit", "hsla(1.5turn, 50% , 50%, 0.3)"],
+    ["hsl() with spaces", "hsl(120DEG 50 50% / .5)"],
+    ["hsl() with none", "hsl(none none none)"],
+  ])("accepts %s as a colour stop and logs it as given", (_label, color) => {
+    const ctx = new RecordingContext();
+    ctx.createLinearGradient(0, 0, 1, 0).addColorStop(0, color);
+    expect(ctx.log[1]).toEqual({
+      call: "addColorStop",
+      args: [{ gradient: 0 }, 0, color],
+    });
+  });
+});
+
+describe("the dash pattern", () => {
+  it("stores an odd-length list twice over", () => {
+    const ctx = new RecordingContext();
+    ctx.setLineDash([1, 2, 3]);
+    expect(ctx.getLineDash()).toEqual([1, 2, 3, 1, 2, 3]);
+  });
+
+  it("stores a single entry twice", () => {
+    const ctx = new RecordingContext();
+    ctx.setLineDash([4]);
+    expect(ctx.getLineDash()).toEqual([4, 4]);
+  });
+
+  it("logs the list as given", () => {
+    const ctx = new RecordingContext();
+    ctx.setLineDash([1, 2, 3]);
+    expect(ctx.log).toEqual([{ call: "setLineDash", args: [[10000, 20000, 30000]] }]);
+  });
+
+  it("keeps the previous list when one has a negative entry", () => {
+    const ctx = new RecordingContext();
+    ctx.setLineDash([4, 2]);
+    ctx.setLineDash([1, -2]);
+    expect(ctx.getLineDash()).toEqual([4, 2]);
+  });
+
+  it("accepts zero entries and the empty list", () => {
+    const ctx = new RecordingContext();
+    ctx.setLineDash([0, 0]);
+    expect(ctx.getLineDash()).toEqual([0, 0]);
+    ctx.setLineDash([]);
+    expect(ctx.getLineDash()).toEqual([]);
   });
 });
 

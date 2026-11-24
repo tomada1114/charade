@@ -936,7 +936,7 @@ describe("a built-in effect", () => {
   });
 
   it.each(["sweat", "sparkle", "speedLines"])(
-    "keeps %s going on scene time when it has no duration",
+    "keeps %s going when it has no duration",
     (name) => {
       const built = scene({ duration: 2 }, (stage) => {
         effectOf(stage, name);
@@ -949,6 +949,37 @@ describe("a built-in effect", () => {
           50,
         ),
       );
+    },
+  );
+
+  it("draws an open-ended sparkle at 3 s as a bounded one starting at 0 draws at 0 s", () => {
+    const on = { x: 0, y: 1.2 };
+    const bounded = scene({ duration: 1 }, (stage) => {
+      effectOf(stage, "sparkle", { on, duration: 1 });
+    });
+    const late = scene({ duration: 4 }, (stage) => {
+      effectOf(stage, "sparkle", { on, at: 3 });
+    });
+    // 3 s is frame 90 at 30 fps.
+    expect(record(late, 90)).toBe(record(bounded, 0));
+  });
+
+  it.each(["sweat", "sparkle", "speedLines"])(
+    "builds %s up from its own start when it has no duration, whatever its at",
+    (name) => {
+      const on = { x: 0, y: 1.2 };
+      const bounded = scene({ duration: 1 }, (stage) => {
+        effectOf(stage, name, { on, duration: 1 });
+      });
+      const late = (at: number): Scene =>
+        scene({ duration: 4 }, (stage) => {
+          effectOf(stage, name, { on, at });
+        });
+      // 1.5 s and 2.2 s are frames 45 and 66 at 30 fps.
+      for (const frame of [6, 12, 29]) {
+        expect(record(late(1.5), 45 + frame)).toBe(record(bounded, frame));
+        expect(record(late(2.2), 66 + frame)).toBe(record(bounded, frame));
+      }
     },
   );
 
@@ -1160,6 +1191,25 @@ describe("a built-in action", () => {
 
   const moods = [undefined, ...Object.keys(builtinExpressions)];
 
+  /** What the checks find of `name` in every mood, alone and over a stand. */
+  function faultsInEveryMood(
+    name: keyof typeof builtinActions,
+    options: object,
+  ): Finding[] {
+    return moods.flatMap((mood) => {
+      const asked = mood === undefined ? options : { ...options, mood };
+      // Over a stand a pose that has ended gives way to the stand beneath it, which
+      // the six solo actions are written for; the first three plant their feet at 0.
+      // The cart's hands follow its handle rather than the body, as any reach does.
+      return [
+        ...faults(alone(name, asked)),
+        ...(["stand", "sitDown", "throw"].includes(name)
+          ? []
+          : faults(overStand(name, asked))),
+      ];
+    });
+  }
+
   it.each([
     ["sitDown", {}],
     ["sitDown", { seat: 0.2 }],
@@ -1210,6 +1260,11 @@ describe("a built-in action", () => {
     ["think", { ponder: 10 }],
     ["think", { duration: 0.4 }],
     ["think", { duration: 8 }],
+  ] as const)("keeps every joint within its limits: %s %j", (name, options) => {
+    expect(faultsInEveryMood(name, options)).toEqual([]);
+  });
+
+  it.each([
     // #27
     ["pickUp", {}],
     ["pickUp", { where: { x: 0.2, y: 0 }, grip: { x: 0, y: 0 } }],
@@ -1264,19 +1319,11 @@ describe("a built-in action", () => {
     ["carry", { by: "cart", duration: 12 }],
   ] as const)(
     "keeps every joint within its limits: %s %j",
-    // The longest walk is some six hundred frames of several hundred segments, fourteen times.
+    // The longest carry is some seven hundred frames of over a thousand segments,
+    // fourteen times, alone and over a stand.
     { timeout: 30_000 },
     (name, options) => {
-      for (const mood of moods) {
-        const asked = mood === undefined ? options : { ...options, mood };
-        expect(faults(alone(name, asked))).toEqual([]);
-        // Over a stand a pose that has ended gives way to the stand beneath it, which
-        // the six solo actions are written for; the first three plant their feet at 0.
-        // The cart's hands follow its handle rather than the body, as any reach does.
-        if (!["stand", "sitDown", "throw"].includes(name)) {
-          expect(faults(overStand(name, asked))).toEqual([]);
-        }
-      }
+      expect(faultsInEveryMood(name, options)).toEqual([]);
     },
   );
 

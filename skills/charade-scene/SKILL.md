@@ -103,9 +103,10 @@ export default scene({ rows: 2 }, (stage) => {
   returned, as in `{ at: thrown.marks.release, duration: 0.4 }`.
 - Erasable TypeScript only: no `enum`, no parameter properties, no `namespace`. Loops,
   functions and arithmetic are fine. A helper file is imported with its `.ts` extension.
-- If the folder has a `package.json` without `"type": "module"`, name the scene
-  `idea.mts`; otherwise it fails with `ERR_LOAD_FAILED` ("Cannot use import statement
-  outside a module").
+- If the folder's `package.json` sets `"type": "commonjs"` (npm 11's `npm init -y`
+  does), set `"type": "module"`, or name the scene `idea.mts` and each helper `.mts` too
+  (a `.ts` helper there is still CommonJS); otherwise it fails with `ERR_LOAD_FAILED`,
+  and its fix names both. Never name a scene `.cts`.
 - Never read the clock (`Date`, `performance`) or `Math.random`; `check` rejects both.
   Functions at depths 3 and 4 get `moment.random.float(i)` instead: a number in [0, 1)
   for each whole number `i`, the same on every run.

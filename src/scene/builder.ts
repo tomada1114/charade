@@ -1,6 +1,6 @@
 import type { Finding, FindingCollector, Severity } from "../check/findings.js";
 import { nearestNames } from "../check/nearest.js";
-import { watchReads } from "../check/reads.js";
+import { valueOf, watchReads } from "../check/reads.js";
 import { type ItemKind, SceneClosedError, UnknownRowError } from "../errors.js";
 import { ANCHOR_PART_NAMES, isAnchorPart } from "../rig/kinematics.js";
 import {
@@ -25,6 +25,7 @@ import {
   type LabelData,
   type MoveData,
   type PlaceData,
+  type PoseData,
   type SayData,
   TEXT_ALIGNS,
   type TextAlign,
@@ -61,6 +62,11 @@ interface MutableSegment {
     | SayData;
 }
 
+/** The face pose an action's `mood` recorded. */
+interface MoodSegment extends MutableSegment {
+  readonly data: PoseData;
+}
+
 interface MutableTrack {
   readonly kind: string;
   readonly name: string;
@@ -88,6 +94,10 @@ interface ActorState {
   /** Whether the missing cursor was reported: once per actor, so it cannot fill the cap. */
   warned: boolean;
   readonly fullBody: { readonly start: Micros; readonly end: Micros | null }[];
+  /** The mood segments on the track, which a later `express` takes channels from. */
+  readonly moods: MoodSegment[];
+  /** Where each `do` still building will put its mood on the track. */
+  readonly moodSlots: { at: number }[];
   /**
    * What a time given as `at` is counted from: 0 for an actor, the action's start for
    * the clip an action's `build` records on.
@@ -540,6 +550,8 @@ export class SceneBuilder {
       open: false,
       warned: false,
       fullBody: [],
+      moods: [],
+      moodSlots: [],
       offset: 0,
       defaults: { blend: undefined, mode: undefined },
     };
@@ -1020,20 +1032,22 @@ export class SceneBuilder {
     try {
       // A clock or random read here is left to the frame check, which meets it again
       // at every frame and names the track; kept, it would be reported twice.
-      first = watchReads(() =>
-        motion(0, {
-          time: toSeconds(start),
-          duration: end === null ? Infinity : toSeconds(end - start),
-          progress: 0,
-          random: randomSource({
-            seed: this.#settings.seed,
-            row: actor.row,
-            kind: actor.track.kind,
-            name: actor.track.name,
-            occurrence: actor.track.occurrence,
+      first = valueOf(
+        watchReads(() =>
+          motion(0, {
+            time: toSeconds(start),
+            duration: end === null ? Infinity : toSeconds(end - start),
+            progress: 0,
+            random: randomSource({
+              seed: this.#settings.seed,
+              row: actor.row,
+              kind: actor.track.kind,
+              name: actor.track.name,
+              occurrence: actor.track.occurrence,
+            }),
           }),
-        }),
-      ).value;
+        ),
+      );
     } catch {
       this.#report(
         "ERR_SCENE_INVALID_VALUE",
@@ -1331,7 +1345,83 @@ export class SceneBuilder {
       blend: bag["blend"],
       mode: bag["mode"],
     };
-    return this.#recordPose(actor, values, timing, "express", where);
+    const span = this.#recordPose(actor, values, timing, "express", where);
+    this.#endMoods(actor);
+    return span;
+  }
+
+  /**
+   * Ends each mood the express just recorded starts inside, on the channels the express
+   * names. Left running, the mood is the earlier-recorded call the express fades back
+   * to at its end, and the later end that is held once the action is over.
+   */
+  #endMoods(actor: ActorState): void {
+    const express = actor.track.segments.at(-1);
+    if (express?.data.kind !== "pose" || express.data.mode !== "replace") {
+      return;
+    }
+    const { start } = express;
+    const named = express.data.channels;
+    for (const mood of [...actor.moods]) {
+      if (start < mood.start || (mood.end !== null && start >= mood.end)) {
+        continue;
+      }
+      const channels = Object.entries(mood.data.channels);
+      const taken = channels.filter(([name]) => Object.hasOwn(named, name));
+      if (taken.length === 0) {
+        continue;
+      }
+      const index = actor.track.segments.indexOf(mood);
+      if (start === mood.start) {
+        // Cut at its start, the mood would be held at full from the first frame: a pop.
+        if (taken.length === channels.length) {
+          actor.track.segments.splice(index, 1);
+          actor.moods.splice(actor.moods.indexOf(mood), 1);
+          for (const slot of actor.moodSlots) {
+            if (slot.at > index) {
+              slot.at -= 1;
+            }
+          }
+          continue;
+        }
+      } else {
+        const ended: MoodSegment = {
+          start: mood.start,
+          end: start,
+          data: {
+            ...mood.data,
+            channels: Object.fromEntries(taken),
+            blend: Math.min(mood.data.blend, start - mood.start),
+          },
+        };
+        actor.track.segments[index] = ended;
+        actor.moods[actor.moods.indexOf(mood)] = ended;
+        if (taken.length === channels.length) {
+          continue;
+        }
+      }
+      const kept: MoodSegment = {
+        ...mood,
+        data: {
+          ...mood.data,
+          channels: Object.fromEntries(
+            channels.filter(([name]) => !Object.hasOwn(named, name)),
+          ),
+        },
+      };
+      if (start === mood.start) {
+        actor.track.segments[index] = kept;
+        actor.moods[actor.moods.indexOf(mood)] = kept;
+        continue;
+      }
+      actor.track.segments.splice(index + 1, 0, kept);
+      actor.moods.push(kept);
+      for (const slot of actor.moodSlots) {
+        if (slot.at > index) {
+          slot.at += 1;
+        }
+      }
+    }
   }
 
   /** The name and face values of an action's mood, or `undefined`. */
@@ -1379,10 +1469,13 @@ export class SceneBuilder {
       // Shared with the actor, so the missing cursor is still reported once per actor.
       warned: actor.warned,
       fullBody: actor.fullBody,
+      moods: actor.moods,
+      moodSlots: actor.moodSlots,
       offset: start,
       defaults: { blend, mode },
     };
-    const moodAt = actor.track.segments.length;
+    const moodSlot = { at: actor.track.segments.length };
+    actor.moodSlots.push(moodSlot);
     const marks = new Map<string, Micros>();
     if (action !== undefined && params !== undefined) {
       const clip = Object.freeze({
@@ -1418,9 +1511,9 @@ export class SceneBuilder {
       duration === undefined ? clipState.cursor : (end ?? start),
     );
     this.#latest = Math.max(this.#latest, end ?? 0);
+    actor.moodSlots.splice(actor.moodSlots.indexOf(moodSlot), 1);
     if (mood !== undefined) {
-      // Before the action's own calls, so a face the action sets itself wins.
-      actor.track.segments.splice(moodAt, 0, {
+      const segment: MoodSegment = {
         start,
         end,
         data: {
@@ -1434,7 +1527,10 @@ export class SceneBuilder {
           ),
           followThrough: 0,
         },
-      });
+      };
+      // Before the action's own calls, so a face the action sets itself wins.
+      actor.track.segments.splice(moodSlot.at, 0, segment);
+      actor.moods.push(segment);
     }
     if (action === undefined || params === undefined) {
       // A call that cannot run still takes its time, so what follows keeps its place.

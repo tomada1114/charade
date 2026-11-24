@@ -188,6 +188,21 @@ recorded sample is written against; changing any of it changes all of them at on
   held hand stays on its point when an earlier-recorded call still moves the back. A
   call recorded later than the reach that moves the body is not seen by it: the hand
   then leaves the point, and the reach is recorded again after that call.
+- A `replace` `express` recorded after a `do` and starting inside its span ends that
+  action's mood at the express's start, on the face channels the express names: the
+  builder cuts the mood's segment there (its blend no longer than what is left of it)
+  and keeps a second mood segment, recorded right after it, for the channels the express
+  leaves alone. One that starts with the action takes those channels from the mood
+  altogether, since a mood cut at its start would be held at full from that frame.
+  Composed as recorded, the mood would be the earlier-recorded call still running, so
+  the express would fade back to it after its own blend, and the mood, ending last,
+  would be the face held after the action: a face changed at a mark would show for a
+  fifth of a second. A mood is the one segment the engine records for a scene rather
+  than the scene itself, so where it stops is the builder's to say, and the composition
+  rules stay as they are. It is `express` alone: `mode: "add"` still adds and fades, an
+  express that starts before the action or at its end changes nothing here, and a `pose`
+  of face channels inside a mood still gives way to it, as any ended pose does to an
+  earlier call still running.
 - A full-body call is a `replace` pose that names all fourteen angles. One that starts
   while an earlier one is still playing is the warning `ERR_SCENE_FULL_BODY_CUT`.
 - The composed pose at a frame is `poseAtFrame` in `src/rig/compose.ts`, internal. It
@@ -196,6 +211,16 @@ recorded sample is written against; changing any of it changes all of them at on
   value is not a finite number. `poseAtInstant` composes the same at a time that is not
   a frame's, given in frame units: a prop let go between two frames starts its path from
   where the hand was at that microsecond, not at the frame before.
+- What does not depend on the frame is worked out once per track and kept in a `WeakMap`
+  keyed on its segments array, with the frame rate and the segment count it was made
+  for: the layers, the held ones in end order, and the channels each ended segment
+  yields on, found in one pass in recorded order. A frame then costs one pass over the
+  track's segments, not their square; `check`, `sheet` and `render` compose every frame,
+  and a long walk is over a thousand segments. A pose is still a function of the
+  timeline and the frame alone. A segment replaced in place without the count changing
+  would be composed stale, which nothing does: the builder's in-place edits (an
+  `express` ending a mood) happen before anything composes the track, and a built or
+  parsed timeline is not changed again.
 - `drive` takes one function of time that returns a map of channel values, as in
   `a.drive(t => ({ spine: Math.sin(t * 3) * 0.1 }))`. The channels it names are the keys
   it returns when it is called once with `t = 0` as the call is recorded: an unknown
@@ -228,19 +253,30 @@ recorded sample is written against; changing any of it changes all of them at on
   `DrawFunction` (draws on a `ShapeContext`), and the source is `RandomSource`. In an
   open-ended segment `duration` is `Infinity` and `progress` stays 0.
 - A drawing function — a depth 4 callback, or the `draw` of a prop, backdrop or effect —
-  gets a `DrawMoment`: a `Moment` plus `view`, a `RowView` (`left`, `right`, `bottom`,
-  `top`) giving the row's visible area in the coordinates the function draws in. For a
-  free drawing and a backdrop that is the row's own (`∓units / 2`, −0.3, 2.2); for a
-  prop or an effect it is shifted by the item's ground point or origin, since its
-  context is, and mirrored with an effect that is drawn mirrored. The width is the one
-  thing about a row an item cannot know, and a backdrop has to reach both edges at every
-  canvas shape and row count. It is a field of the moment, not a parameter or a method
-  of the context: every drawing function already receives the moment, a parameter would
-  be a reserved name in every definition's bag, and the drawing interface holds only
-  standard Canvas 2D members. It is a separate type because a `drive` has no layout to
-  read: a pose is composed from the timeline alone, which does not hold the canvas size.
-  A function typed against `Moment` is still accepted where a `DrawMoment` is handed
-  over. `rowView` in `src/draw/layout.ts` builds it.
+  gets a `DrawMoment`: a `Moment` plus `t` (below) and `view`, a `RowView` (`left`,
+  `right`, `bottom`, `top`) giving the row's visible area in the coordinates the
+  function draws in. For a free drawing and a backdrop that is the row's own
+  (`∓units / 2`, −0.3, 2.2); for a prop or an effect it is shifted by the item's ground
+  point or origin, since its context is, and mirrored with an effect that is drawn
+  mirrored. The width is the one thing about a row an item cannot know, and a backdrop
+  has to reach both edges at every canvas shape and row count. It is a field of the
+  moment, not a parameter or a method of the context: every drawing function already
+  receives the moment, a parameter would be a reserved name in every definition's bag,
+  and the drawing interface holds only standard Canvas 2D members. It is a separate type
+  because a `drive` has no layout to read: a pose is composed from the timeline alone,
+  which does not hold the canvas size. A function typed against `Moment` is still
+  accepted where a `DrawMoment` is handed over. `rowView` in `src/draw/layout.ts` builds
+  it.
+- A `DrawMoment` also carries `t`, seconds since its segment began, the same number a
+  depth 4 callback receives as its argument: a prop's, backdrop's or effect's `draw`
+  takes its params where that argument would be, and in an open-ended segment `progress`
+  stays 0, so without it a drawing could not tell how long it had been shown, and what
+  repeats would start at scene time 0 and differ by where it was placed. It is named `t`
+  rather than given as a `start` field so that one name means one thing across depths 3
+  and 4 and the definitions, and nobody subtracts. A `drive`'s `Moment` has no `t`: its
+  function already takes it. `t` is computed from the frame and the start in frame
+  units, `(n × 1e6 − µs × fps) / (fps × 1e6)`, not as `n / fps − start`, which rounds
+  the same distance from the start two ways at two starts.
 
 ## The rig
 
@@ -416,10 +452,10 @@ change to the shape raises the version.
   interface. `imageSmoothingEnabled` and `imageSmoothingQuality` belong to the image
   family: they only govern how an image is resampled.
 - The names are `DrawingContext` (the full interface) and `ShapeContext` (the depth 4
-  type); `DrawingContext extends ShapeContext` with the text members. The handles and
-  shapes they return are `Gradient` (only `addColorStop`, structural so a real context's
-  gradient satisfies it) and `TextMeasurement` (`width` and the six bounding box
-  distances both real contexts report). All four are root exports.
+  type); `DrawingContext extends ShapeContext` with `reset` and the text members. The
+  handles and shapes they return are `Gradient` (only `addColorStop`, structural so a
+  real context's gradient satisfies it) and `TextMeasurement` (`width` and the six
+  bounding box distances both real contexts report). All four are root exports.
 - Properties are declared with a wide getter and a narrow setter. A plain writable
   property rejects one of the two real contexts (same spike). The pair differs only
   where the two contexts differ: `fillStyle` and `strokeStyle` read as `string | object`
@@ -436,9 +472,29 @@ change to the shape raises the version.
   it, so adding a member is a minor change. The recording context in this repository
   implements every member.
 - There are two types. The engine draws on the full interface. The one handed to a depth
-  4 callback is the same without the text members: with `y` up raw text would be
-  mirrored, and it would bypass the text checks. A scene's text goes through labels,
-  speech bubbles and the text helper.
+  4 callback is the same without the text members (and `reset`, below): with `y` up raw
+  text would be mirrored, and it would bypass the text checks. A scene's text goes
+  through labels, speech bubbles and the text helper.
+- `reset` is on `DrawingContext` only, the one member of the rule the depth 4 type drops
+  besides text. A drawing is handed the frame's shared context, not one of its own, and
+  `reset` would clear the background and every item drawn before it and empty the save
+  stack under the row's clip and transform. Confining it to the item instead would need
+  a wrapper or a second canvas per item; a drawing that wants a clean state already has
+  `save`, `restore`, `setTransform` and `resetTransform`. Types do not stop a plain-JS
+  scene, so `drawTrack` and `drawItem` shadow `reset` on the context with a no-op own
+  property while a drawing runs and delete it after.
+- The same guard (`guarded` in `src/draw/frame.ts`) counts a drawing's `save` and
+  `restore`, because the row's clip and transform sit on the shared save stack under
+  every item: a `restore` with none of the drawing's own saves left to pop is ignored,
+  and the saves it leaves open are restored when it returns (after a throw too), so its
+  state reaches neither the rest of its row nor the next item. Rebalancing is what the
+  drawer's own `save`…`restore` around each item already promises; leaving open saves in
+  place would make the drawer's closing `restore` pop the drawing's state rather than
+  its own. An ignored `reset` or `restore` never reaches the context, so the recording
+  context does not log it; the restores that close open saves are real calls and are
+  logged. A context that is not extensible or already has an own `reset`, `save` or
+  `restore` is handed over unguarded, all three at once since the counts only hold
+  together: no real context is either.
 - The text helper is `drawText(ctx, text, options?)`, a root export with
   `DrawTextOptions` (`x`, `y`, `size`, `align`, `width`) and its result `TextSize`. It
   is named for what it does rather than `fillText`, which would read as the context

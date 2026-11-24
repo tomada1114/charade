@@ -243,7 +243,9 @@ console.log(reasonOf(new Error("not ours")));
 - `Finding`, `Severity` and `SourceLocation` describe one problem found in a scene as
   plain data: an `ERR_<AREA>_<FAILURE>` `code`, an `error` or `warning` severity, what
   is wrong, how to fix it, and where it applies.
-- `FindingCollector` records findings up to `FINDING_CAP` (20), keeping the first ones.
+- `FindingCollector` records findings up to `FINDING_CAP` (20), keeping the first ones,
+  except that a warning gives way to an error: at the cap, a later error takes the place
+  of the last warning kept, so a run with an error never passes.
 - `exitCodeFor` maps findings to an `ExitCode` (0 clean, 1 failing findings, with
   `strict` making warnings fail; `COULD_NOT_RUN` is 2), and `checkReport` builds the
   `CheckReport` document `{ version, ok, findings, summary }`.
@@ -267,9 +269,10 @@ console.log(checkReport(findings).summary);
 
 - `DrawingContext` is the drawing context the engine draws a frame on: the standard
   Canvas 2D members whose arguments and results are numbers, strings or this package's
-  own `Gradient` and `TextMeasurement`. `ShapeContext` is the same without the text
-  members, and is what a depth 4 drawing callback receives. Both are receive-only: you
-  are handed one, never implement it.
+  own `Gradient` and `TextMeasurement`. `ShapeContext` is the same without `reset` and
+  the text members, and is what a depth 4 drawing callback receives: a drawing shares
+  the frame's context, so it cannot clear what was drawn before it. Both are
+  receive-only: you are handed one, never implement it.
 
 ```ts
 import type { ShapeContext } from "charade";
@@ -394,11 +397,11 @@ export default scene((stage) => {
 - The built-in backdrops are `plain`, `court`, `office`, `hill` and `night`:
   `row.backdrop("night")` draws behind that row only, and each paints its whole row at
   every canvas shape and row count. A drawing function's last argument is a
-  `DrawMoment`: the scene time, the segment's progress, a seeded random source, and
-  `view`, the row's visible area in the units the function draws in (`left`, `right`,
-  `bottom`, `top`). A row is always 2.5 units high, but its width follows the canvas and
-  the row count, so a backdrop of your own reads its edges from `view` instead of
-  assuming them.
+  `DrawMoment`: the scene time, `t` (seconds since the item began to show, which an
+  open-ended item has too), the segment's progress, a seeded random source, and `view`,
+  the row's visible area in the units the function draws in (`left`, `right`, `bottom`,
+  `top`). A row is always 2.5 units high, but its width follows the canvas and the row
+  count, so a backdrop of your own reads its edges from `view` instead of assuming them.
 
 ```ts
 import { defineBackdrop, scene } from "charade";

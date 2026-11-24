@@ -281,9 +281,10 @@ describe("drawing context types", () => {
     expectTypeOf<SkiaTextMetrics>().toExtend<TextMeasurement>();
   });
 
-  it("makes the full interface the shape context plus text", () => {
+  it("makes the full interface the shape context plus reset and text", () => {
     expectTypeOf<DrawingContext>().toExtend<ShapeContext>();
     expectTypeOf<Exclude<keyof DrawingContext, keyof ShapeContext>>().toEqualTypeOf<
+      | "reset"
       | "fillText"
       | "strokeText"
       | "measureText"
@@ -641,6 +642,31 @@ describe("handle types", () => {
     expectTypeOf<Parameters<DrawFunction>[0]>().not.toHaveProperty("fillText");
   });
 
+  it("gives a depth 4 drawing no reset, while the engine's full context keeps it", () => {
+    expectTypeOf<Parameters<DrawFunction>[0]>().not.toHaveProperty("reset");
+    expectTypeOf<DrawingContext>().toHaveProperty("reset");
+    const kept = (row: Row): Span =>
+      row.draw((ctx) => {
+        ctx.save();
+        ctx.resetTransform();
+        ctx.restore();
+      });
+    expectTypeOf(kept).returns.toEqualTypeOf<Span>();
+    const reset = (ctx: { reset(): void }): void => {
+      ctx.reset();
+    };
+    const engine = (ctx: DrawingContext): void => {
+      reset(ctx);
+    };
+    expect(engine).toBeTypeOf("function");
+    const rejected = (row: Row): Span =>
+      row.draw((ctx) => {
+        // @ts-expect-error a depth 4 drawing cannot reset the frame's context
+        reset(ctx);
+      });
+    expect(rejected).toBeTypeOf("function");
+  });
+
   it("gives a function the scene time, its segment and the random source", () => {
     expectTypeOf<Moment>().toEqualTypeOf<{
       readonly time: number;
@@ -652,7 +678,7 @@ describe("handle types", () => {
     expectTypeOf<RandomSource["uint32"]>().toEqualTypeOf<(draw?: number) => number>();
   });
 
-  it("gives a drawing function the moment and the row's visible area", () => {
+  it("gives a drawing function the moment, its time in the segment and the row's visible area", () => {
     expectTypeOf<RowView>().toEqualTypeOf<{
       readonly left: number;
       readonly right: number;
@@ -661,9 +687,11 @@ describe("handle types", () => {
     }>();
     expectTypeOf<DrawMoment>().toExtend<Moment>();
     expectTypeOf<DrawMoment["view"]>().toEqualTypeOf<RowView>();
-    expectTypeOf<keyof DrawMoment>().toEqualTypeOf<keyof Moment | "view">();
-    // A drive has no row to see: its moment is the plain one.
+    expectTypeOf<DrawMoment["t"]>().toEqualTypeOf<number>();
+    expectTypeOf<keyof DrawMoment>().toEqualTypeOf<keyof Moment | "t" | "view">();
+    // A drive has no row to see and its `t` as an argument: its moment is the plain one.
     expectTypeOf<Parameters<MotionFunction>[1]>().not.toHaveProperty("view");
+    expectTypeOf<Parameters<MotionFunction>[1]>().not.toHaveProperty("t");
     defineBackdrop({
       name: "wide",
       description: "A backdrop that reads the row's edges.",

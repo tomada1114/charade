@@ -379,6 +379,27 @@ describe("free drawings", () => {
     expect(moments[2]?.[0]).toBeCloseTo(0.966667, 6);
   });
 
+  it("hands the same t in the moment as in the argument", () => {
+    const seen: [number, number][] = [];
+    const built = scene({ duration: 2 }, (stage) => {
+      stage.draw(
+        (_ctx, t, moment) => {
+          seen.push([t, moment.t]);
+        },
+        { at: 0.5 },
+      );
+    });
+    for (const frame of [15, 27, 60]) {
+      record(built, frame);
+    }
+    // Frames 15, 27 and 60 at 30 fps are 0, 0.4 and 1.5 s after 0.5 s.
+    expect(seen).toEqual([
+      [0, 0],
+      [0.4, 0.4],
+      [1.5, 1.5],
+    ]);
+  });
+
   it("draws nothing for a segment whose function was omitted or is not a drawing", () => {
     const built = scene((stage) => {
       stage.actor().wait(1);
@@ -433,6 +454,335 @@ describe("free drawings", () => {
     drawFrame(ctx, built, 30);
     expect(spy).toHaveBeenCalled();
     expect(alpha).toBe(1);
+  });
+});
+
+/** Calls `ctx.reset` the way a plain-JS drawing would, past the type that leaves it out. */
+function callReset(ctx: object): void {
+  const reset: unknown = Reflect.get(ctx, "reset");
+  if (typeof reset === "function") {
+    Reflect.apply(reset, ctx, []);
+  }
+}
+
+describe("a drawing that calls reset", () => {
+  const background = [
+    { call: "reset", args: [] },
+    { call: "fillStyle", args: ["#ffffff"] },
+    { call: "fillRect", args: [0, 0, 10800000, 10800000] },
+  ];
+  const resetting = scene((stage) => {
+    stage.draw((ctx) => {
+      ctx.rect(1, 1, 1, 1);
+    });
+    stage.draw((ctx) => {
+      callReset(ctx);
+    });
+    stage.draw((ctx) => {
+      ctx.rect(2, 2, 2, 2);
+    });
+    stage.actor().wait(1);
+  });
+
+  it("keeps the background and the items drawn before a free drawing that resets", () => {
+    const log = record(resetting, 30);
+    expect(log.slice(0, 3)).toEqual(background);
+    expect(log.filter((entry) => entry.call === "reset")).toHaveLength(1);
+    const before = log.findIndex(
+      (entry) => entry.call === "rect" && entry.args[0] === 10000,
+    );
+    const after = log.findIndex(
+      (entry) => entry.call === "rect" && entry.args[0] === 20000,
+    );
+    expect(before).toBeGreaterThan(-1);
+    expect(after).toBeGreaterThan(before);
+  });
+
+  it("keeps the frame's state for the items after a free drawing that resets", () => {
+    const fonts: unknown[] = [];
+    const built = scene((stage) => {
+      stage.draw((ctx) => {
+        callReset(ctx);
+      });
+      stage.draw((ctx) => {
+        fonts.push(Reflect.get(ctx, "font"));
+      });
+      stage.actor().wait(1);
+    });
+    record({ ...built, textFont: "Charade Test" }, 30);
+    expect(fonts).toEqual(["100px Charade Test"]);
+  });
+
+  it("keeps the background and the actor drawn before a prop that resets", () => {
+    const wiping = defineProp({
+      name: "wiping",
+      description: "Resets the context it is handed.",
+      draw(ctx) {
+        callReset(ctx);
+      },
+    });
+    const built = scene({ duration: 1 }, (stage) => {
+      stage.actor();
+      stage.prop(wiping).place({ x: 0.5, y: 0 }, { layer: "front" });
+    });
+    const log = record(built, 0);
+    expect(log.slice(0, 3)).toEqual(background);
+    expect(log.filter((entry) => entry.call === "reset")).toHaveLength(1);
+    expect(log.some((entry) => entry.call === "arc" && entry.args[2] === 900)).toBe(
+      true,
+    );
+  });
+
+  it("gives the context its own reset back once the drawing returns", () => {
+    const ctx = new RecordingContext();
+    drawFrame(ctx, resetting, 30);
+    expect(Object.hasOwn(ctx, "reset")).toBe(false);
+    ctx.reset();
+    expect(ctx.log.at(-1)).toEqual({ call: "reset", args: [] });
+  });
+
+  // The residual cases: the drawing's reset reaches the context.
+  it.each([
+    [
+      "one that is not extensible",
+      () => Object.preventExtensions(new RecordingContext()),
+    ],
+    [
+      "one with a reset of its own",
+      () => {
+        const ctx = new RecordingContext();
+        Object.defineProperty(ctx, "reset", {
+          configurable: true,
+          value: RecordingContext.prototype.reset.bind(ctx),
+        });
+        return ctx;
+      },
+    ],
+  ])("hands %s over as it is", (_, make) => {
+    const ctx = make();
+    drawFrame(ctx, resetting, 30);
+    expect(ctx.log.filter((entry) => entry.call === "reset")).toHaveLength(2);
+  });
+});
+
+/**
+ * A recording context that also keeps the clip and the transform last set, saved and
+ * restored with the rest of its state, so a drawing can read what it is drawn under.
+ */
+class StateContext extends RecordingContext {
+  clipped = false;
+
+  matrix: readonly number[] = [1, 0, 0, 1, 0, 0];
+
+  readonly #saved: { clipped: boolean; matrix: readonly number[] }[] = [];
+
+  override save(): void {
+    super.save();
+    this.#saved.push({ clipped: this.clipped, matrix: this.matrix });
+  }
+
+  override restore(): void {
+    super.restore();
+    const saved = this.#saved.pop();
+    this.clipped = saved?.clipped ?? false;
+    this.matrix = saved?.matrix ?? [1, 0, 0, 1, 0, 0];
+  }
+
+  override clip(): void {
+    super.clip();
+    this.clipped = true;
+  }
+
+  override setTransform(
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+    e: number,
+    f: number,
+  ): void {
+    super.setTransform(a, b, c, d, e, f);
+    this.matrix = [a, b, c, d, e, f];
+  }
+
+  get depth(): number {
+    return this.#saved.length;
+  }
+}
+
+describe("a drawing whose saves and restores do not balance", () => {
+  /** A scene whose first free drawing runs `unbalanced`, and whose second reads `ctx`. */
+  function sceneWith(
+    unbalanced: (ctx: { save(): void; restore(): void }) => void,
+    ctx: StateContext,
+    seen: { clipped: boolean; matrix: readonly number[]; depth: number }[],
+  ): Scene {
+    return scene((stage) => {
+      stage.draw((drawn) => {
+        unbalanced(drawn);
+      });
+      stage.draw(() => {
+        seen.push({ clipped: ctx.clipped, matrix: ctx.matrix, depth: ctx.depth });
+      });
+      stage.actor().wait(1);
+    });
+  }
+
+  /** What the second drawing is drawn under when the first one balances. */
+  function balanced(): { clipped: boolean; matrix: readonly number[]; depth: number } {
+    const ctx = new StateContext();
+    const seen: { clipped: boolean; matrix: readonly number[]; depth: number }[] = [];
+    drawFrame(
+      ctx,
+      sceneWith(() => undefined, ctx, seen),
+      30,
+    );
+    const [state] = seen;
+    if (state === undefined) {
+      throw new Error("the second drawing was not drawn");
+    }
+    return state;
+  }
+
+  it("draws the next item under the row's clip and transform after two extra restores", () => {
+    const ctx = new StateContext();
+    const seen: { clipped: boolean; matrix: readonly number[]; depth: number }[] = [];
+    drawFrame(
+      ctx,
+      sceneWith(
+        (drawn) => {
+          drawn.restore();
+          drawn.restore();
+        },
+        ctx,
+        seen,
+      ),
+      30,
+    );
+    const expected = balanced();
+    expect(expected.clipped).toBe(true);
+    expect(expected.matrix).not.toEqual([1, 0, 0, 1, 0, 0]);
+    expect(seen).toEqual([expected]);
+    expect(ctx.depth).toBe(0);
+  });
+
+  it("pops the drawing's own saves and ignores only the restores past them", () => {
+    const ctx = new RecordingContext();
+    const reached: (LogEntry | undefined)[] = [];
+    const built = scene((stage) => {
+      stage.draw((drawn) => {
+        drawn.save();
+        drawn.restore();
+        reached.push(ctx.log.at(-1));
+        const before = ctx.log.length;
+        drawn.restore();
+        reached.push(ctx.log.length === before ? undefined : ctx.log.at(-1));
+      });
+      stage.actor().wait(1);
+    });
+    drawFrame(ctx, built, 30);
+    expect(reached).toEqual([{ call: "restore", args: [] }, undefined]);
+    const calls = ctx.log.map((entry) => entry.call);
+    expect(calls.filter((call) => call === "save")).toHaveLength(
+      calls.filter((call) => call === "restore").length,
+    );
+  });
+
+  it("restores the saves a drawing leaves open when it throws", () => {
+    const ctx = new StateContext();
+    const built = scene((stage) => {
+      stage.draw((drawn) => {
+        drawn.save();
+        drawn.save();
+        throw new Error("drawn halfway");
+      });
+      stage.actor().wait(1);
+    });
+    expect(() => {
+      drawFrame(ctx, built, 30);
+    }).toThrow(FrameItemError);
+    expect(ctx.depth).toBe(0);
+  });
+
+  it("hands a context with a save and restore of its own over as it is", () => {
+    const ctx = new RecordingContext();
+    for (const name of ["save", "restore"] as const) {
+      Object.defineProperty(ctx, name, {
+        configurable: true,
+        value: RecordingContext.prototype[name].bind(ctx),
+      });
+    }
+    let saves = 0;
+    let restores = 0;
+    const counted = scene((stage) => {
+      stage.draw((drawn) => {
+        drawn.restore();
+      });
+      stage.actor().wait(1);
+    });
+    drawFrame(ctx, counted, 30);
+    for (const entry of ctx.log) {
+      saves += entry.call === "save" ? 1 : 0;
+      restores += entry.call === "restore" ? 1 : 0;
+    }
+    expect(restores).toBe(saves + 1);
+  });
+
+  it("restores the saves a drawing leaves open before the next item", () => {
+    const ctx = new StateContext();
+    const seen: { clipped: boolean; matrix: readonly number[]; depth: number }[] = [];
+    drawFrame(
+      ctx,
+      sceneWith(
+        (drawn) => {
+          drawn.save();
+          drawn.save();
+        },
+        ctx,
+        seen,
+      ),
+      30,
+    );
+    expect(seen).toEqual([balanced()]);
+    expect(ctx.depth).toBe(0);
+  });
+
+  it("keeps the row's state for the item after a prop with an extra restore", () => {
+    const popping = defineProp({
+      name: "popping",
+      description: "Restores once more than it saves.",
+      draw(drawn) {
+        drawn.restore();
+      },
+    });
+    const ctx = new StateContext();
+    const seen: { clipped: boolean; matrix: readonly number[]; depth: number }[] = [];
+    const built = scene({ duration: 1 }, (stage) => {
+      stage.actor();
+      stage.prop(popping).place({ x: 0.5, y: 0 }, { layer: "front" });
+      stage.draw(() => {
+        seen.push({ clipped: ctx.clipped, matrix: ctx.matrix, depth: ctx.depth });
+      });
+    });
+    drawFrame(ctx, built, 0);
+    expect(seen).toEqual([balanced()]);
+    expect(ctx.depth).toBe(0);
+  });
+
+  it("gives the context its own save and restore back once the drawing returns", () => {
+    const ctx = new RecordingContext();
+    drawFrame(
+      ctx,
+      scene((stage) => {
+        stage.draw((drawn) => {
+          drawn.restore();
+        });
+        stage.actor().wait(1);
+      }),
+      30,
+    );
+    expect(Object.hasOwn(ctx, "save")).toBe(false);
+    expect(Object.hasOwn(ctx, "restore")).toBe(false);
   });
 });
 
@@ -690,6 +1040,28 @@ describe("backdrops and effects", () => {
   function headIndex(log: readonly LogEntry[]): number {
     return log.findIndex((entry) => entry.call === "arc" && entry.args[2] === 900);
   }
+
+  it("tells an open-ended effect how long its segment has been shown", () => {
+    const seen: [number, number, number][] = [];
+    const clock = defineEffect({
+      name: "clock",
+      description: "An effect that notes its moment.",
+      draw(_ctx, _params, { t, time, progress }) {
+        seen.push([t, time, progress]);
+      },
+    });
+    const built = scene({ duration: 4 }, (stage) => {
+      stage.effect(clock, { at: 3 });
+    });
+    for (const frame of [89, 90, 102]) {
+      record(built, frame);
+    }
+    // Shown from 3 s, frame 90 at 30 fps; frame 102 is 0.4 s on, with progress still 0.
+    expect(seen).toEqual([
+      [0, 3, 0],
+      [0.4, 3.4, 0],
+    ]);
+  });
 
   it("draws a backdrop before the ground line and an effect after the actor", () => {
     const built = scene({ duration: 1 }, (stage) => {

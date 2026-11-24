@@ -68,6 +68,10 @@ export interface TextMeasurement {
  * drawn mirrored, and it would bypass the text checks. A scene's text goes through labels,
  * speech bubbles and the text helper.
  *
+ * It has no `reset` either: a drawing shares the frame's context, and resetting it would
+ * clear everything drawn before the drawing and the row's clip and transform with it. The
+ * engine also ignores a `reset` called on the context it hands over.
+ *
  * A property whose value two real contexts report differently is declared with a wide
  * getter and a narrow setter: read it as any string, write one of the standard values.
  *
@@ -91,8 +95,6 @@ export interface ShapeContext {
   save(): void;
   /** Pops the drawing state saved last. */
   restore(): void;
-  /** Resets the context to its initial state, clearing the state stack and the path. */
-  reset(): void;
 
   /**
    * Moves the origin.
@@ -432,8 +434,8 @@ export interface ShapeContext {
 }
 
 /**
- * The full drawing context the engine draws a frame on: {@link ShapeContext} plus the
- * standard Canvas 2D text members.
+ * The full drawing context the engine draws a frame on: {@link ShapeContext} plus
+ * `reset` and the standard Canvas 2D text members.
  *
  * @remarks
  * Not named after the DOM's context type, which it would shadow. Both a browser's 2D
@@ -455,6 +457,12 @@ export interface ShapeContext {
  * @public
  */
 export interface DrawingContext extends ShapeContext {
+  /**
+   * Resets the context to its initial state, clearing the canvas, the state stack and the
+   * path.
+   */
+  reset(): void;
+
   /**
    * Fills text at a point.
    *

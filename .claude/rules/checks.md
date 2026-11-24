@@ -36,6 +36,41 @@ recorded sample is how an unintended change in appearance fails a test.
   position, never the value. A property write counts: the write throws and the state
   keeps its old value. An `undefined` in a required argument, before a given one, or
   written to a property throws the same class, since a real context reads it as `NaN`.
+- An argument a real context rejects throws instead of being logged, so a record cannot
+  pass where the rendered frame throws: a negative radius to `arc`, `arcTo`, `ellipse`
+  or `createRadialGradient` and a colour stop offset outside 0..1 (`IndexSizeError` in
+  the DOM), and a negative corner radius or more than four of them to `roundRect`
+  (`RangeError`). The class is `DrawingArgumentRangeError`
+  (`ERR_SCENE_DRAWING_OUT_OF_RANGE`), beside `NonFiniteDrawingError` and carrying the
+  same `call` and `argument`, never the value; a list of radii is its one argument
+  position. The test is on the value given, not the logged one, `-0` is not negative,
+  and a negative infinity throws `NonFiniteDrawingError`. An empty radius list is not
+  rejected, since skia-canvas 4 accepts it (and five radii too, which the recorder still
+  rejects as the DOM does). A negative `createRadialGradient` radius is rejected on the
+  same terms, though skia-canvas 4 accepts it: the recorder follows the DOM where it is
+  stricter.
+- A colour stop whose colour cannot be parsed throws `InvalidDrawingColorError`
+  (`ERR_SCENE_INVALID_DRAWING_COLOR`, beside the two above, `call` `addColorStop` and
+  `argument` 1, never the value), since skia-canvas throws a `TypeError` on it at
+  render. The offset is checked first. The check is pure, so it is a grammar rather than
+  skia's parser, and it accepts only what skia-canvas 4 parses as well: after trimming
+  Unicode `White_Space` from both ends (as skia does, so a no-break space or `\v` there
+  is accepted) and ignoring case, a CSS named colour or `transparent`; `#` with 3, 4, 6
+  or 8 hex digits; and `rgb()`, `rgba()`, `hsl()` or `hsla()` in the comma syntax (rgb
+  channels all numbers or all percentages, hsl a hue with an optional angle unit then
+  two percentages, an optional alpha) or the space syntax (each channel a number, a
+  percentage or `none`, an optional `/ alpha`). It follows skia where skia is stricter
+  than CSS: the seven `grey` spellings, `currentcolor`, a form feed inside the
+  parentheses and a space between a hue and its comma are rejected. It is stricter than
+  skia elsewhere: other colour functions (`hwb()`, `lab()`, `oklch()`, `color()`…), and
+  comma-syntax forms CSS rejects but skia reads, such as `rgb(1, 2, 3%)`, `none` there,
+  or an hsl saturation without `%`. Only colour stops are checked; a style property
+  given an unparseable colour is ignored by a real context, so it is logged as given.
+- `setLineDash` keeps the dash list as a real context does: a list with a negative entry
+  leaves the previous one in place, and an odd-length list is stored twice over, so
+  `[1, 2, 3]` reads back from `getLineDash` as `[1, 2, 3, 1, 2, 3]`. The call is logged
+  as given either way. A non-finite entry, which a real context ignores too, throws
+  `NonFiniteDrawingError` as any non-finite argument does.
 - A property write is logged as a call. A gradient is logged by its creation index.
 - An entry is `{ call, args }`. A property write's `call` is the property's name and
   `args` holds the one value; a method's `args` holds the arguments given, so an omitted
@@ -94,10 +129,16 @@ recorded sample is how an unintended change in appearance fails a test.
   resize it quietly and the raw output would lose its `width × height × 4` length.
 - An unknown name or a bad parameter while a scene runs is recorded as a finding and
   authoring continues with a placeholder, so one run reports every mistake instead of
-  the first. Recording stops at twenty findings (`FINDING_CAP`), keeping the first ones;
-  the report says when later ones were dropped. A structural mistake — a row the scene
-  does not have, a callback that returns a promise — is thrown instead, since there is
-  no placeholder to continue with.
+  the first. Recording stops at twenty findings (`FINDING_CAP`), keeping the first ones,
+  except that a warning gives way to an error: at the cap a later warning is dropped and
+  a later error evicts the last warning kept, never an error, so the kept findings are
+  the first errors and, in the room left, the first warnings, in the order added. The
+  cap lives in `FindingCollector` rather than in a separate place for late findings,
+  because the scene's clock and random reads are recorded only after its build callback
+  returns, and `checkScene` never sees what the scene dropped: a dropped error would
+  turn a failing run into exit 0. The report says when findings were dropped. A
+  structural mistake — a row the scene does not have, a callback that returns a promise
+  — is thrown instead, since there is no placeholder to continue with.
 - The public names are `Finding` (the plain data), `Severity` (`"error" | "warning"`),
   `SourceLocation` (`file`, `line`, `column`), and `FindingCollector`, which records up
   to the cap. A finding's location fields are `row`, `target`, `joint`, `time` (seconds)
@@ -226,7 +267,9 @@ recorded sample is how an unintended change in appearance fails a test.
 - A watched global still answers as the real one does, so the scene runs on and one
   check reports every read. Only reading the current time counts: `Date.now()`,
   `new Date()` and `Date()`, not `new Date(2020, 0, 1)` or `Date.UTC`. A nested watch
-  keeps its reads to itself.
+  keeps its reads to itself. A watch returns what its function throws, with the reads
+  made before the throw, instead of rethrowing it: a frame whose function reads and then
+  throws reports both the read and the failure, and the caller rethrows when it must.
 - A read in the build callback is a finding frozen into the scene, with no row or
   target. A read at a frame names the track. Both use the `ERR_CHECK_` codes, also the
   one recorded while authoring: it is one failure with one fix, and a caller should not

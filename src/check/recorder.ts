@@ -34,6 +34,144 @@ export class NonFiniteDrawingError extends CharadeError {
 }
 
 /**
+ * A drawing call was given a number a real context rejects: a negative radius, a colour
+ * stop offset outside 0..1, or a corner radius list that is negative or longer than four.
+ * `call` names the member and `argument` the zero-based position of the rejected
+ * argument, never its value.
+ */
+export class DrawingArgumentRangeError extends CharadeError {
+  readonly code = "ERR_SCENE_DRAWING_OUT_OF_RANGE" as const;
+
+  readonly call: string;
+
+  readonly argument: number;
+
+  constructor(call: string, argument: number) {
+    super(
+      `Argument ${String(argument)} of ${call} is outside the range a context accepts.`,
+    );
+    this.call = call;
+    this.argument = argument;
+  }
+}
+
+/**
+ * Throws when the radius at `argument` is negative; `-0` is not, and a non-finite one is
+ * left to `NonFiniteDrawingError`.
+ */
+function requireRadius(radius: number, call: string, argument: number): void {
+  if (radius < 0 && Number.isFinite(radius)) {
+    throw new DrawingArgumentRangeError(call, argument);
+  }
+}
+
+const MAX_CORNER_RADII = 4;
+
+/**
+ * A drawing call was given a colour a real context cannot parse, or a value that is not a
+ * string. `call` names the member and `argument` the zero-based position of the rejected
+ * argument, never its value.
+ */
+export class InvalidDrawingColorError extends CharadeError {
+  readonly code = "ERR_SCENE_INVALID_DRAWING_COLOR" as const;
+
+  readonly call: string;
+
+  readonly argument: number;
+
+  constructor(call: string, argument: number) {
+    super(
+      `Argument ${String(argument)} of ${call} is not a colour a context can parse.`,
+    );
+    this.call = call;
+    this.argument = argument;
+  }
+}
+
+// The CSS named colours less the seven `grey` spellings, which skia-canvas 4 rejects.
+const NAMED_COLORS: ReadonlySet<string> = new Set(
+  (
+    "aliceblue antiquewhite aqua aquamarine azure beige bisque black blanchedalmond blue " +
+    "blueviolet brown burlywood cadetblue chartreuse chocolate coral cornflowerblue " +
+    "cornsilk crimson cyan darkblue darkcyan darkgoldenrod darkgray darkgreen darkkhaki " +
+    "darkmagenta darkolivegreen darkorange darkorchid darkred darksalmon darkseagreen " +
+    "darkslateblue darkslategray darkturquoise darkviolet deeppink deepskyblue dimgray " +
+    "dodgerblue firebrick floralwhite forestgreen fuchsia gainsboro ghostwhite gold " +
+    "goldenrod gray green greenyellow honeydew hotpink indianred indigo ivory khaki " +
+    "lavender lavenderblush lawngreen lemonchiffon lightblue lightcoral lightcyan " +
+    "lightgoldenrodyellow lightgray lightgreen lightpink lightsalmon lightseagreen " +
+    "lightskyblue lightslategray lightsteelblue lightyellow lime limegreen linen magenta " +
+    "maroon mediumaquamarine mediumblue mediumorchid mediumpurple mediumseagreen " +
+    "mediumslateblue mediumspringgreen mediumturquoise mediumvioletred midnightblue " +
+    "mintcream mistyrose moccasin navajowhite navy oldlace olive olivedrab orange " +
+    "orangered orchid palegoldenrod palegreen paleturquoise palevioletred papayawhip " +
+    "peachpuff peru pink plum powderblue purple rebeccapurple red rosybrown royalblue " +
+    "saddlebrown salmon sandybrown seagreen seashell sienna silver skyblue slateblue " +
+    "slategray snow springgreen steelblue tan teal thistle tomato transparent turquoise " +
+    "violet wheat white whitesmoke yellow yellowgreen"
+  ).split(" "),
+);
+
+const HEX_COLOR = /^#(?:[\da-f]{3,4}|[\da-f]{6}|[\da-f]{8})$/;
+
+// CSS whitespace less the form feed, which skia-canvas 4 rejects inside the parentheses;
+// not the wider set `\s` matches.
+const WS = "[\\t\\n\\r ]";
+const NUM = String.raw`[+-]?(?:\d+(?:\.\d+)?|\.\d+)(?:e[+-]?\d+)?`;
+const PCT = `${NUM}%`;
+const HUE = `${NUM}(?:deg|rad|grad|turn)?`;
+const SPACED = `(?:${NUM}|${PCT}|none)`;
+
+const COMMA = `${WS}*,${WS}*`;
+
+/** A comma-separated body; skia-canvas 4 rejects a space between a hue and its comma. */
+function legacy(a: string, afterA: string, b: string, c: string): string {
+  return `^${WS}*${a}${afterA}${b}${COMMA}${c}(?:${COMMA}(?:${NUM}|${PCT}))?${WS}*$`;
+}
+
+/** A space-separated body, with an optional `/ alpha`. */
+function spaced(hue: string): string {
+  return `^${WS}*${hue}${WS}+${SPACED}${WS}+${SPACED}(?:${WS}*/${WS}*${SPACED})?${WS}*$`;
+}
+
+const RGB_BODY = new RegExp(
+  [legacy(NUM, COMMA, NUM, NUM), legacy(PCT, COMMA, PCT, PCT), spaced(SPACED)].join(
+    "|",
+  ),
+);
+const HSL_BODY = new RegExp(
+  [legacy(HUE, `,${WS}*`, PCT, PCT), spaced(`(?:${HUE}|none)`)].join("|"),
+);
+const COLOR_FUNCTION = /^(rgba?|hsla?)\((.*)\)$/s;
+
+/**
+ * Whether a real context can parse `value` as a colour: a named colour, a hex form, or
+ * `rgb()`, `rgba()`, `hsl()` or `hsla()` in either syntax, as `.claude/rules/checks.md`
+ * lists. Other colour functions and `currentcolor` are rejected though skia-canvas reads
+ * some of them.
+ */
+function isColor(value: unknown): boolean {
+  if (typeof value !== "string") {
+    return false;
+  }
+  // Unicode White_Space, as skia-canvas 4 trims it: a no-break space or `\v` around a
+  // colour renders, so it must not be rejected here.
+  const color = value
+    .replace(/^\p{White_Space}+|\p{White_Space}+$/gu, "")
+    .toLowerCase();
+  if (NAMED_COLORS.has(color) || HEX_COLOR.test(color)) {
+    return true;
+  }
+  const match = COLOR_FUNCTION.exec(color);
+  const name = match?.[1];
+  const body = match?.[2];
+  if (name === undefined || body === undefined) {
+    return false;
+  }
+  return (name.startsWith("rgb") ? RGB_BODY : HSL_BODY).test(body);
+}
+
+/**
  * A style was set to a gradient this recording context did not create, which it has no
  * creation index to log by. `call` names the property.
  */
@@ -257,9 +395,16 @@ export class RecordingContext implements DrawingContext {
     this.#record(call, args);
     const index = this.#gradients.size;
     const gradient = new RecordedGradient((offset, color) => {
+      if (Number.isFinite(offset) && (offset < 0 || offset > 1)) {
+        throw new DrawingArgumentRangeError("addColorStop", 0);
+      }
+      const quantised = quantise(offset, "addColorStop", 0);
+      if (!isColor(color)) {
+        throw new InvalidDrawingColorError("addColorStop", 1);
+      }
       this.#log.push({
         call: "addColorStop",
-        args: [{ gradient: index }, quantise(offset, "addColorStop", 0), color],
+        args: [{ gradient: index }, quantised, color],
       });
     });
     this.#gradients.set(gradient, index);
@@ -335,14 +480,18 @@ export class RecordingContext implements DrawingContext {
   }
 
   arc(...args: Args<"arc">): void {
+    requireRadius(args[2], "arc", 2);
     this.#record("arc", args);
   }
 
   arcTo(...args: Args<"arcTo">): void {
+    requireRadius(args[4], "arcTo", 4);
     this.#record("arcTo", args);
   }
 
   ellipse(...args: Args<"ellipse">): void {
+    requireRadius(args[2], "ellipse", 2);
+    requireRadius(args[3], "ellipse", 3);
     this.#record("ellipse", args);
   }
 
@@ -351,6 +500,17 @@ export class RecordingContext implements DrawingContext {
   }
 
   roundRect(...args: Args<"roundRect">): void {
+    const radii = args[4];
+    if (Array.isArray(radii)) {
+      if (radii.length > MAX_CORNER_RADII) {
+        throw new DrawingArgumentRangeError("roundRect", 4);
+      }
+      for (const radius of radii) {
+        requireRadius(radius, "roundRect", 4);
+      }
+    } else if (radii !== undefined) {
+      requireRadius(radii, "roundRect", 4);
+    }
     this.#record("roundRect", args);
   }
 
@@ -383,6 +543,8 @@ export class RecordingContext implements DrawingContext {
   }
 
   createRadialGradient(...args: Args<"createRadialGradient">): Gradient {
+    requireRadius(args[2], "createRadialGradient", 2);
+    requireRadius(args[5], "createRadialGradient", 5);
     return this.#gradient("createRadialGradient", args);
   }
 
@@ -392,7 +554,12 @@ export class RecordingContext implements DrawingContext {
 
   setLineDash(segments: readonly number[]): void {
     this.#push("setLineDash", [segments]);
-    this.#state.lineDash = [...segments];
+    // A real context ignores a list with a negative entry and repeats an odd-length one.
+    if (segments.some((segment) => segment < 0)) {
+      return;
+    }
+    this.#state.lineDash =
+      segments.length % 2 === 1 ? [...segments, ...segments] : [...segments];
   }
 
   getLineDash(): number[] {

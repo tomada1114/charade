@@ -4,7 +4,12 @@ import type { Point } from "../rig/kinematics.js";
 import { builtinBackdrops, builtinEffects, builtinProps } from "../scene/builtins.js";
 import { randomSource } from "../timeline/random.js";
 import type { DrawMoment } from "../timeline/segments.js";
-import { frameInSegment, frameSeconds, MICROS_PER_SECOND } from "../timeline/time.js";
+import {
+  frameInSegment,
+  frameSeconds,
+  type Micros,
+  MICROS_PER_SECOND,
+} from "../timeline/time.js";
 import type { Timeline, TimelineTrack } from "../timeline/timeline.js";
 import type { DrawingContext, ShapeContext } from "./context.js";
 import { drawFigure, facingOf, FIGURE_LINE, INK, PAPER } from "./figure.js";
@@ -392,7 +397,7 @@ export function drawItem(
     if (draw === undefined) {
       continue;
     }
-    const t = time - start / MICROS_PER_SECOND;
+    const t = sinceStart(frame, start, fps);
     const duration = end === null ? Infinity : (end - start) / MICROS_PER_SECOND;
     ctx.save();
     try {
@@ -403,15 +408,68 @@ export function drawItem(
       ctx.strokeStyle = INK;
       ctx.fillStyle = INK;
       ctx.lineWidth = FIGURE_LINE;
-      draw(ctx, data["params"], {
-        time,
-        duration,
-        progress: end === null ? 0 : t / duration,
-        random,
-        view,
+      guarded(ctx, () => {
+        draw(ctx, data["params"], {
+          time,
+          duration,
+          progress: end === null ? 0 : t / duration,
+          t,
+          random,
+          view,
+        });
       });
     } finally {
       ctx.restore();
+    }
+  }
+}
+
+/**
+ * Seconds from a segment's start to frame `frame`, from the difference in frame units:
+ * `frame / fps − start` in floats would let the same distance from the start round two
+ * ways at two starts, and a repeating effect then differ by where it was placed.
+ */
+function sinceStart(frame: number, start: Micros, fps: number): number {
+  return (frame * MICROS_PER_SECOND - start * fps) / (fps * MICROS_PER_SECOND);
+}
+
+/** The members a drawing's guard shadows on the shared context while it runs. */
+const GUARDED = ["reset", "save", "restore"] as const;
+
+/**
+ * Calls `draw` with `reset` a no-op and `save`/`restore` counted, so a plain-JS drawing
+ * can neither clear nor pop the row's state; `.claude/rules/engine.md` has the reasons.
+ */
+function guarded(ctx: ShapeContext, draw: () => void): void {
+  if (!Object.isExtensible(ctx) || GUARDED.some((name) => Object.hasOwn(ctx, name))) {
+    draw();
+    return;
+  }
+  const save = ctx.save.bind(ctx);
+  const restore = ctx.restore.bind(ctx);
+  let open = 0;
+  const shadow = (name: (typeof GUARDED)[number], value: () => void): void => {
+    Object.defineProperty(ctx, name, { configurable: true, writable: true, value });
+  };
+  shadow("reset", () => undefined);
+  shadow("save", () => {
+    save();
+    open += 1;
+  });
+  shadow("restore", () => {
+    if (open > 0) {
+      open -= 1;
+      restore();
+    }
+  });
+  try {
+    draw();
+  } finally {
+    for (const name of GUARDED) {
+      Reflect.deleteProperty(ctx, name);
+    }
+    for (; open > 0; open -= 1) {
+      restore();
     }
   }
 }
@@ -445,17 +503,20 @@ export function drawTrack(
     if (!isDrawCallback(draw) || !frameInSegment(frame, start, end, fps)) {
       continue;
     }
-    const t = time - start / MICROS_PER_SECOND;
+    const t = sinceStart(frame, start, fps);
     const duration = end === null ? Infinity : (end - start) / MICROS_PER_SECOND;
     ctx.strokeStyle = INK;
     ctx.fillStyle = INK;
     ctx.lineWidth = FIGURE_LINE;
-    draw(ctx, t, {
-      time,
-      duration,
-      progress: end === null ? 0 : t / duration,
-      random,
-      view,
+    guarded(ctx, () => {
+      draw(ctx, t, {
+        time,
+        duration,
+        progress: end === null ? 0 : t / duration,
+        t,
+        random,
+        view,
+      });
     });
   }
 }
