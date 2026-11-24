@@ -1,11 +1,6 @@
-import {
-  type ActionDefinition,
-  type Clip,
-  defineAction,
-  type Point,
-  type PoseChannels,
-  type Stage,
-} from "../../index.js";
+import type { Point } from "../../rig/kinematics.js";
+import { type ActionDefinition, defineAction } from "../../scene/define.js";
+import type { Clip, PoseChannels, Stage } from "../../scene/handles.js";
 import { rockProp } from "../props/rock.js";
 import { crouch, squat } from "./pickUp.js";
 import { type Gait, smoothstep, STANDING, stride, strideTime } from "./walk.js";

@@ -1,4 +1,5 @@
-import { defineEffect, type EffectDefinition, type Stage } from "../../index.js";
+import { defineEffect, type EffectDefinition } from "../../scene/define.js";
+import type { Stage } from "../../scene/handles.js";
 import { throwAction } from "../actions/throw.js";
 import { ballProp } from "../props/ball.js";
 

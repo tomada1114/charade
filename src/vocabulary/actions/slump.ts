@@ -1,4 +1,5 @@
-import { type ActionDefinition, defineAction, type Stage } from "../../index.js";
+import { type ActionDefinition, defineAction } from "../../scene/define.js";
+import type { Stage } from "../../scene/handles.js";
 
 const slumpParams = {
   depth: {

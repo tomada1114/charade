@@ -227,7 +227,8 @@ In your own project, with the items in `wave.ts`:
 The same file, with these differences; `.claude/rules/vocabulary.md` has the rest.
 
 1. One item per file at `src/vocabulary/<kind>s/<name>.ts`, exported as `<name><Kind>`
-   (`waveAction`), importing from `../../index.js` in place of `"charade"`.
+   (`waveAction`), importing each name from its defining module under `../../` (what
+   `src/index.ts` re-exports it from) in place of `"charade"`.
 2. `pnpm vocabulary:index` rebuilds the generated index; a test fails when it is stale.
 3. `pnpm build`, then `node dist/cli.js check --defs dist/vocabulary/<kind>s/<name>.js`
    and `node dist/cli.js catalog <name> --images`; look and fix as above.

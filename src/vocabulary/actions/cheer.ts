@@ -1,9 +1,5 @@
-import {
-  type ActionDefinition,
-  defineAction,
-  type PoseChannels,
-  type Stage,
-} from "../../index.js";
+import { type ActionDefinition, defineAction } from "../../scene/define.js";
+import type { PoseChannels, Stage } from "../../scene/handles.js";
 
 const cheerParams = {
   times: {
