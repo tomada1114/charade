@@ -1216,6 +1216,8 @@ describe("a built-in action", () => {
     ["sitDown", { seat: 0.4 }],
     ["sitDown", { duration: 0.4 }],
     ["sitDown", { duration: 4 }],
+    ["sitDown", { from: -2 }],
+    ["sitDown", { from: 2, seat: 0.4 }],
     ["slump", {}],
     ["slump", { depth: 0.2 }],
     ["slump", { depth: 1 }],
@@ -1226,6 +1228,8 @@ describe("a built-in action", () => {
     ["throw", { to: { x: 0.4, y: 1.2 }, loft: 0.05, bounce: false }],
     ["throw", { duration: 0.5 }],
     ["throw", { duration: 4 }],
+    ["throw", { from: -2 }],
+    ["throw", { from: 2, to: { x: 3.5, y: 0 } }],
     // #26 R2
     ["stand", {}],
     ["stand", { duration: 0.2 }],
@@ -1393,6 +1397,68 @@ describe("a built-in action", () => {
       )
       .find((channels) => channels?.["pelvisX"] === -0.24);
     expect(seated?.["pelvisY"]).toBeCloseTo(0.3 + 0.015 - 0.48, 10);
+  });
+
+  /** The skeleton of the first actor at the last frame of `built`. */
+  function lastSkeleton(built: Scene): Skeleton {
+    const track = built.timeline.rows[0]?.tracks.find(({ kind }) => kind === "actor");
+    const last = lastFrameOf(built.timeline);
+    if (track === undefined || last === undefined) {
+      throw new Error("no actor, or no length");
+    }
+    return forwardKinematics(poseAtFrame(built.timeline, 0, track, last));
+  }
+
+  /** Both feet flat on the ground, within `near` of `x`. */
+  function expectFeetAt(skeleton: Skeleton, x: number, near: number): void {
+    for (const side of ["L", "R"] as const) {
+      expect(Math.abs(skeleton[`ankle${side}`].x - x)).toBeLessThan(near);
+      expect(skeleton[`ankle${side}`].y).toBeCloseTo(0, 6);
+      expect(skeleton[`toe${side}`].y).toBeCloseTo(0, 2);
+    }
+  }
+
+  it("sits down where a walk ended, given from, on a box placed behind it", () => {
+    // Two rows, so the row is wide enough for the walk.
+    const built = scene({ rows: 2 }, (wide) => {
+      const stage = wide.row(0);
+      stage.prop("box").place({ x: 1 - 0.24, y: 0 });
+      const actor = stage.actor();
+      actor.do("walk", { distance: 1 });
+      actor.do("sitDown", { from: 1 });
+      actor.wait(0.3);
+    });
+    expect(built.findings).toEqual([]);
+    expect(checkScene(built).findings).toEqual([]);
+    const seated = lastSkeleton(built);
+    expect(seated.pelvis.x).toBeCloseTo(1 - 0.24, 6);
+    expect(seated.pelvis.y).toBeCloseTo(0.26 + 0.015, 6);
+    expectFeetAt(seated, 1, 0.05);
+  });
+
+  it("throws from where a walk ended, given from, and ends standing there", () => {
+    const built = scene({ rows: 2 }, (wide) => {
+      const stage = wide.row(0);
+      const ball = stage.prop("ball");
+      const actor = stage.actor();
+      actor.do("walk", { distance: 1 });
+      actor.do("throw", { ball, from: 1, to: { x: 1.6, y: 0 }, bounce: false });
+      actor.wait(0.3);
+    });
+    expect(built.findings).toEqual([]);
+    expect(checkScene(built).findings).toEqual([]);
+    const standing = lastSkeleton(built);
+    expect(standing.pelvis.x).toBeCloseTo(1, 6);
+    expect(standing.pelvis.y).toBeCloseTo(0.48, 6);
+    expectFeetAt(standing, 1, 1e-6);
+  });
+
+  it("makes a dejected throw from elsewhere fall short of to, on its way there", () => {
+    const flight = segmentsOf(
+      alone("throw", { from: 2, to: { x: 3, y: 0 }, bounce: false, mood: "dejected" }),
+      "prop",
+    ).at(-1);
+    expect((flight as { data: { x: number } }).data.x).toBeCloseTo(2.55, 10);
   });
 });
 
