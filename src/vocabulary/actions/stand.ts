@@ -1,10 +1,9 @@
 import {
   type ActionDefinition,
-  type CycleKey,
   defineAction,
   type NoParams,
-  type Stage,
-} from "../../index.js";
+} from "../../scene/define.js";
+import type { CycleKey, Stage } from "../../scene/handles.js";
 
 /**
  * When the eyes close within one pass of {@link BLINK_PERIOD}: unevenly spaced, one of
