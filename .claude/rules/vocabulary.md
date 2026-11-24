@@ -93,10 +93,12 @@ never repeats it. This rule holds only what is true inside this repository.
   occupies the asked duration or else what it recorded. A mood is a face pose over the
   action's span, recorded beneath the action's own calls so a face the action sets wins;
   like any ended pose it is held afterwards, until a later call moves the face. An
-  action's or expression's `build` that throws propagates out of `scene()`, as the
-  scene's own code does. `express` takes `at`, `duration`, `blend` and `mode` and
-  records a pose of the face channels `build` returns. A prop, backdrop or effect takes
-  `at` (default 0) and `duration` (default open-ended).
+  `express` that starts inside the action ends the mood there on the channels it names
+  (`.claude/rules/engine.md`, Sequencing). An action's or expression's `build` that
+  throws propagates out of `scene()`, as the scene's own code does. `express` takes
+  `at`, `duration`, `blend` and `mode` and records a pose of the face channels `build`
+  returns. A prop, backdrop or effect takes `at` (default 0) and `duration` (default
+  open-ended).
 - `row.effect` also takes `on`, where the effect's origin is (`EffectOptions`): a point
   of the row, an actor of the row, which is the centre of its head, or an `EffectAnchor`
   `{ actor, part, offset }` whose `part` (`AnchorPart`) is `head`, `pelvis`, `handL`,
