@@ -313,9 +313,13 @@ These set the conventions the later items follow.
   of its own beside the one that overshoots: a straight elbow or knee, a shoulder raised
   past 3.
 - Each pose of these actions lasts until the next one on its channels has arrived, not
-  only until it starts (`.claude/rules/engine.md` § Sequencing), so an action plays the
-  same alone and over an open-ended `stand`. The sweep in
-  `tests/vocabulary-samples.test.ts` runs every action both ways.
+  only until it starts (`.claude/rules/engine.md` § Sequencing), so an action is not
+  pulled towards a bounded `stand` it is played inside while one pose hands over to the
+  next; when its last pose ends, that stand takes the joints back. Over an open-ended
+  `stand` any action plays as it does alone, since a pose that ends there is held and
+  the stand loses those joints: they stop breathing (the blink, an `add`, goes on) until
+  `stand` is called again. The sweep in `tests/vocabulary-samples.test.ts` runs every
+  action alone and over an open-ended `stand`.
 
 ## The three actions that move a prop
 

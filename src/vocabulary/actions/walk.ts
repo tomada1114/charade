@@ -142,7 +142,7 @@ export function stride(
   /**
    * A pose that starts at `start`, has arrived at `at` and lasts until `until`, when the
    * next one on its channels has arrived: one that ended sooner would give way, for
-   * as long as the next takes to blend in, to whatever the scene has running beneath.
+   * as long as the next takes to blend in, to a bounded call running beneath it.
    */
   const key = (
     channels: PoseChannels,

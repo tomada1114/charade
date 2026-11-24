@@ -53,7 +53,7 @@ export const cheerAction: ActionDefinition<typeof cheerParams, "up"> = defineAct
     /**
      * A pose from `start` that takes `blend` to arrive and lasts until `until`, when the
      * next one on its channels has arrived: one that ended sooner would give way,
-     * while the next blends in, to whatever the scene has running beneath.
+     * while the next blends in, to a bounded call running beneath it.
      */
     const key = (
       channels: PoseChannels,
