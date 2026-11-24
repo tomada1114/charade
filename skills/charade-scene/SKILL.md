@@ -139,10 +139,14 @@ part of the scene.
   repeats keyed values, eased from each key to the next and round again: a sway or a
   breath as data. It is timed, blended and open-ended like `drive`.
 - An action without an end, such as one that stands and breathes, is open-ended in the
-  same way. Make it the actor's last call, after everything it does: it shows through
-  wherever a call recorded after it has ended, so an open-ended stand started first
-  undoes every ending, and a figure that sat down stands back up. To idle between
-  actions, give it a `duration`.
+  same way. It lasts until a later call takes its joints, which then keep the pose that
+  call leaves: a figure that sat down over it stays seated, and those joints no longer
+  breathe. Call the stand again, with `at`, to idle again. A sway that should go on
+  through later poses is a `cycle` or `drive` with `mode: "add"`.
+- A stand with a `duration` is not such a base. A call started inside it is an override
+  that gives the joints back when it ends: `do("stand", { duration: 5 })` then
+  `do("sitDown", { at: 0.5 })` stands back up. Start the next call when the stand has
+  ended, or leave the `duration` off.
 - An actor starts at `x = 0` and there is no call that places it. An action that takes
   the actor somewhere says where it ends, and an action that needs to know where the
   actor stands takes that as a parameter; the catalog says which.

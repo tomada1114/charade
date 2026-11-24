@@ -24,7 +24,7 @@ const blinkKeys: readonly CycleKey[] = BLINKS.flatMap((at) => [
 export const standAction: ActionDefinition<NoParams, never> = defineAction({
   name: "stand",
   description:
-    "Stands at ease and stays alive: comes to an upright stance with the arms loose, then breathes, the chest rising and the head riding on it, and blinks now and then. Without a duration it goes on to the end of the scene and does not lengthen it, so start it first and time what follows with at, or give it a duration to use it as a pause. It leaves the actor where it stands. The mood dejected stands sagging, head low, and breathes slowly.",
+    "Stands at ease and stays alive: comes to an upright stance with the arms loose, then breathes, the chest rising and the head riding on it, and blinks now and then. Without a duration it goes on to the end of the scene and does not lengthen it, so start it first and time what follows with at: it lasts until a later call takes its joints, which then keep the pose that call leaves and no longer breathe, so call stand again, with at, to idle again. With a duration it is a pause, and a call started inside it gives the joints back to it when that call ends. It leaves the actor where it stands. The mood dejected stands sagging, head low, and breathes slowly.",
   moods: ["dejected"],
   build(clip) {
     const low = clip.mood === "dejected";

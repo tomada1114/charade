@@ -1198,14 +1198,12 @@ describe("a built-in action", () => {
   ): Finding[] {
     return moods.flatMap((mood) => {
       const asked = mood === undefined ? options : { ...options, mood };
-      // Over a stand a pose that has ended gives way to the stand beneath it, which
-      // the six solo actions are written for; the first three plant their feet at 0.
+      // Over a stand without a duration each pose that ends is held over it, so an
+      // action plays there as it does alone; a stand over a stand is the stand again.
       // The cart's hands follow its handle rather than the body, as any reach does.
       return [
         ...faults(alone(name, asked)),
-        ...(["stand", "sitDown", "throw"].includes(name)
-          ? []
-          : faults(overStand(name, asked))),
+        ...(name === "stand" ? [] : faults(overStand(name, asked))),
       ];
     });
   }
@@ -1459,6 +1457,93 @@ describe("a built-in action", () => {
       "prop",
     ).at(-1);
     expect((flight as { data: { x: number } }).data.x).toBeCloseTo(2.55, 10);
+  });
+});
+
+describe("a call over a stand without a duration", () => {
+  /** The actor's pose at the last frame of `built`. */
+  function lastPose(built: Scene): Pose {
+    expect(built.findings).toEqual([]);
+    const track = built.timeline.rows[0]?.tracks.find(({ kind }) => kind === "actor");
+    const last = lastFrameOf(built.timeline);
+    if (track === undefined || last === undefined) {
+      throw new Error("no actor, or no length");
+    }
+    return poseAtFrame(built.timeline, 0, track, last);
+  }
+
+  /** The channels the poses and reaches of `built`'s actor name. */
+  function namedChannels(built: Scene): (keyof Pose)[] {
+    const chains: Readonly<Record<string, readonly string[]>> = {
+      handL: ["shoulderL", "elbowL"],
+      handR: ["shoulderR", "elbowR"],
+      footL: ["hipL", "kneeL"],
+      footR: ["hipR", "kneeR"],
+    };
+    const names = segmentsOf(built, "actor").flatMap((segment) => {
+      const { data } = segment as { data: { channels?: object; effector?: string } };
+      return [
+        ...Object.keys(data.channels ?? {}),
+        ...(chains[data.effector ?? ""] ?? []),
+      ];
+    });
+    return [...new Set(names)] as (keyof Pose)[];
+  }
+
+  it.each(["sitDown", "think", "slump"] as const)(
+    "ends %s started inside the stand at the pose it ends at alone",
+    (name) => {
+      let end = Number.NaN;
+      const alone = scene((stage) => {
+        const actor = stage.actor();
+        end = actor.do(name, { at: 0.5 }).end;
+        actor.wait(1.5);
+      });
+      const over = scene({ duration: end + 1.5 }, (stage) => {
+        const actor = stage.actor();
+        actor.do("stand");
+        actor.do(name, { at: 0.5 });
+      });
+      const [expected, pose] = [lastPose(alone), lastPose(over)];
+      const names = namedChannels(alone);
+      expect(names.length).toBeGreaterThan(4);
+      for (const channel of names) {
+        expect([channel, pose[channel]]).toEqual([channel, expected[channel]]);
+      }
+    },
+  );
+
+  it("keeps a plain pose started inside the stand", () => {
+    const over = scene({ duration: 4 }, (stage) => {
+      const actor = stage.actor();
+      actor.do("stand");
+      actor.pose({ shoulderR: 2.5, elbowR: 0.4 }, { at: 0.5 });
+    });
+    expect(lastPose(over)).toMatchObject({ shoulderR: 2.5, elbowR: 0.4 });
+  });
+
+  it("stands back up from a sitDown, breathing, when stand is called again", () => {
+    const built = scene({ duration: 12 }, (stage) => {
+      const actor = stage.actor();
+      actor.do("stand");
+      const sat = actor.do("sitDown", { at: 0.5 });
+      actor.do("stand", { at: sat.end + 0.5 });
+    });
+    expect(built.findings).toEqual([]);
+    const track = built.timeline.rows[0]?.tracks.find(({ kind }) => kind === "actor");
+    if (track === undefined) {
+      throw new Error("no actor");
+    }
+    // The last seven seconds: two of the 3.4 s breaths, long after the stance arrived.
+    const posed = Array.from({ length: 211 }, (_, index) =>
+      poseAtFrame(built.timeline, 0, track, 150 + index),
+    );
+    const chests = posed.map(({ chest }) => chest);
+    // One stand's breath, not two added up: the chest rises 0.09 rad.
+    expect(Math.max(...chests) - Math.min(...chests)).toBeCloseTo(0.09, 3);
+    for (const pose of posed) {
+      expect(pose).toMatchObject({ pelvisY: 0, hipL: 0, hipR: 0, kneeL: 0, kneeR: 0 });
+    }
   });
 });
 

@@ -178,12 +178,24 @@ recorded sample is written against; changing any of it changes all of them at on
 - A pose is held after its call ends, until a later call moves those channels: an ended
   `replace` segment stays as the base, a later end over an earlier one. Returning to
   rest instead would make a seated figure stand up during every `wait`. A `drive` is
-  held at its last value, with `t` frozen at its duration.
-- A segment that ends while an earlier-recorded one is still running on a channel blends
-  back out to it over its own `blend`; this is the "out" of an override. Whether it does
-  is decided at its end, so the fade goes on if the lower one ends meanwhile. An `add`
-  segment is never held and always fades out. The mode's name is `BlendMode`, `replace`
-  or `add`; `reach` has no mode.
+  held at its last value, with `t` frozen at its duration. An open-ended segment
+  recorded earlier does not take them back (below).
+- A segment that ends while an earlier-recorded bounded one is still running on a
+  channel blends back out to it over its own `blend`; this is the "out" of an override
+  over a call that goes on to finish. Whether it does is decided at its end, so the fade
+  goes on if the lower one ends meanwhile. An `add` segment is never held and always
+  fades out. The mode's name is `BlendMode`, `replace` or `add`; `reach` has no mode.
+- An open-ended `replace` segment is a base, not something to give way to. A
+  later-recorded `replace` segment that ends while it runs, and does not yield to a
+  bounded one, is held over it, as over any held pose, and the open-ended segment loses
+  that channel from that end on; it does not come back when a still later call ends, and
+  it keeps the channels nothing has taken. Yielding to it would make every later bounded
+  call on its channels temporary: a `sitDown` over an open-ended `stand` stood back up,
+  and a pose's arm dropped after 0.2 s (#74). The ended segment has fully arrived at its
+  end, so the hand-over shows no step. To get the base back, record it again: the later
+  one wins. A bounded `cycle` or `drive` (a `stand` with a `duration`) still takes its
+  channels back until it ends; a call inside one is an override. An open-ended `add`
+  segment is still faded back to.
 - A `reach` is solved over the pose beneath it, while it runs and while it is held, so a
   held hand stays on its point when an earlier-recorded call still moves the back. A
   call recorded later than the reach that moves the body is not seen by it: the hand
@@ -201,8 +213,8 @@ recorded sample is written against; changing any of it changes all of them at on
   than the scene itself, so where it stops is the builder's to say, and the composition
   rules stay as they are. It is `express` alone: `mode: "add"` still adds and fades, an
   express that starts before the action or at its end changes nothing here, and a `pose`
-  of face channels inside a mood still gives way to it, as any ended pose does to an
-  earlier call still running.
+  of face channels gives way only to a bounded action's mood, as any ended pose does to
+  an earlier bounded call still running; over an open-ended action's mood it is held.
 - A full-body call is a `replace` pose that names all fourteen angles. One that starts
   while an earlier one is still playing is the warning `ERR_SCENE_FULL_BODY_CUT`.
 - The composed pose at a frame is `poseAtFrame` in `src/rig/compose.ts`, internal. It
@@ -213,14 +225,15 @@ recorded sample is written against; changing any of it changes all of them at on
   where the hand was at that microsecond, not at the frame before.
 - What does not depend on the frame is worked out once per track and kept in a `WeakMap`
   keyed on its segments array, with the frame rate and the segment count it was made
-  for: the layers, the held ones in end order, and the channels each ended segment
-  yields on, found in one pass in recorded order. A frame then costs one pass over the
-  track's segments, not their square; `check`, `sheet` and `render` compose every frame,
-  and a long walk is over a thousand segments. A pose is still a function of the
-  timeline and the frame alone. A segment replaced in place without the count changing
-  would be composed stale, which nothing does: the builder's in-place edits (an
-  `express` ending a mood) happen before anything composes the track, and a built or
-  parsed timeline is not changed again.
+  for: the layers, the held ones in end order, the channels each ended segment yields
+  on, found in one pass in recorded order, and when each open-ended segment loses each
+  channel, found in one pass in reverse. A frame then costs one pass over the track's
+  segments, not their square; `check`, `sheet` and `render` compose every frame, and a
+  long walk is over a thousand segments. A pose is still a function of the timeline and
+  the frame alone. A segment replaced in place without the count changing would be
+  composed stale, which nothing does: the builder's in-place edits (an `express` ending
+  a mood) happen before anything composes the track, and a built or parsed timeline is
+  not changed again.
 - `drive` takes one function of time that returns a map of channel values, as in
   `a.drive(t => ({ spine: Math.sin(t * 3) * 0.1 }))`. The channels it names are the keys
   it returns when it is called once with `t = 0` as the call is recorded: an unknown
@@ -241,11 +254,12 @@ recorded sample is written against; changing any of it changes all of them at on
   above 0 is `ERR_SCENE_OUT_OF_RANGE` and keys that are not a list
   `ERR_SCENE_INVALID_VALUE`, either recorded as a wait; a key without an `at` inside the
   period is `ERR_SCENE_OUT_OF_RANGE` and is dropped.
-- A segment that ends gives way at once to an earlier-recorded one still running on its
-  channels, so a sequence of poses played over an open-ended `cycle` or `drive` is
-  pulled towards that base while each next pose blends in. An action that should play
-  the same over a `stand` keeps each pose running until the next one on its channels has
-  arrived; the six solo actions do (`.claude/rules/vocabulary.md`).
+- A segment that ends gives way at once to an earlier-recorded bounded one still running
+  on its channels, so a sequence of poses played over a bounded `cycle` or `drive` (a
+  `stand` with a `duration`) is pulled towards that base while each next pose blends in.
+  An action that should play the same there keeps each pose running until the next one
+  on its channels has arrived; the six solo actions do (`.claude/rules/vocabulary.md`).
+  Over an open-ended base nothing is pulled: each pose that ends is held.
 - A function at depth 3 or 4 receives `t`, seconds since its segment began, and a second
   argument with the scene time, the segment's duration and progress, and the keyed
   random source. That argument is `Moment` (`time`, `duration`, `progress`, `random`);
