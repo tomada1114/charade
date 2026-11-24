@@ -5,16 +5,12 @@
     "outDir": "dist",
     "noEmit": false,
     "declaration": true,
-    "sourceMap": true,
 
-    // `src/` is deliberately kept out of the tarball, so a map that only
-    // referenced `../src/*.ts` would resolve to nothing for a consumer.
-    // Embedding the sources makes every published map self-contained.
-    "inlineSources": true,
-
-    // Off because TypeScript honours `inlineSources` for `.js.map` only: a
-    // `.d.ts.map` always references `../src/*.ts` by path, so every one of them
-    // would ship dangling. `check-package.mjs` enforces that as an invariant.
+    // The package ships no source maps (issue #33): `src/` is not in the
+    // tarball, and maps were the largest files in it. `check-package.mjs`
+    // rejects any `.map` it finds.
+    "sourceMap": false,
+    "inlineSourceMap": false,
     "declarationMap": false,
     "isolatedDeclarations": true,
 

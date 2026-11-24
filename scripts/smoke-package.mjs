@@ -25,8 +25,6 @@ import path from "node:path";
 import process from "node:process";
 
 import {
-  findAbsoluteMapSources,
-  findDanglingMapSources,
   findMissingRequiredPaths,
   findUnreadableManifest,
   inspectPackageEntries,
@@ -228,7 +226,6 @@ export function checkTarballContents(entries, label) {
   const problems = [
     ...inspectPackageEntries(entries, { manifest: packedManifest }),
     ...findMissingRequiredPaths(entries),
-    ...findDanglingMapSources(entries),
     ...findUnreadableManifest(entries, packedManifest),
   ];
   if (problems.length > 0) {
@@ -239,18 +236,6 @@ export function checkTarballContents(entries, label) {
         .map((problem) => `[${problem.code}] ${problem.message}`)
         .join("\n\n"),
       next: "Fix the paths listed above, then run `pnpm run package:smoke` again.",
-    });
-  }
-
-  step("checking that no published map leaks an absolute path");
-  const leaks = findAbsoluteMapSources(entries);
-  if (leaks.length > 0) {
-    fail("ERR_SMOKE_MAP_ABSOLUTE_PATH", {
-      what: "A published map references its sources by absolute path, exposing the build machine's layout.",
-      subject: leaks.map((leak) => leak.path).join(", "),
-      expected: "every `sources` entry relative to the map file",
-      actual: `${String(leaks.length)} absolute reference(s)`,
-      next: "Check `rootDir` and `outDir` in tsconfig.build.json, then rebuild.",
     });
   }
 }
