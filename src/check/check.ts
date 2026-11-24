@@ -612,18 +612,21 @@ function location(finding: Finding): string | undefined {
  * its fix line, then the count.
  */
 export function formatReport(report: CheckReport): string {
-  const blocks = report.findings.map((finding) => {
-    const at = location(finding);
-    return (
-      `${finding.severity} ${finding.code}: ${finding.message}\n` +
-      (at === undefined ? "" : `  at: ${at}\n`) +
-      `  fix: ${finding.fix}\n\n`
-    );
-  });
+  const blocks = report.findings.map((finding) => `${formatFinding(finding)}\n`);
   const { errors, warnings, truncated } = report.summary;
   return (
     blocks.join("") +
     `${plural(errors, "error")}, ${plural(warnings, "warning")}\n` +
     (truncated ? "Later findings were dropped: fix these and check again.\n" : "")
+  );
+}
+
+/** One finding as the text output prints it: its line, its location if any, its fix. */
+export function formatFinding(finding: Finding): string {
+  const at = location(finding);
+  return (
+    `${finding.severity} ${finding.code}: ${finding.message}\n` +
+    (at === undefined ? "" : `  at: ${at}\n`) +
+    `  fix: ${finding.fix}\n`
   );
 }

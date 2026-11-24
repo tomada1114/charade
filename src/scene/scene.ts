@@ -1,6 +1,6 @@
 import { type Finding, FindingCollector } from "../check/findings.js";
 import { nearestNames } from "../check/nearest.js";
-import { readFinding, valueOf, watchReads } from "../check/reads.js";
+import { noteAbortedBuild, readFinding, valueOf, watchReads } from "../check/reads.js";
 import { AsyncBuildError } from "../errors.js";
 import { DEFAULT_SEED } from "../timeline/random.js";
 import { DEFAULT_FPS, type Micros } from "../timeline/time.js";
@@ -267,44 +267,52 @@ export function buildScene(
   vocabulary: Vocabulary,
 ): Scene {
   const findings = new FindingCollector();
-  const settings = resolveOptions(options, findings);
-  const builder = new SceneBuilder(settings, findings, vocabulary);
-  let returned: unknown;
-  if (isBuild(build)) {
-    try {
-      const watched = watchReads(() => build(builder.stage));
-      for (const read of watched.reads) {
-        findings.add(readFinding(read, { subject: "The scene's build function" }));
+  try {
+    const settings = resolveOptions(options, findings);
+    const builder = new SceneBuilder(settings, findings, vocabulary);
+    let returned: unknown;
+    if (isBuild(build)) {
+      try {
+        const watched = watchReads(() => build(builder.stage));
+        for (const read of watched.reads) {
+          findings.add(readFinding(read, { subject: "The scene's build function" }));
+        }
+        returned = valueOf(watched);
+      } finally {
+        builder.close();
       }
-      returned = valueOf(watched);
-    } finally {
+    } else {
       builder.close();
+      findings.add({
+        code: "ERR_SCENE_INVALID_VALUE",
+        severity: "error",
+        message: "scene was not given a build function; the scene is empty.",
+        fix: "Call scene((stage) => { ... }) or scene(options, (stage) => { ... }).",
+      });
     }
-  } else {
-    builder.close();
-    findings.add({
-      code: "ERR_SCENE_INVALID_VALUE",
-      severity: "error",
-      message: "scene was not given a build function; the scene is empty.",
-      fix: "Call scene((stage) => { ... }) or scene(options, (stage) => { ... }).",
+    if (isThenable(returned)) {
+      // The rejected build goes on running; what it throws after this is already answered.
+      void Promise.resolve(returned).catch(() => undefined);
+      throw new AsyncBuildError();
+    }
+    const timeline = builder.timeline();
+    checkDuration(timeline, findings);
+    const built: Scene = {
+      kind: "charade.scene",
+      version: 1,
+      width: settings.width,
+      height: settings.height,
+      font: settings.font,
+      timeline,
+      findings: findings.findings,
+      truncated: findings.truncated,
+    };
+    return deepFreeze(built);
+  } catch (error) {
+    noteAbortedBuild(error, {
+      findings: findings.findings,
+      truncated: findings.truncated,
     });
+    throw error;
   }
-  if (isThenable(returned)) {
-    // The rejected build goes on running; what it throws after this is already answered.
-    void Promise.resolve(returned).catch(() => undefined);
-    throw new AsyncBuildError();
-  }
-  const timeline = builder.timeline();
-  checkDuration(timeline, findings);
-  const built: Scene = {
-    kind: "charade.scene",
-    version: 1,
-    width: settings.width,
-    height: settings.height,
-    font: settings.font,
-    timeline,
-    findings: findings.findings,
-    truncated: findings.truncated,
-  };
-  return deepFreeze(built);
 }

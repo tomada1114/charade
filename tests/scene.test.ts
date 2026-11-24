@@ -2,6 +2,11 @@ import { describe, expect, it, vi } from "vitest";
 
 import { lastFrameOf } from "../src/check/check.js";
 import {
+  installReadWatch,
+  type ReadWatch,
+  takeAbortedBuild,
+} from "../src/check/reads.js";
+import {
   type Actor,
   AsyncBuildError,
   type Finding,
@@ -273,6 +278,116 @@ describe("scene", () => {
   it("stores a seed of negative zero as zero", () => {
     const built = scene({ seed: -0, duration: 1 }, () => undefined);
     expect(Object.is(built.timeline.seed, 0)).toBe(true);
+  });
+});
+
+/** A watch that reports one clock read for every function it runs. */
+const clockWatch: ReadWatch = (run) => {
+  try {
+    return { ok: true, value: run(), reads: ["Date"] };
+  } catch (error) {
+    return { ok: false, error, reads: ["Date"] };
+  }
+};
+
+/** Runs `run` with `watch` installed, then puts back what was installed before. */
+function watching<T>(watch: ReadWatch, run: () => T): T {
+  const previous = installReadWatch(watch);
+  try {
+    return run();
+  } finally {
+    installReadWatch(previous);
+  }
+}
+
+describe("a build that fails", () => {
+  const boom = new Error("the author's own failure");
+  const failing = (): void => {
+    throw boom;
+  };
+
+  it("still throws the author's own error object", () => {
+    expect(watching(clockWatch, () => thrownBy(() => scene(failing)))).toBe(boom);
+  });
+
+  it("keeps the findings recorded before the failure under what was thrown", () => {
+    const findings = watching(clockWatch, () => {
+      const error = thrownBy(() => scene(untyped({ durations: 1 }), failing));
+      return takeAbortedBuild(error).findings.map(({ code }) => code);
+    });
+    expect(findings).toEqual(["ERR_SCENE_UNKNOWN_OPTION", "ERR_CHECK_CLOCK_READ"]);
+  });
+
+  it("keeps the findings of a build that returns a promise", () => {
+    const taken = watching(clockWatch, () => {
+      const error = thrownBy(() => scene((): unknown => Promise.resolve()));
+      expect(error).toBeInstanceOf(AsyncBuildError);
+      return takeAbortedBuild(error).findings.map(({ code }) => code);
+    });
+    expect(taken).toEqual(["ERR_CHECK_CLOCK_READ"]);
+  });
+
+  it("gives nothing back for a different error, and clears what it kept", () => {
+    const [other, again] = watching(clockWatch, () => {
+      const error = thrownBy(() => scene(failing));
+      return [
+        takeAbortedBuild(new Error("another")).findings,
+        takeAbortedBuild(error).findings,
+      ];
+    });
+    expect(other).toEqual([]);
+    expect(again).toEqual([]);
+  });
+
+  it("gives back a kept finding only once", () => {
+    const [first, second] = watching(clockWatch, () => {
+      const error = thrownBy(() => scene(failing));
+      return [
+        takeAbortedBuild(error).findings.length,
+        takeAbortedBuild(error).findings.length,
+      ];
+    });
+    expect([first, second]).toEqual([1, 0]);
+  });
+
+  it("keeps nothing with no watch installed", () => {
+    const previous = installReadWatch(undefined);
+    try {
+      const error = thrownBy(() => scene(untyped({ durations: 1 }), failing));
+      expect(error).toBe(boom);
+      expect(takeAbortedBuild(error).findings).toEqual([]);
+    } finally {
+      installReadWatch(previous);
+    }
+  });
+
+  it("is forgotten when a watch is installed", () => {
+    const taken = watching(clockWatch, () => {
+      const error = thrownBy(() => scene(failing));
+      installReadWatch(installReadWatch(clockWatch));
+      return takeAbortedBuild(error).findings;
+    });
+    expect(taken).toEqual([]);
+  });
+
+  it("forgets an earlier build's findings when a later one fails with none", () => {
+    const taken = watching(clockWatch, () => {
+      thrownBy(() => scene(failing));
+      const error = thrownBy(() =>
+        watching(
+          (run) => {
+            try {
+              return { ok: true, value: run(), reads: [] };
+            } catch (thrown) {
+              return { ok: false, error: thrown, reads: [] };
+            }
+          },
+          () => scene(failing),
+        ),
+      );
+      return takeAbortedBuild(error).findings;
+    });
+    expect(taken).toEqual([]);
   });
 });
 
