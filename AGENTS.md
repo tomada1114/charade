@@ -125,9 +125,10 @@ Only loading a definitions module and writing the sample images are the export l
 Pure code imports no `node:` module and no skia-canvas, and reads no clock and no
 unseeded random number, so that a browser page can bundle it later without a change to
 the published contract. Only the export layer and the CLI are Node-only, and neither is
-reachable from the root entry. The boundary is a lint rule by directory in
-`eslint.config.mjs`; what that rule cannot see, such as a dynamic `import()`, holds as
-this instruction.
+reachable from the root entry. The boundary is a lint rule in `eslint.config.mjs` over
+every module under `src/` except `src/export/` and the CLI, so a root module and
+`src/internal/` are pure too; what that rule cannot see, such as a dynamic `import()`,
+holds as this instruction.
 
 These facts hold for every change, because no config can check whether a change was
 meant:

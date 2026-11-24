@@ -75,11 +75,57 @@ const NODE_GLOBALS = [
   "clearImmediate",
 ];
 
-/** The pure layers of the table in AGENTS.md § Architecture. */
-const PURE_LAYERS = ["scene", "timeline", "rig", "draw", "check", "vocabulary"];
+/**
+ * Every source module is pure except the ones these globs name: AGENTS.md §
+ * Architecture's export layer and CLI. A root module (src/errors.ts,
+ * src/index.ts), src/internal/ and any directory added later are pure by
+ * default, because every pure layer imports a root module.
+ */
+const PURE_SOURCE = "src/**/*.{ts,mts,cts}";
+const NODE_ONLY_SOURCE = ["src/cli.{ts,mts,cts}", "src/cli/**", "src/export/**"];
 
 const PURE_LAYER_IS_PURE =
-  'is not allowed in a pure layer: see "Architecture" in AGENTS.md. Only src/export/ and src/cli.ts are Node-only.';
+  'is not allowed in pure code: see "Architecture" in AGENTS.md. Only src/export/, src/cli.ts and src/cli/ are Node-only.';
+
+const UNSEEDED_RANDOM = `Unseeded random ${PURE_LAYER_IS_PURE} Use the seeded random source from the timeline layer.`;
+
+/**
+ * `no-restricted-syntax` entries for pure code: `Math` or `crypto` used as a
+ * value rather than as the object of a member access, which is how an alias
+ * (`const M = Math; M.random()`) or a hand-off (`Reflect.get(Math, "random")`)
+ * walks past the `no-restricted-properties` ban on `Math.random`.
+ *
+ * @remarks
+ * Restated by the src/index.ts block, since `no-restricted-syntax` options
+ * replace rather than merge across config objects.
+ */
+const PURE_SYNTAX = [
+  {
+    selector: [
+      "Identifier[name=/^(Math|crypto)$/]",
+      ":not(MemberExpression > .object)",
+      ":not(MemberExpression[computed=false] > .property)",
+      ":not(Property[computed=false] > .key)",
+      ":not(MethodDefinition[computed=false] > .key)",
+      ":not(PropertyDefinition[computed=false] > .key)",
+      ":not(TSPropertySignature[computed=false] > .key)",
+      ":not(TSMethodSignature[computed=false] > .key)",
+      // Type positions: `typeof Math.random`, `let m: Math`.
+      ":not(TSQualifiedName > *)",
+      ":not(TSTypeQuery > .exprName)",
+      ":not(TSTypeReference > .typeName)",
+    ].join(""),
+    message:
+      'In pure code, use Math and crypto only as `Math.max(…)`: an alias hides an unseeded random read from the lint. See "Architecture" in AGENTS.md.',
+  },
+  {
+    // `Math[key]()` names no property no-restricted-properties can match.
+    selector:
+      "MemberExpression[computed=true][object.name=/^(Math|crypto)$/]:not([property.type='Literal'])",
+    message:
+      'In pure code, read a Math or crypto member by its name: a computed key hides an unseeded random read from the lint. See "Architecture" in AGENTS.md.',
+  },
+];
 
 /**
  * `no-restricted-imports` options for every pure layer, plus any extra
@@ -106,7 +152,7 @@ function pureLayerImports(extraPatterns) {
         { regex: "^node:", message: `A Node built-in ${PURE_LAYER_IS_PURE}` },
         { regex: "^skia-canvas(/|$)", message: `skia-canvas ${PURE_LAYER_IS_PURE}` },
         {
-          regex: String.raw`^(\.\./)+(export(/|$)|cli(\.[jt]s)?$|cli/)`,
+          regex: String.raw`^(\.\./)+(export(/|$)|cli(\.[mc]?[jt]s)?$|cli/)`,
           message: `The export layer or the CLI ${PURE_LAYER_IS_PURE}`,
         },
         {
@@ -128,7 +174,7 @@ const universalSourceRestrictions = isUniversalProfile()
   ? [
       {
         name: "universal-profile/no-node-builtins",
-        files: ["src/**/*.ts"],
+        files: [PURE_SOURCE],
         rules: {
           "no-restricted-imports": [
             "error",
@@ -209,7 +255,7 @@ export default defineConfig([
   },
   {
     name: "public-api/explicit-surface",
-    files: ["src/**/*.ts"],
+    files: [PURE_SOURCE],
     rules: {
       // The published contract is named exports from src/index.ts. A default
       // export has no stable name for consumers to import, or for a reviewer
@@ -239,44 +285,16 @@ export default defineConfig([
       ],
     },
   },
-  {
-    name: "public-api/internal-stays-private",
-    files: ["src/index.ts"],
-    rules: {
-      // src/index.ts is the whole published contract, so a re-export here is
-      // the one edit that can publish a private symbol by accident. The
-      // directory name is not the boundary — this line is.
-      //
-      // Anchored on the path segment, not on the bare word: an unanchored
-      // /internal/ also matches a specifier that merely starts with those
-      // letters, so a legitimate `./internal-format.js` re-export would be
-      // rejected for a private directory it is not in. src/index.ts sits
-      // beside the directory, so `./internal/` is the only spelling that can
-      // reach it.
-      "no-restricted-syntax": [
-        "error",
-        NO_EXPORT_STAR,
-        {
-          selector: "ExportNamedDeclaration[source.value=/^\\.\\/internal\\//]",
-          message:
-            "exporting an internal symbol publishes it — move it to a public module first",
-        },
-        {
-          selector: "ExportAllDeclaration[source.value=/^\\.\\/internal\\//]",
-          message:
-            "exporting an internal symbol publishes it — move it to a public module first",
-        },
-      ],
-    },
-  },
   ...universalSourceRestrictions,
   {
     // After the universal profile's block, and a superset of it, so switching
-    // that profile on cannot loosen a pure layer.
-    name: "boundaries/pure-layers",
-    files: [`src/{${PURE_LAYERS.join(",")}}/**/*.ts`],
+    // that profile on cannot loosen pure code.
+    name: "boundaries/pure-code",
+    files: [PURE_SOURCE],
+    ignores: NODE_ONLY_SOURCE,
     rules: {
       "no-restricted-imports": pureLayerImports([]),
+      "no-restricted-syntax": ["error", NO_EXPORT_STAR, ...PURE_SYNTAX],
       "no-restricted-globals": [
         "error",
         {
@@ -303,8 +321,65 @@ export default defineConfig([
         ].map(([object, property]) => ({
           object,
           property,
-          message: `Unseeded random ${PURE_LAYER_IS_PURE} Use the seeded random source from the timeline layer.`,
+          message: UNSEEDED_RANDOM,
         })),
+        // `globalThis.Math.random` is not `Math.random` to the entries above,
+        // so the global object may not hand these two out at all.
+        ...["globalThis", "window", "self"].flatMap((object) =>
+          ["Math", "crypto"].map((property) => ({
+            object,
+            property,
+            message: `In pure code, name ${property} directly: read through ${object}, an unseeded random read hides from the lint. See "Architecture" in AGENTS.md.`,
+          })),
+        ),
+      ],
+    },
+  },
+  {
+    // A root module sits beside src/export/ and src/cli.ts, so `./` reaches
+    // them from here; inside a layer `./cli.js` is that layer's own module.
+    name: "boundaries/root-modules",
+    files: ["src/*.{ts,mts,cts}"],
+    ignores: NODE_ONLY_SOURCE,
+    rules: {
+      "no-restricted-imports": pureLayerImports([
+        {
+          regex: String.raw`^\./(export(/|$)|cli(\.[mc]?[jt]s)?$|cli/)`,
+          message: `The export layer or the CLI ${PURE_LAYER_IS_PURE}`,
+        },
+      ]),
+    },
+  },
+  {
+    // After boundaries/pure-code, which also sets no-restricted-syntax here,
+    // so this block's superset is the one that holds.
+    name: "public-api/internal-stays-private",
+    files: ["src/index.ts"],
+    rules: {
+      // src/index.ts is the whole published contract, so a re-export here is
+      // the one edit that can publish a private symbol by accident. The
+      // directory name is not the boundary — this line is.
+      //
+      // Anchored on the path segment, not on the bare word: an unanchored
+      // /internal/ also matches a specifier that merely starts with those
+      // letters, so a legitimate `./internal-format.js` re-export would be
+      // rejected for a private directory it is not in. src/index.ts sits
+      // beside the directory, so `./internal/` is the only spelling that can
+      // reach it.
+      "no-restricted-syntax": [
+        "error",
+        NO_EXPORT_STAR,
+        ...PURE_SYNTAX,
+        {
+          selector: "ExportNamedDeclaration[source.value=/^\\.\\/internal\\//]",
+          message:
+            "exporting an internal symbol publishes it — move it to a public module first",
+        },
+        {
+          selector: "ExportAllDeclaration[source.value=/^\\.\\/internal\\//]",
+          message:
+            "exporting an internal symbol publishes it — move it to a public module first",
+        },
       ],
     },
   },
@@ -314,11 +389,11 @@ export default defineConfig([
     // rule only keeps items off the modules that load the vocabulary (export
     // and cli are already in the shared patterns).
     name: "boundaries/vocabulary-stays-off-the-root-entry",
-    files: ["src/vocabulary/**/*.ts"],
+    files: ["src/vocabulary/**/*.{ts,mts,cts}"],
     rules: {
       "no-restricted-imports": pureLayerImports([
         {
-          regex: String.raw`^(\.\./)+(index|vocabulary/index|scene/builtins|scene/scene|internal(/.*)?)(\.[jt]s)?$`,
+          regex: String.raw`^(\.\./)+(index|vocabulary/index|scene/builtins|scene/scene|internal(/.*)?)(\.[mc]?[jt]s)?$`,
           message:
             "A built-in item imports each name from the module src/index.ts re-exports it from: the root entry, the scene function and the built-in maps load the vocabulary, so importing them here closes a cycle. See .claude/rules/vocabulary.md.",
         },

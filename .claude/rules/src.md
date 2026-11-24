@@ -18,6 +18,14 @@ and an undocumented public symbol. What follows is the judgment they cannot make
   Nothing it exports may reach skia-canvas, ffmpeg or a `node:` module through its
   import graph, not even behind a lazy `import()`; `.claude/rules/export.md` says where
   rendering lives instead.
+- The lint holds that boundary for every `.ts`, `.mts` and `.cts` file under `src/`
+  except `src/cli.ts`, `src/cli/` and `src/export/`: a root module or `src/internal/` is
+  pure by default, because every pure layer imports `src/errors.ts`. Making a module
+  Node-only means moving it into `src/export/`, not widening that exception list.
+- The lint sees `Math.random` and `crypto` only by name: it rejects `globalThis.Math`
+  and `Math` or `crypto` used as a value (`const M = Math`), but not a global object
+  that is itself aliased (`const g = globalThis; g.Math.random()`) or reached
+  dynamically. Those hold as instruction.
 - `src/internal/` is private because of the directory, not the file name. `src/cli.ts`
   is a command entry, tested through `argv`, exit code and output, never re-exported.
 - Every public declaration carries TSDoc with `@public`. A public type that references

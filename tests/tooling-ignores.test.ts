@@ -361,13 +361,23 @@ describe("the layer boundary in eslint.config.mjs", () => {
     "no-restricted-globals",
     "no-restricted-properties",
   ];
+  // Also set on the Node-only modules, for the `export *` ban, so the
+  // effective-config checks below leave it out of BOUNDARY_RULES.
+  const REPORTED_RULES = [...BOUNDARY_RULES, "no-restricted-syntax"];
 
   // Paths no later issue will create: typescript-eslint refuses a default-project
   // file once it joins the real project.
   const probes = {
     scene: "src/scene/layer-boundary-probe.ts",
     vocabulary: "src/vocabulary/props/layer-boundary-probe.ts",
+    vocabularyMts: "src/vocabulary/props/layer-boundary-probe.mts",
+    root: "src/layer-boundary-probe.ts",
+    internal: "src/internal/layer-boundary-probe.ts",
+    internalNested: "src/internal/deep/layer-boundary-probe.ts",
+    rigMts: "src/rig/layer-boundary-probe.mts",
+    rigCts: "src/rig/layer-boundary-probe.cts",
     exporter: "src/export/layer-boundary-probe.ts",
+    cliModule: "src/cli/layer-boundary-probe.ts",
   };
 
   // A separate instance: only these probes, which do not exist on disk, need
@@ -377,7 +387,12 @@ describe("the layer boundary in eslint.config.mjs", () => {
     overrideConfig: {
       languageOptions: {
         parserOptions: {
-          projectService: { allowDefaultProject: Object.values(probes) },
+          projectService: {
+            allowDefaultProject: Object.values(probes),
+            // The default cap is 8; there is one probe per kind of path.
+            maximumDefaultProjectFileMatchCount_THIS_WILL_SLOW_DOWN_LINTING:
+              Object.keys(probes).length,
+          },
         },
       },
     },
@@ -395,7 +410,7 @@ describe("the layer boundary in eslint.config.mjs", () => {
     ).toEqual([]);
     return messages
       .map((message) => message.ruleId ?? "")
-      .filter((ruleId) => BOUNDARY_RULES.includes(ruleId));
+      .filter((ruleId) => REPORTED_RULES.includes(ruleId));
   }
 
   async function effectiveRules(
@@ -416,6 +431,14 @@ describe("the layer boundary in eslint.config.mjs", () => {
     ["a draw module", "src/draw/context.ts", "../"],
     ["a scene module", probes.scene, "../"],
     ["a nested vocabulary module", probes.vocabulary, "../../"],
+    ["a vocabulary .mts module", probes.vocabularyMts, "../../"],
+    ["the errors module", "src/errors.ts", "./"],
+    ["the root entry", "src/index.ts", "./"],
+    ["a new root module", probes.root, "./"],
+    ["a src/internal module", probes.internal, "../"],
+    ["a nested src/internal module", probes.internalNested, "../../"],
+    ["a pure-layer .mts module", probes.rigMts, "../"],
+    ["a pure-layer .cts module", probes.rigCts, "../"],
   ] as const;
 
   describe.each(pureFiles)("in %s (%s)", (_label, relative, up) => {
@@ -466,10 +489,64 @@ describe("the layer boundary in eslint.config.mjs", () => {
         "export const r = crypto.getRandomValues(new Uint8Array(1));\n",
       ],
       ["crypto.randomUUID", "export const r = crypto.randomUUID();\n"],
+      ["Math.random by a string key", 'export const r = Math["random"]();\n'],
+
+      ["globalThis.Math", "export const r = globalThis.Math.random();\n"],
+      ["globalThis.crypto", "export const r = globalThis.crypto.randomUUID();\n"],
+      ["self.Math", "export const r = self.Math.random();\n"],
     ])("rejects %s", async (_name, code) => {
       expect(await boundaryReports(relative, code)).toEqual([
         "no-restricted-properties",
       ]);
+    });
+
+    it.each([
+      ["an alias of Math", "const M = Math;\nexport const r = M.random();\n"],
+      ["an alias of crypto", "const c = crypto;\nexport const r = c.randomUUID();\n"],
+      ["Math handed to a call", 'export const r = Reflect.get(Math, "random");\n'],
+      ["Math in an object", "export const o = { Math };\n"],
+      [
+        "Math read by a computed key",
+        'const k = "random" as const;\nexport const r = Math[k]();\n',
+      ],
+    ])("rejects %s", async (_name, code) => {
+      expect(await boundaryReports(relative, code)).toEqual(["no-restricted-syntax"]);
+    });
+
+    it("rejects Math.random destructured, as a property read and as an alias", async () => {
+      expect(
+        await boundaryReports(
+          relative,
+          "const { random } = Math;\nexport const r = random();\n",
+        ),
+      ).toEqual(["no-restricted-properties", "no-restricted-syntax"]);
+    });
+
+    it("accepts ordinary Math use and a member that only shares its name", async () => {
+      expect(
+        await boundaryReports(
+          relative,
+          "const o = { Math: 1, crypto: 2 };\ntype T = typeof Math;\nexport const r: [number, number, T | undefined] = [Math.max(o.Math, Math.PI), o.crypto, undefined];\n",
+        ),
+      ).toEqual([]);
+    });
+
+    it("accepts Math and crypto in type positions", async () => {
+      expect(
+        await boundaryReports(
+          relative,
+          "type R = typeof Math.random;\nexport interface I { crypto(): Math; r?: R }\n",
+        ),
+      ).toEqual([]);
+    });
+
+    it("accepts a same-layer module named cli or export inside a layer", async () => {
+      expect(
+        await boundaryReports(
+          probes.scene,
+          'import { a } from "./cli.js";\nimport { b } from "./export.js";\nexport const c = [a, b];\n',
+        ),
+      ).toEqual([]);
     });
 
     it("accepts a same-layer import whose directory shares a builtin's name", async () => {
@@ -490,6 +567,7 @@ describe("the layer boundary in eslint.config.mjs", () => {
       ["src/internal", "../../internal/x.js"],
       ["the built-in index", "../index.js"],
       ["the built-in index by its full path", "../../vocabulary/index.js"],
+      ["the root entry by an .mjs spelling", "../../index.mjs"],
     ])("rejects importing %s", async (_label, specifier) => {
       expect(
         await boundaryReports(
@@ -514,10 +592,11 @@ describe("the layer boundary in eslint.config.mjs", () => {
 
   it.each([
     ["the CLI entry", "src/cli.ts"],
+    ["a nested CLI module", probes.cliModule],
     ["an export-layer module", probes.exporter],
   ])("lets %s import node:fs and skia-canvas", async (_label, relative) => {
     const code =
-      'import { readFileSync } from "node:fs";\nimport { Canvas } from "skia-canvas";\nexport const io = [readFileSync, Canvas, Date.now(), Math.random()];\n';
+      'import { readFileSync } from "node:fs";\nimport { Canvas } from "skia-canvas";\nconst M = Math;\nexport const io = [readFileSync, Canvas, Date.now(), M.random(), globalThis.Math.random()];\n';
     expect(await boundaryReports(relative, code)).toEqual([]);
   });
 
@@ -528,10 +607,18 @@ describe("the layer boundary in eslint.config.mjs", () => {
         : (setting?.slice(1) ?? []).map((entry) => readKey(entry, "selector"));
     }
 
+    // The alias ban and the computed-key ban of pure code.
+    const aliasSelector: unknown = expect.stringMatching(/^Identifier\[name=/);
+    const computedSelector: unknown = expect.stringMatching(
+      /^MemberExpression\[computed=true\]/,
+    );
+
     it("keeps the src/** rules on a pure-layer file", async () => {
       const rules = await effectiveRules("src/rig/ik.ts");
       expect(syntaxSelectors(rules["no-restricted-syntax"])).toEqual([
         "ExportAllDeclaration",
+        aliasSelector,
+        computedSelector,
       ]);
       expect(ruleSeverity(rules["no-restricted-exports"])).toBe(2);
       expect(
@@ -540,18 +627,49 @@ describe("the layer boundary in eslint.config.mjs", () => {
       expect(ruleSeverity(rules["no-console"])).toBe(2);
     });
 
-    it("keeps all three export restrictions on src/index.ts and adds no boundary rule", async () => {
+    it("keeps all three export restrictions on src/index.ts beside the alias ban", async () => {
       const rules = await effectiveRules("src/index.ts");
       expect(syntaxSelectors(rules["no-restricted-syntax"])).toEqual([
         "ExportAllDeclaration",
+        aliasSelector,
+        computedSelector,
         "ExportNamedDeclaration[source.value=/^\\.\\/internal\\//]",
         "ExportAllDeclaration[source.value=/^\\.\\/internal\\//]",
       ]);
-      expect(ruleSeverity(rules["no-restricted-imports"])).toBeUndefined();
+    });
+
+    it.each([
+      ["the root entry", "src/index.ts"],
+      ["the errors module", "src/errors.ts"],
+      ["a vocabulary module", "src/vocabulary/index.ts"],
+    ])("applies every boundary rule to %s", async (_label, relative) => {
+      const rules = await effectiveRules(relative);
+      for (const rule of BOUNDARY_RULES) {
+        expect(ruleSeverity(rules[rule])).toBe(2);
+      }
+    });
+
+    it("gives a vocabulary module both its own pattern and the node: ban", async () => {
+      const setting = (await effectiveRules("src/vocabulary/index.ts"))[
+        "no-restricted-imports"
+      ];
+      const regexes =
+        typeof setting === "number"
+          ? []
+          : (setting?.slice(1) ?? []).flatMap((entry) => {
+              const patterns = readKey(entry, "patterns");
+              return Array.isArray(patterns)
+                ? patterns.map((pattern: unknown) => readKey(pattern, "regex"))
+                : [];
+            });
+      expect(regexes).toContain("^node:");
+      expect(regexes).toContain("^skia-canvas(/|$)");
+      expect(regexes).toContainEqual(expect.stringContaining("scene/builtins"));
     });
 
     it.each([
       ["the CLI entry", "src/cli.ts"],
+      ["a nested CLI module", "src/cli/commands.ts"],
       ["an export-layer module", "src/export/raster.ts"],
     ])("applies no boundary rule to %s", async (_label, relative) => {
       const rules = await effectiveRules(relative);
