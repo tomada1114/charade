@@ -276,6 +276,14 @@ recorded sample is how an unintended change in appearance fails a test.
   need two codes for it. The call a `drive` gets at `t = 0` while it is recorded drops
   its reads, since the frame check meets the same read at every frame and names the
   track; kept, one mistake would be reported twice.
+- A build that fails makes no scene, so its findings have nowhere to be frozen:
+  `buildScene` hands those recorded before the failure, the build's reads among them, to
+  `noteAbortedBuild` in `src/check/reads.ts` with what was thrown, and rethrows it
+  unchanged. The CLI takes them back by that same thrown value when the load fails and
+  prints them with the load error; a load error with no `cause` (no scene file, not a
+  scene) was thrown by no build and takes none. They are kept only while a watch is
+  installed, one build at a time; the error class carries nothing, since a thrown value
+  need not be an object.
 
 ## Output
 
